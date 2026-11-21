@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Algebra Blaster — Secondary Math Arcade Shooter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #050814;
+      --neon-cyan: #00f3ff;
+      --neon-pink: #ff2a85;
+      --neon-amber: #ffb800;
+      --neon-green: #00ff9d;
+      --neon-purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-deep);
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+    }
+
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .font-mono-math {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Animated cyber grid background for overlays */
+    .cyber-panel {
+      background: rgba(10, 15, 36, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 243, 255, 0.28);
+      box-shadow: 0 0 40px rgba(0, 243, 255, 0.14), inset 0 0 24px rgba(0, 243, 255, 0.06);
+    }
+
+    .neon-text-cyan {
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.8), 0 0 24px rgba(0, 243, 255, 0.45);
+    }
+
+    .neon-text-pink {
+      text-shadow: 0 0 10px rgba(255, 42, 133, 0.8), 0 0 24px rgba(255, 42, 133, 0.45);
+    }
+
+    .neon-text-amber {
+      text-shadow: 0 0 12px rgba(255, 184, 0, 0.85), 0 0 28px rgba(255, 184, 0, 0.45);
+    }
+
+    /* Arcade tactile buttons */
+    .btn-arcade {
+      position: relative;
+      transition: all 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.6), 0 0 18px rgba(0, 243, 255, 0.25);
+    }
+
+    .btn-arcade:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-arcade:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+    }
+
+    .key-btn {
+      background: linear-gradient(180deg, rgba(30, 41, 75, 0.95) 0%, rgba(15, 23, 46, 0.98) 100%);
+      border: 1px solid rgba(0, 243, 255, 0.32);
+      box-shadow: 0 3px 0 rgba(2, 6, 23, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      transition: transform 0.07s ease, background 0.1s ease, border-color 0.1s ease;
+    }
+
+    .key-btn:hover {
+      border-color: rgba(0, 243, 255, 0.75);
+      background: linear-gradient(180deg, rgba(42, 58, 105, 0.95) 0%, rgba(20, 31, 61, 0.98) 100%);
+    }
+
+    .key-btn:active, .key-btn.pressed {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(2, 6, 23, 0.9);
+      border-color: #00f3ff;
+      background: rgba(0, 243, 255, 0.22);
+    }
+
+    .fire-btn {
+      background: linear-gradient(135deg, #ff2a85 0%, #ff6b00 100%);
+      border: 1px solid rgba(255, 200, 220, 0.5);
+      box-shadow: 0 4px 0 #831142, 0 0 22px rgba(255, 42, 133, 0.55);
+      transition: transform 0.08s ease, filter 0.12s ease;
+    }
+
+    .fire-btn:hover {
+      filter: brightness(1.12);
+    }
+
+    .fire-btn:active, .fire-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #831142, 0 0 12px rgba(255, 42, 133, 0.4);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-earned {
+      animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes pulseBorder {
+      0%, 100% { border-color: rgba(0, 243, 255, 0.35); }
+      50% { border-color: rgba(0, 243, 255, 0.85); }
+    }
+
+    .pulse-border {
+      animation: pulseBorder 2.4s infinite ease-in-out;
+    }
+
+    @keyframes levelUpBannerAnim {
+      0% { transform: translate(-50%, -20px) scale(0.8); opacity: 0; }
+      15% { transform: translate(-50%, 0) scale(1.05); opacity: 1; }
+      25% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      82% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -18px) scale(0.95); opacity: 0; }
+    }
+
+    .level-up-banner {
+      animation: levelUpBannerAnim 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    /* Custom scrollbar for instructions modal on small screens */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 243, 255, 0.4);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#050814]">
+
+  <!-- TOP HUD BAR (Always accessible during active play) -->
+  <header id="hudBar" class="relative z-20 flex items-center justify-between px-2.5 sm:px-6 py-2 bg-slate-950/90 border-b border-cyan-500/25 backdrop-blur-md shrink-0 gap-2">
+    <!-- Left: Lives, Level Progress & Combo -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-900/90 border border-pink-500/30 px-2 sm:px-2.5 py-1.5 rounded-xl" title="Shield Integrity (Lives)">
+        <span class="text-[10px] sm:text-xs font-orbitron uppercase tracking-wider text-pink-300 hidden lg:inline mr-1">Shields</span>
+        <div id="livesContainer" class="flex items-center gap-1">
+          <!-- Hearts rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Progressive Level Badge & Progress Bar -->
+      <div class="flex flex-col justify-center bg-slate-900/95 border border-purple-400/40 px-2.5 sm:px-3 py-1 rounded-xl min-w-[88px] sm:min-w-[116px]" title="Solve 5 equations to Level Up!">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-orbitron font-bold">
+          <span id="hudLevelText" class="text-purple-300">LVL 1</span>
+          <span id="hudLevelCount" class="text-slate-400 font-mono-math text-[10px]">0/5</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+          <div id="hudLevelBar" class="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <div id="hudComboBadge" class="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-300 font-orbitron text-xs font-bold transition-transform duration-150">
+        <span>COMBO</span>
+        <span id="comboValue" class="text-amber-400 text-sm">x1</span>
+      </div>
+    </div>
+
+    <!-- Center: Countdown Timer -->
+    <div class="flex flex-col items-center">
+      <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-900/95 border border-cyan-400/35 px-3 sm:px-5 py-1 rounded-xl shadow-inner">
+        <svg class="w-4 h-4 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="timerDisplay" class="font-orbitron font-extrabold text-sm sm:text-xl tracking-wider text-cyan-300">01:30</span>
+      </div>
+    </div>
+
+    <!-- Right: Points, Sound Toggle, Pause Button -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="flex items-center gap-2 bg-slate-900/90 border border-emerald-400/30 px-2.5 sm:px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] sm:text-xs font-orbitron uppercase tracking-wider text-emerald-300/80 hidden lg:inline">Score</span>
+        <span id="scoreDisplay" class="font-orbitron font-extrabold text-sm sm:text-lg text-emerald-400 tracking-wide">0</span>
+      </div>
+
+      <!-- Sound Toggle Button -->
+      <button id="soundToggleBtn" type="button" aria-label="Toggle Sound" title="Toggle Sound (M)"
+        class="p-2 sm:p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-cyan-500/30 text-cyan-300 transition active:scale-95">
+        <svg id="soundOnIcon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundOffIcon" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+      </button>
+
+      <!-- Pause Button -->
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause Game (Esc / P)"
+        class="p-2 sm:p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/35 text-amber-300 transition active:scale-95">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN GAME ARENA (Responsive Canvas Wrapper) -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="block w-full h-full cursor-crosshair"></canvas>
+
+    <!-- Target Lock Hint Floating Pill -->
+    <div id="targetHintPill" class="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full bg-slate-950/75 border border-cyan-500/25 text-[11px] sm:text-xs text-cyan-200/80 backdrop-blur-sm flex items-center gap-2 whitespace-nowrap">
+      <span class="inline-block w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+      <span>Click pod to aim • Type missing value &amp; press <strong class="text-white">SPACE</strong> or <strong class="text-white">FIRE</strong></span>
+    </div>
+
+    <!-- Dynamic Level-Up Notification Banner -->
+    <div id="levelUpBanner" class="hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-20 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-purple-900/95 via-pink-900/95 to-cyan-900/95 border-2 border-cyan-300 shadow-[0_0_30px_rgba(0,243,255,0.65)] text-center">
+      <div id="levelUpTitle" class="font-orbitron font-black text-base sm:text-xl tracking-wider text-white neon-text-cyan">
+        LEVEL 2 REACHED!
+      </div>
+      <div id="levelUpSub" class="text-[11px] sm:text-xs font-semibold text-amber-300 mt-0.5">
+        SPEED &amp; COMPLEXITY UP • +300 BONUS PTS
+      </div>
+    </div>
+
+    <!-- ==================== 1. START SCREEN OVERLAY ==================== -->
+    <section id="startScreen" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md">
+      <div class="cyber-panel w-full max-w-xl rounded-3xl p-5 sm:p-8 text-center relative overflow-hidden">
+        <!-- Decorative corner accents -->
+        <div class="absolute top-0 left-0 w-16 h-16 border-t-2 border-l-2 border-cyan-400/60 rounded-tl-3xl pointer-events-none"></div>
+        <div class="absolute bottom-0 right-0 w-16 h-16 border-b-2 border-r-2 border-pink-500/60 rounded-br-3xl pointer-events-none"></div>
+
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/35 text-cyan-300 text-xs font-orbitron tracking-widest uppercase mb-3">
+          <span>Progressive Secondary Math Defense</span>
+        </div>
+
+        <h1 class="font-orbitron font-black text-2xl sm:text-4xl md:text-5xl tracking-tight text-white neon-text-cyan mb-2">
+          ALGEBRA BLASTER
+        </h1>
+        <p class="text-slate-300 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5">
+          Begin at <strong class="text-purple-300">Level 1</strong> and survive escalating waves! Every <strong class="text-cyan-300">5 equations solved</strong> advances you to a higher level with faster descent speeds, denser waves, and deeper secondary math challenges.
+        </p>
+
+        <!-- Topic Module Selector -->
+        <div class="bg-slate-900/85 border border-slate-700/80 rounded-2xl p-4 mb-6 text-left">
+          <div class="flex items-center justify-between mb-2.5">
+            <label class="font-orbitron text-xs uppercase tracking-wider text-cyan-300">Select Math Module</label>
+            <span class="text-[11px] font-orbitron text-purple-300 bg-purple-500/15 border border-purple-400/30 px-2 py-0.5 rounded-full">
+              Starts at LVL 1
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="topicSelector">
+            <button type="button" data-topic="all" class="topic-btn active px-3 py-2.5 rounded-xl text-xs font-semibold bg-cyan-500/25 border border-cyan-400 text-white transition">
+              All Topics
+            </button>
+            <button type="button" data-topic="algebra" class="topic-btn px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-cyan-400/50 transition">
+              Algebra
+            </button>
+            <button type="button" data-topic="indices" class="topic-btn px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-cyan-400/50 transition">
+              Indices &amp; Surds
+            </button>
+            <button type="button" data-topic="geometry" class="topic-btn px-3 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-cyan-400/50 transition">
+              Angles &amp; Ratio
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button id="startGameBtn" type="button"
+            class="btn-arcade w-full sm:w-auto px-8 py-3.5 rounded-2xl font-orbitron font-extrabold text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 border border-cyan-200/70">
+            Launch Mission
+          </button>
+
+          <button id="openInstructionsBtn" type="button"
+            class="btn-arcade w-full sm:w-auto px-6 py-3.5 rounded-2xl font-orbitron font-bold text-xs sm:text-sm tracking-wider uppercase bg-slate-800/95 text-cyan-300 border border-cyan-500/40 hover:bg-slate-800">
+            How to Play
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. INSTRUCTIONS MODAL OVERLAY ==================== -->
+    <section id="instructionsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
+      <div class="cyber-panel w-full max-w-2xl max-h-[90%] overflow-y-auto rounded-3xl p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-cyan-500/25 pb-3 mb-4">
+          <h2 class="font-orbitron font-extrabold text-lg sm:text-2xl text-cyan-300 neon-text-cyan">
+            MISSION BRIEFING &amp; LEVEL PROGRESSION
+          </h2>
+          <button id="closeInstructionsBtn" type="button" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-slate-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-slate-900/90 border border-cyan-500/25 rounded-2xl p-3.5">
+              <div class="font-orbitron text-cyan-400 font-bold text-xs uppercase mb-1">1. Solve the Missing Value (?)</div>
+              <p class="text-slate-300 leading-relaxed">
+                Each descending enemy pod carries an incomplete secondary math equation with a missing integer <span class="font-mono-math font-bold text-amber-300">?</span>.
+              </p>
+              <div class="mt-2 p-2 rounded-xl bg-slate-950 font-mono-math text-xs text-cyan-200 border border-slate-800">
+                LVL 1: <span class="text-white font-bold">(?) + 7 = 15</span> &rarr; Shoot <span class="text-emerald-400 font-bold">8</span><br>
+                LVL 5: <span class="text-white font-bold">3((?) - 2) = 15</span> &rarr; Shoot <span class="text-emerald-400 font-bold">7</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-purple-500/25 rounded-2xl p-3.5">
+              <div class="font-orbitron text-purple-400 font-bold text-xs uppercase mb-1">2. Progressive Level Ramp-Up</div>
+              <p class="text-slate-300 leading-relaxed">
+                Every <strong class="text-white">5 equations solved</strong> triggers a <strong class="text-purple-300">Level Up</strong>:
+              </p>
+              <ul class="mt-1.5 space-y-1 text-xs text-slate-300">
+                <li>• <strong class="text-cyan-300">LVL 1–2:</strong> Foundation (1-step algebra, squares, basic angles)</li>
+                <li>• <strong class="text-amber-300">LVL 3–4:</strong> Intermediate (2-step, negatives, index laws, ratios)</li>
+                <li>• <strong class="text-pink-300">LVL 5–6:</strong> Advanced (brackets, both-sides, reverse %)</li>
+                <li>• <strong class="text-emerald-300">LVL 7+:</strong> Mastery (quadratics, power-of-power, polygons)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-amber-500/25 rounded-2xl p-3.5">
+            <div class="font-orbitron text-amber-400 font-bold text-xs uppercase mb-2">3. Controls &amp; Scoring Multipliers</div>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-300">
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                <span><strong>Click/Tap Pod or Tab:</strong> Switch target lock</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-pink-400"></span>
+                <span><strong>Digits 0–9 &amp; (-):</strong> Type your answer</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span><strong>Spacebar / Enter / FIRE:</strong> Shoot plasma bolt</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span><strong>3 Lives &amp; 90 Seconds:</strong> Reach high levels for 3 Stars!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end">
+          <button id="gotItBtn" type="button"
+            class="btn-arcade px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs sm:text-sm uppercase bg-cyan-500 text-slate-950">
+            Ready to Blast!
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PAUSE OVERLAY ==================== -->
+    <section id="pauseOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+      <div class="cyber-panel w-full max-w-sm rounded-3xl p-6 text-center">
+        <div class="w-12 h-12 mx-auto mb-3 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 9v6m4-6v6" />
+          </svg>
+        </div>
+        <h2 class="font-orbitron font-extrabold text-2xl text-white mb-1">SYSTEM PAUSED</h2>
+        <p id="pauseLevelInfo" class="text-purple-300 font-orbitron text-xs mb-6">Currently at Level 1</p>
+
+        <div class="flex flex-col gap-2.5">
+          <button id="resumeBtn" type="button"
+            class="btn-arcade w-full py-3 rounded-xl font-orbitron font-bold text-sm uppercase bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950">
+            Resume Mission
+          </button>
+          <button id="restartFromPauseBtn" type="button"
+            class="btn-arcade w-full py-3 rounded-xl font-orbitron font-bold text-xs uppercase bg-slate-800 text-amber-300 border border-amber-500/35">
+            Restart at Level 1
+          </button>
+          <button id="quitToMenuBtn" type="button"
+            class="btn-arcade w-full py-3 rounded-xl font-orbitron font-bold text-xs uppercase bg-slate-900 text-slate-300 border border-slate-700">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. END GAME OVERLAY ==================== -->
+    <section id="endGameOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
+      <div class="cyber-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+        <div id="endStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-cyan-500/20 border border-cyan-400/40 text-cyan-300">
+          Mission Complete
+        </div>
+
+        <h2 id="endTitle" class="font-orbitron font-black text-2xl sm:text-3xl text-white neon-text-cyan mb-3">
+          SECTOR SECURED!
+        </h2>
+
+        <!-- 3 Stars Rating Display -->
+        <div id="starsContainer" class="flex items-center justify-center gap-3 my-3">
+          <!-- Populated dynamically with animated SVG stars -->
+        </div>
+        <p id="starCaption" class="text-xs text-slate-300 mb-5 font-medium">Outstanding algebraic precision!</p>
+
+        <!-- Total Points & Breakdown Card -->
+        <div class="bg-slate-900/90 border border-slate-700/80 rounded-2xl p-4 mb-6">
+          <div class="text-xs font-orbitron uppercase tracking-wider text-slate-400 mb-1">Total Points</div>
+          <div id="finalScoreDisplay" class="font-orbitron font-black text-3xl sm:text-4xl text-emerald-400 neon-text-cyan mb-3">
+            0
+          </div>
+
+          <div class="grid grid-cols-4 gap-1.5 pt-3 border-t border-slate-800 text-center">
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-orbitron">Max Lvl</div>
+              <div id="statMaxLevel" class="font-mono-math font-bold text-sm sm:text-base text-purple-300">1</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-orbitron">Solved</div>
+              <div id="statSolved" class="font-mono-math font-bold text-sm sm:text-base text-cyan-300">0</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-orbitron">Accuracy</div>
+              <div id="statAccuracy" class="font-mono-math font-bold text-sm sm:text-base text-amber-300">100%</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-slate-400 font-orbitron">Streak</div>
+              <div id="statStreak" class="font-mono-math font-bold text-sm sm:text-base text-pink-400">0</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Try Again & Menu Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="tryAgainBtn" type="button"
+            class="btn-arcade flex-1 py-3.5 px-5 rounded-2xl font-orbitron font-extrabold text-sm uppercase tracking-wider bg-gradient-to-r from-emerald-400 to-cyan-500 text-slate-950 border border-emerald-200/70">
+            Try Again
+          </button>
+          <button id="endMenuBtn" type="button"
+            class="btn-arcade py-3.5 px-5 rounded-2xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-800 text-slate-200 border border-slate-600">
+            Menu
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- BOTTOM TACTILE WEAPON CONSOLE (Numeric Input & Keypad) -->
+  <footer id="weaponConsole" class="relative z-20 bg-slate-950/95 border-t border-cyan-500/30 px-2.5 sm:px-6 py-2 sm:py-3 shrink-0">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-2 sm:gap-3">
+
+      <!-- Ammunition Readout & Negative/Backspace Controls -->
+      <div class="flex items-center justify-between w-full md:w-auto gap-2">
+        <!-- Loaded Warhead Value Display -->
+        <div class="flex-1 md:w-48 flex items-center justify-between bg-slate-900 border-2 border-cyan-400/60 pulse-border rounded-2xl px-3.5 py-1.5 sm:py-2 shadow-inner">
+          <span class="text-[10px] font-orbitron uppercase tracking-wider text-cyan-400/80">Ammo</span>
+          <div id="answerInputDisplay" class="font-mono-math font-extrabold text-xl sm:text-2xl text-white tracking-wider min-h-[28px] sm:min-h-[32px] flex items-center">
+            <span class="text-slate-500 text-sm animate-pulse">_</span>
+          </div>
+        </div>
+
+        <!-- Sign Toggle (+/-) and Backspace -->
+        <div class="flex items-center gap-1.5">
+          <button type="button" data-key="-" class="key-btn px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl font-mono-math font-extrabold text-base sm:text-lg text-amber-300" title="Toggle Negative Sign (-)">
+            &plusmn; / -
+          </button>
+          <button type="button" data-key="BACKSPACE" class="key-btn px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl font-orbitron font-bold text-xs sm:text-sm text-slate-200" title="Backspace">
+            DEL
+          </button>
+          <button type="button" data-key="CLEAR" class="key-btn px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-orbitron font-bold text-xs text-rose-300" title="Clear Input">
+            CLR
+          </button>
+        </div>
+      </div>
+
+      <!-- Digits 0-9 + FIRE Button -->
+      <div class="flex items-center justify-between w-full flex-1 gap-1 sm:gap-1.5">
+        <div class="grid grid-cols-10 gap-1 sm:gap-1.5 flex-1">
+          <button type="button" data-key="1" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">1</button>
+          <button type="button" data-key="2" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">2</button>
+          <button type="button" data-key="3" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">3</button>
+          <button type="button" data-key="4" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">4</button>
+          <button type="button" data-key="5" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">5</button>
+          <button type="button" data-key="6" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">6</button>
+          <button type="button" data-key="7" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">7</button>
+          <button type="button" data-key="8" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">8</button>
+          <button type="button" data-key="9" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">9</button>
+          <button type="button" data-key="0" class="key-btn py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-white">0</button>
+        </div>
+
+        <button id="fireBtn" type="button" title="Shoot Answer (Spacebar or Enter)"
+          class="fire-btn px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl font-orbitron font-black text-xs sm:text-sm tracking-wider uppercase text-white shrink-0 flex items-center gap-1.5">
+          <span>FIRE</span>
+          <span class="hidden sm:inline-block text-[10px] font-mono-math font-bold px-1.5 py-0.5 rounded bg-black/30 border border-white/25 text-pink-100">SPACE</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * ALGEBRA BLASTER — SECONDARY MATHEMATICS ARCADE SHOOTER
+     * Single-file HTML/CSS/JS implementation with Web Audio Synthesizer & Canvas 2D Physics.
+     */
+
+    // =========================================================================
+    // 1. WEB AUDIO API RETRO SYNTHESIZER (Zero external sound assets required)
+    // =========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playKeyTap() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(620, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.045);
+
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+
+      playLaser() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(920, now);
+        osc.frequency.exponentialRampToValueAtTime(190, now + 0.18);
+
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      }
+
+      playExplosion(combo = 1) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        // Filtered noise burst for crisp explosion
+        const bufferSize = this.ctx.sampleRate * 0.28;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.09));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(950, now);
+        filter.frequency.exponentialRampToValueAtTime(120, now + 0.28);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+
+        // Harmonic chime scaled by combo
+        const chime = this.ctx.createOscillator();
+        const chimeGain = this.ctx.createGain();
+        const baseFreq = Math.min(440 * Math.pow(1.06, combo - 1), 980);
+        chime.type = 'sine';
+        chime.frequency.setValueAtTime(baseFreq, now);
+        chime.frequency.setValueAtTime(baseFreq * 1.25, now + 0.07);
+
+        chimeGain.gain.setValueAtTime(0.14, now);
+        chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+        chime.connect(chimeGain);
+        chimeGain.connect(this.ctx.destination);
+        chime.start(now);
+        chime.stop(now + 0.25);
+      }
+
+      playDeflect() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(175, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.16);
+
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+
+      playDamage() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(42, now + 0.42);
+
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.44);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.44);
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + idx * 0.11;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        });
+      }
+
+      playLevelUp() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [440, 554.37, 659.25, 880, 1108.73];
+        notes.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + idx * 0.065;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.29);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // =========================================================================
+    // 2. PROGRESSIVE SECONDARY MATHEMATICS EQUATION GENERATOR
+    // =========================================================================
+    const MathGenerator = {
+      randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      },
+
+      pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      },
+
+      /**
+       * Generates an incomplete secondary mathematics equation scaled by current level:
+       * - Levels 1–2: Foundation (1-step algebra, basic squares/roots, basic angles, simple %)
+       * - Levels 3–4: Intermediate (2-step algebra, negative integers, index laws, triangle angles, ratios)
+       * - Levels 5–6: Advanced (brackets, variables both sides, combined surds/zero index, reverse %)
+       * - Levels 7+ : Mastery (quadratics, power-of-power indices, polygon interior angles, multi-step)
+       */
+      generate(topic = 'all', level = 1) {
+        const tier = level <= 2 ? 1 : level <= 4 ? 2 : level <= 6 ? 3 : 4;
+
+        const pools = {
+          algebra: {
+            1: [() => this.algOneStepAddSub(), () => this.algOneStepMultDiv()],
+            2: [() => this.algTwoStep(), () => this.algNegativeSolution(), () => this.algSimpleSub()],
+            3: [() => this.algBrackets(), () => this.algBothSides(), () => this.algNegativeCoeff()],
+            4: [() => this.algQuadraticRoot(), () => this.algQuadraticShifted(), () => this.algFractionStep()]
+          },
+          indices: {
+            1: [() => this.indBasicSquareCube(), () => this.indBasicRoot()],
+            2: [() => this.indMultiplyLaw(), () => this.indDivideLaw(), () => this.indRootPlusConst()],
+            3: [() => this.indZeroAndPower(), () => this.indSurdDiff(), () => this.indSolveExponent()],
+            4: [() => this.indPowerOfPower(), () => this.indCombinedLaw(), () => this.indCubeAndSquareSum()]
+          },
+          geometry: {
+            1: [() => this.geoComplementary(), () => this.geoSupplementary(), () => this.geoSimplePercent()],
+            2: [() => this.geoTriangleSum(), () => this.geoDirectRatio(), () => this.geoPercentMultiple()],
+            3: [() => this.geoQuadSum(), () => this.geoReversePercent(), () => this.geoScaleRatio()],
+            4: [() => this.geoPolygonInterior(), () => this.geoPolygonExterior(), () => this.geoAlgebraicAngle()]
+          }
+        };
+
+        let candidates = [];
+        const activeTopics = topic === 'all' ? ['algebra', 'indices', 'geometry'] : [topic];
+
+        activeTopics.forEach(t => {
+          // Primary generators from current tier
+          candidates.push(...pools[t][tier]);
+          // Blend in 1 generator from previous tier for natural continuity
+          if (tier > 1) {
+            candidates.push(this.pick(pools[t][tier - 1]));
+          }
+        });
+
+        return this.pick(candidates)();
+      },
+
+      // --- ALGEBRA TIER 1 (Levels 1-2) ---
+      algOneStepAddSub() {
+        const x = this.randInt(2, 16);
+        const b = this.randInt(3, 19);
+        if (Math.random() < 0.5) {
+          return { text: `(?) + ${b} = ${x + b}`, answer: x, tag: 'LVL1 ALG' };
+        }
+        return { text: `(?) - ${b} = ${x - b}`, answer: x, tag: 'LVL1 ALG' };
+      },
+
+      algOneStepMultDiv() {
+        const a = this.randInt(2, 9);
+        const x = this.randInt(2, 12);
+        if (Math.random() < 0.6) {
+          return { text: `${a} × (?) = ${a * x}`, answer: x, tag: 'LVL1 ALG' };
+        }
+        return { text: `(?) ÷ ${a} = ${x}`, answer: a * x, tag: 'LVL1 ALG' };
+      },
+
+      // --- ALGEBRA TIER 2 (Levels 3-4) ---
+      algTwoStep() {
+        const a = this.randInt(2, 7);
+        const x = this.randInt(2, 11);
+        const b = this.randInt(1, 15);
+        if (Math.random() < 0.5) {
+          return { text: `${a}(?) + ${b} = ${a * x + b}`, answer: x, tag: '2-STEP' };
+        }
+        return { text: `${a}(?) - ${b} = ${a * x - b}`, answer: x, tag: '2-STEP' };
+      },
+
+      algNegativeSolution() {
+        const x = this.randInt(-9, -1);
+        const b = this.randInt(6, 18);
+        return { text: `(?) + ${b} = ${x + b}`, answer: x, tag: 'INTEGERS' };
+      },
+
+      algSimpleSub() {
+        const m = this.randInt(2, 5);
+        const x = this.randInt(2, 8);
+        const c = this.randInt(1, 10);
+        return { text: `x=${x}: ${m}x + ${c} = ?`, answer: m * x + c, tag: 'SUBSTITUTE' };
+      },
+
+      // --- ALGEBRA TIER 3 (Levels 5-6) ---
+      algBrackets() {
+        const a = this.randInt(2, 6);
+        const b = this.randInt(1, 7);
+        const x = this.randInt(-4, 9);
+        const rhs = a * (x - b);
+        return { text: `${a}((?) - ${b}) = ${rhs}`, answer: x, tag: 'BRACKETS' };
+      },
+
+      algBothSides() {
+        const c = this.randInt(2, 4);
+        const a = c + this.randInt(1, 3);
+        const x = this.randInt(2, 9);
+        const b = this.randInt(1, 10);
+        const d = (a - c) * x + b;
+        return { text: `${a}(?) + ${b} = ${c}(?) + ${d}`, answer: x, tag: 'LINEAR' };
+      },
+
+      algNegativeCoeff() {
+        const a = this.randInt(2, 5);
+        const x = this.randInt(-3, 7);
+        const start = this.randInt(12, 26);
+        return { text: `${start} - ${a}(?) = ${start - a * x}`, answer: x, tag: 'ALGEBRA' };
+      },
+
+      // --- ALGEBRA TIER 4 (Levels 7+) ---
+      algQuadraticRoot() {
+        const x = this.randInt(4, 13);
+        const offset = this.randInt(2, 14);
+        return { text: `(?)² - ${offset} = ${x * x - offset}  (x>0)`, answer: x, tag: 'QUADRATIC' };
+      },
+
+      algQuadraticShifted() {
+        const b = this.randInt(1, 5);
+        const x = this.randInt(2, 8);
+        const sq = (x + b) * (x + b);
+        return { text: `((?) + ${b})² = ${sq}  (x>0)`, answer: x, tag: 'QUADRATIC' };
+      },
+
+      algFractionStep() {
+        const div = this.randInt(2, 5);
+        const ans = this.randInt(3, 10);
+        const a = this.randInt(2, 5);
+        const x = this.randInt(2, 9);
+        const b = div * ans - a * x;
+        const bStr = b >= 0 ? `+ ${b}` : `- ${Math.abs(b)}`;
+        return { text: `(${a}(?) ${bStr}) ÷ ${div} = ${ans}`, answer: x, tag: 'MASTERY' };
+      },
+
+      // --- INDICES & SURDS TIER 1 (Levels 1-2) ---
+      indBasicSquareCube() {
+        if (Math.random() < 0.7) {
+          const n = this.randInt(2, 12);
+          return { text: `${n}² = ?`, answer: n * n, tag: 'SQUARES' };
+        }
+        const n = this.randInt(2, 5);
+        return { text: `${n}³ = ?`, answer: n * n * n, tag: 'CUBES' };
+      },
+
+      indBasicRoot() {
+        const r = this.randInt(3, 12);
+        return { text: `√${r * r} = ?`, answer: r, tag: 'ROOTS' };
+      },
+
+      // --- INDICES & SURDS TIER 2 (Levels 3-4) ---
+      indMultiplyLaw() {
+        const base = this.pick([2, 3, 5, 7]);
+        const p1 = this.randInt(2, 5);
+        const p2 = this.randInt(2, 6);
+        return { text: `${base}^${p1} × ${base}^${p2} = ${base}^(?)`, answer: p1 + p2, tag: 'INDEX LAW' };
+      },
+
+      indDivideLaw() {
+        const base = this.pick([2, 3, 5, 10]);
+        const p2 = this.randInt(2, 5);
+        const p1 = p2 + this.randInt(2, 6);
+        return { text: `${base}^${p1} ÷ ${base}^${p2} = ${base}^(?)`, answer: p1 - p2, tag: 'INDEX LAW' };
+      },
+
+      indRootPlusConst() {
+        const r = this.randInt(4, 12);
+        const k = this.randInt(2, 14);
+        return { text: `√${r * r} + (?) = ${r + k}`, answer: k, tag: 'SURDS' };
+      },
+
+      // --- INDICES & SURDS TIER 3 (Levels 5-6) ---
+      indZeroAndPower() {
+        const base = this.randInt(3, 19);
+        const n = this.randInt(2, 7);
+        return { text: `${base}⁰ + ${n}² = ?`, answer: 1 + n * n, tag: 'INDICES' };
+      },
+
+      indSurdDiff() {
+        const r1 = this.randInt(7, 13);
+        const r2 = this.randInt(2, r1 - 1);
+        return { text: `√${r1 * r1} - √${r2 * r2} = ?`, answer: r1 - r2, tag: 'SURDS' };
+      },
+
+      indSolveExponent() {
+        const pairs = [
+          [2, 4], [2, 5], [2, 6], [2, 7],
+          [3, 3], [3, 4], [4, 3], [5, 3]
+        ];
+        const [b, exp] = this.pick(pairs);
+        return { text: `${b}^(?) = ${Math.pow(b, exp)}`, answer: exp, tag: 'EXPONENT' };
+      },
+
+      // --- INDICES & SURDS TIER 4 (Levels 7+) ---
+      indPowerOfPower() {
+        const base = this.pick([2, 3, 5, 7]);
+        const p1 = this.randInt(2, 4);
+        const p2 = this.randInt(2, 4);
+        return { text: `(${base}^${p1})^${p2} = ${base}^(?)`, answer: p1 * p2, tag: 'POWER LAW' };
+      },
+
+      indCombinedLaw() {
+        const base = this.pick([2, 3, 5]);
+        const p1 = this.randInt(4, 7);
+        const p2 = this.randInt(3, 6);
+        const p3 = this.randInt(2, 5);
+        return { text: `(${base}^${p1} × ${base}^${p2}) ÷ ${base}^${p3} = ${base}^(?)`, answer: p1 + p2 - p3, tag: 'INDICES' };
+      },
+
+      indCubeAndSquareSum() {
+        const a = this.randInt(3, 8);
+        const b = this.randInt(2, 4);
+        return { text: `${a}² + ${b}³ = ?`, answer: a * a + b * b * b, tag: 'POWERS' };
+      },
+
+      // --- GEOMETRY & RATIO TIER 1 (Levels 1-2) ---
+      geoComplementary() {
+        const a = this.randInt(15, 75);
+        return { text: `Right ∠: 90° - ${a}° = ?°`, answer: 90 - a, tag: 'ANGLES' };
+      },
+
+      geoSupplementary() {
+        const a = this.randInt(35, 145);
+        return { text: `Line ∠: 180° - ${a}° = ?°`, answer: 180 - a, tag: 'ANGLES' };
+      },
+
+      geoSimplePercent() {
+        const mult = this.randInt(2, 12);
+        const whole = mult * 10;
+        const pct = this.pick([10, 20, 50]);
+        return { text: `${pct}% of ${whole} = ?`, answer: (pct * whole) / 100, tag: 'PERCENT' };
+      },
+
+      // --- GEOMETRY & RATIO TIER 2 (Levels 3-4) ---
+      geoTriangleSum() {
+        const a = this.randInt(30, 80);
+        const b = this.randInt(30, 75);
+        return { text: `△ Angles: 180° - ${a}° - ${b}° = ?°`, answer: 180 - a - b, tag: 'TRIANGLE' };
+      },
+
+      geoDirectRatio() {
+        const r1 = this.randInt(2, 6);
+        const r2 = this.randInt(2, 7);
+        const k = this.randInt(2, 6);
+        return { text: `Ratio ${r1}:${r2} = ${r1 * k}:(?)`, answer: r2 * k, tag: 'RATIO' };
+      },
+
+      geoPercentMultiple() {
+        const pairs = [[25, 48], [25, 64], [75, 40], [75, 80], [30, 60], [40, 85], [60, 45]];
+        const [p, w] = this.pick(pairs);
+        return { text: `${p}% of ${w} = ?`, answer: (p * w) / 100, tag: 'PERCENT' };
+      },
+
+      // --- GEOMETRY & RATIO TIER 3 (Levels 5-6) ---
+      geoQuadSum() {
+        const a = this.randInt(70, 110);
+        const b = this.randInt(70, 110);
+        const c = this.randInt(65, 105);
+        return { text: `Quad: 360° - (${a}°+${b}°+${c}°) = ?°`, answer: 360 - (a + b + c), tag: 'QUAD' };
+      },
+
+      geoReversePercent() {
+        const options = [
+          [20, 9, 45], [20, 14, 70], [25, 12, 48], [25, 18, 72],
+          [50, 27, 54], [10, 13, 130], [40, 16, 40]
+        ];
+        const [pct, part, whole] = this.pick(options);
+        return { text: `${pct}% of (?) = ${part}`, answer: whole, tag: 'REV %' };
+      },
+
+      geoScaleRatio() {
+        const a = this.randInt(2, 5);
+        const b = this.randInt(3, 6);
+        const totalParts = a + b;
+        const unit = this.randInt(3, 9);
+        return { text: `Share ${totalParts * unit} in ${a}:${b} -> Larger=?`, answer: Math.max(a, b) * unit, tag: 'RATIO' };
+      },
+
+      // --- GEOMETRY & RATIO TIER 4 (Levels 7+) ---
+      geoPolygonInterior() {
+        const polys = [
+          [5, 108], [6, 120], [8, 135], [9, 140], [10, 144], [12, 150]
+        ];
+        const [sides, angle] = this.pick(polys);
+        return { text: `Regular ${sides}-gon interior ∠ = ?°`, answer: angle, tag: 'POLYGON' };
+      },
+
+      geoPolygonExterior() {
+        const sides = this.pick([4, 5, 6, 8, 9, 10, 12, 15, 18, 20]);
+        return { text: `Regular ${sides}-gon exterior ∠ = ?°`, answer: 360 / sides, tag: 'POLYGON' };
+      },
+
+      geoAlgebraicAngle() {
+        const a = this.randInt(2, 4);
+        const x = this.randInt(15, 35);
+        const rem = 180 - a * x;
+        return { text: `Line: ${a}(?)° + ${rem}° = 180°`, answer: x, tag: 'GEO-ALG' };
+      }
+    };
+
+    // =========================================================================
+    // 3. GAME STATE & PROGRESSIVE LEVEL CONFIGURATION
+    // =========================================================================
+    const GAME_DURATION = 90; // seconds
+    const MAX_LIVES = 3;
+    const SOLVES_PER_LEVEL = 5;
+
+    /**
+     * Computes dynamic gameplay parameters for any given Level (1, 2, 3, ...).
+     * Gradually scales descent speed, spawn rate, max simultaneous threats, and score multiplier.
+     */
+    function getLevelConfig(level) {
+      const lvlIdx = Math.max(0, level - 1);
+      return {
+        speedBase: Math.min(115, 28 + lvlIdx * 6.5),
+        spawnInterval: Math.max(1.25, 3.2 - lvlIdx * 0.22),
+        maxEnemies: Math.min(7, 3 + Math.floor(lvlIdx / 2)),
+        scoreMult: +(1 + lvlIdx * 0.25).toFixed(2)
+      };
+    }
+
+    const state = {
+      mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+      topic: 'all',
+      level: 1,
+      levelProgress: 0,
+      timeLeft: GAME_DURATION,
+      score: 0,
+      lives: MAX_LIVES,
+      combo: 1,
+      bestStreak: 0,
+      currentStreak: 0,
+      solvedCount: 0,
+      shotsFired: 0,
+      inputBuffer: '',
+      enemies: [],
+      projectiles: [],
+      particles: [],
+      floatingTexts: [],
+      starsBg: [],
+      lockedEnemyId: null,
+      spawnTimer: 0,
+      turretAngle: -Math.PI / 2,
+      turretRecoil: 0,
+      screenShake: 0,
+      damageFlash: 0,
+      nextEnemyId: 1
+    };
+
+    // =========================================================================
+    // 4. DOM REFERENCES & UI BINDINGS
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    const hudLivesContainer = document.getElementById('livesContainer');
+    const hudLevelTextEl = document.getElementById('hudLevelText');
+    const hudLevelCountEl = document.getElementById('hudLevelCount');
+    const hudLevelBarEl = document.getElementById('hudLevelBar');
+    const hudComboBadge = document.getElementById('hudComboBadge');
+    const comboValueEl = document.getElementById('comboValue');
+    const timerDisplayEl = document.getElementById('timerDisplay');
+    const scoreDisplayEl = document.getElementById('scoreDisplay');
+    const answerInputDisplayEl = document.getElementById('answerInputDisplay');
+    const levelUpBannerEl = document.getElementById('levelUpBanner');
+
+    const startScreenEl = document.getElementById('startScreen');
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const pauseOverlayEl = document.getElementById('pauseOverlay');
+    const endGameOverlayEl = document.getElementById('endGameOverlay');
+
+    // Topic selection buttons
+    document.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playKeyTap();
+        document.querySelectorAll('.topic-btn').forEach(b => {
+          b.classList.remove('active', 'bg-cyan-500/25', 'border-cyan-400', 'text-white');
+          b.classList.add('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        });
+        btn.classList.add('active', 'bg-cyan-500/25', 'border-cyan-400', 'text-white');
+        btn.classList.remove('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        state.topic = btn.dataset.topic;
+      });
+    });
+
+    // Screen navigation buttons
+    document.getElementById('startGameBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('tryAgainBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('restartFromPauseBtn').addEventListener('click', () => startNewGame());
+
+    document.getElementById('openInstructionsBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.remove('hidden');
+    });
+
+    document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('gotItBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => togglePause());
+    document.getElementById('resumeBtn').addEventListener('click', () => togglePause(false));
+
+    document.getElementById('quitToMenuBtn').addEventListener('click', () => returnToMenu());
+    document.getElementById('endMenuBtn').addEventListener('click', () => returnToMenu());
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('soundOnIcon').classList.toggle('hidden', muted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !muted);
+      if (!muted) sound.playKeyTap();
+    });
+
+    // =========================================================================
+    // 5. CANVAS SIZING & STARFIELD INITIALIZATION
+    // =========================================================================
+    let canvasWidth = 800;
+    let canvasHeight = 500;
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasWidth = rect.width;
+      canvasHeight = rect.height;
+
+      canvas.width = Math.floor(canvasWidth * dpr);
+      canvas.height = Math.floor(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Keep existing enemies inside horizontal bounds after resize
+      state.enemies.forEach(enemy => {
+        const halfW = enemy.width / 2 + 12;
+        enemy.x = Math.max(halfW, Math.min(canvasWidth - halfW, enemy.x));
+      });
+    }
+
+    function initStarfield() {
+      state.starsBg = [];
+      for (let i = 0; i < 85; i++) {
+        state.starsBg.push({
+          x: Math.random() * canvasWidth,
+          y: Math.random() * canvasHeight,
+          size: Math.random() * 2 + 0.5,
+          speed: Math.random() * 24 + 8,
+          alpha: Math.random() * 0.7 + 0.25
+        });
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // =========================================================================
+    // 6. HUD RENDERING & INPUT HANDLING
+    // =========================================================================
+    function renderLives() {
+      hudLivesContainer.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const alive = i < state.lives;
+        const heart = document.createElement('span');
+        heart.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${alive ? 'text-pink-500 scale-100 drop-shadow-[0_0_6px_rgba(236,72,153,0.85)]' : 'text-slate-700 scale-90'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        `;
+        hudLivesContainer.appendChild(heart);
+      }
+    }
+
+    function updateHUD() {
+      scoreDisplayEl.textContent = state.score.toLocaleString();
+      comboValueEl.textContent = `x${state.combo}`;
+      hudComboBadge.classList.toggle('opacity-40', state.combo <= 1);
+
+      // Update Level & Progress Bar
+      hudLevelTextEl.textContent = `LVL ${state.level}`;
+      hudLevelCountEl.textContent = `${state.levelProgress}/${SOLVES_PER_LEVEL}`;
+      const pct = Math.min(100, (state.levelProgress / SOLVES_PER_LEVEL) * 100);
+      hudLevelBarEl.style.width = `${pct}%`;
+
+      const secs = Math.max(0, Math.ceil(state.timeLeft));
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      timerDisplayEl.textContent = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      if (secs <= 15 && state.mode === 'PLAYING') {
+        timerDisplayEl.classList.remove('text-cyan-300');
+        timerDisplayEl.classList.add('text-rose-400', 'animate-pulse');
+      } else {
+        timerDisplayEl.classList.add('text-cyan-300');
+        timerDisplayEl.classList.remove('text-rose-400', 'animate-pulse');
+      }
+    }
+
+    let levelBannerTimeout = null;
+    function triggerLevelUp(newLevel) {
+      sound.playLevelUp();
+      const bonus = 150 * newLevel;
+      state.score += bonus;
+
+      document.getElementById('levelUpTitle').textContent = `LEVEL ${newLevel} REACHED!`;
+      document.getElementById('levelUpSub').textContent = `SPEED & COMPLEXITY UP • +${bonus} BONUS PTS`;
+
+      levelUpBannerEl.classList.remove('hidden', 'level-up-banner');
+      // Force reflow so animation replays cleanly on consecutive level ups
+      void levelUpBannerEl.offsetWidth;
+      levelUpBannerEl.classList.add('level-up-banner');
+
+      if (levelBannerTimeout) clearTimeout(levelBannerTimeout);
+      levelBannerTimeout = setTimeout(() => {
+        levelUpBannerEl.classList.add('hidden');
+        levelUpBannerEl.classList.remove('level-up-banner');
+      }, 2400);
+    }
+
+    function renderInputDisplay() {
+      if (state.inputBuffer === '') {
+        answerInputDisplayEl.innerHTML = `<span class="text-slate-500 text-sm animate-pulse">_</span>`;
+      } else {
+        answerInputDisplayEl.textContent = state.inputBuffer;
+      }
+    }
+
+    function handleKeyInput(key) {
+      if (state.mode !== 'PLAYING') return;
+
+      if (key === 'CLEAR') {
+        state.inputBuffer = '';
+        sound.playKeyTap();
+        renderInputDisplay();
+        return;
+      }
+
+      if (key === 'BACKSPACE') {
+        state.inputBuffer = state.inputBuffer.slice(0, -1);
+        sound.playKeyTap();
+        renderInputDisplay();
+        return;
+      }
+
+      if (key === '-') {
+        // Toggle negative sign cleanly
+        if (state.inputBuffer.startsWith('-')) {
+          state.inputBuffer = state.inputBuffer.slice(1);
+        } else if (state.inputBuffer.length < 5) {
+          state.inputBuffer = '-' + state.inputBuffer;
+        }
+        sound.playKeyTap();
+        renderInputDisplay();
+        return;
+      }
+
+      if (/^[0-9]$/.test(key)) {
+        const digitCount = state.inputBuffer.replace('-', '').length;
+        if (digitCount < 4) {
+          if (state.inputBuffer === '0') {
+            state.inputBuffer = key;
+          } else if (state.inputBuffer === '-0') {
+            state.inputBuffer = '-' + key;
+          } else {
+            state.inputBuffer += key;
+          }
+          sound.playKeyTap();
+          renderInputDisplay();
+        }
+      }
+    }
+
+    // On-screen keypad listeners (blur after click so Spacebar never re-triggers a focused button)
+    document.querySelectorAll('.key-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.blur();
+        const k = btn.dataset.key;
+        if (k) handleKeyInput(k);
+      });
+    });
+
+    document.getElementById('fireBtn').addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      fireProjectile();
+    });
+
+    // Physical keyboard support (capture phase ensures Spacebar always fires cleanly)
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if (state.mode === 'PLAYING' || state.mode === 'PAUSED') {
+          e.preventDefault();
+          togglePause();
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+        if (e.repeat) return; // Prevent accidental rapid-fire when holding Spacebar
+        const fBtn = document.getElementById('fireBtn');
+        fBtn.classList.add('pressed');
+        setTimeout(() => fBtn.classList.remove('pressed'), 100);
+        fireProjectile();
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        flashVirtualKey(e.key);
+        handleKeyInput(e.key);
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault();
+        flashVirtualKey('-');
+        handleKeyInput('-');
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        flashVirtualKey('BACKSPACE');
+        handleKeyInput('BACKSPACE');
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        flashVirtualKey('CLEAR');
+        handleKeyInput('CLEAR');
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        cycleTargetLock();
+      }
+    }, true);
+
+    function flashVirtualKey(keyVal) {
+      const btn = document.querySelector(`.key-btn[data-key="${keyVal}"]`);
+      if (btn) {
+        btn.classList.add('pressed');
+        setTimeout(() => btn.classList.remove('pressed'), 100);
+      }
+    }
+
+    // Canvas click/tap to lock onto specific equation pod
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.mode !== 'PLAYING') return;
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      let clickedEnemy = null;
+      let bestDist = Infinity;
+
+      for (const enemy of state.enemies) {
+        const dx = Math.abs(px - enemy.x);
+        const dy = Math.abs(py - enemy.y);
+        if (dx <= enemy.width * 0.65 && dy <= enemy.height * 0.85) {
+          const dist = Math.hypot(dx, dy);
+          if (dist < bestDist) {
+            bestDist = dist;
+            clickedEnemy = enemy;
+          }
+        }
+      }
+
+      if (clickedEnemy) {
+        state.lockedEnemyId = clickedEnemy.id;
+        sound.playKeyTap();
+        spawnRingEffect(clickedEnemy.x, clickedEnemy.y, '#00f3ff');
+      }
+    });
+
+    function cycleTargetLock() {
+      if (state.enemies.length === 0) return;
+      const sorted = [...state.enemies].sort((a, b) => b.y - a.y);
+      const idx = sorted.findIndex(e => e.id === state.lockedEnemyId);
+      const next = sorted[(idx + 1) % sorted.length];
+      state.lockedEnemyId = next.id;
+      sound.playKeyTap();
+    }
+
+    // =========================================================================
+    // 7. GAMEPLAY LIFECYCLE (START, PAUSE, END)
+    // =========================================================================
+    function startNewGame() {
+      sound.init();
+      sound.playKeyTap();
+
+      state.mode = 'PLAYING';
+      state.level = 1;
+      state.levelProgress = 0;
+      state.timeLeft = GAME_DURATION;
+      state.score = 0;
+      state.lives = MAX_LIVES;
+      state.combo = 1;
+      state.bestStreak = 0;
+      state.currentStreak = 0;
+      state.solvedCount = 0;
+      state.shotsFired = 0;
+      state.inputBuffer = '';
+      state.enemies = [];
+      state.projectiles = [];
+      state.particles = [];
+      state.floatingTexts = [];
+      state.lockedEnemyId = null;
+      state.spawnTimer = 0.4; // Spawn first enemy quickly
+      state.turretAngle = -Math.PI / 2;
+      state.turretRecoil = 0;
+      state.screenShake = 0;
+      state.damageFlash = 0;
+
+      startScreenEl.classList.add('hidden');
+      instructionsModalEl.classList.add('hidden');
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      levelUpBannerEl.classList.add('hidden');
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+
+      resizeCanvas();
+      renderLives();
+      renderInputDisplay();
+      updateHUD();
+
+      // Spawn initial Level 1 pods
+      spawnEnemy();
+      setTimeout(() => {
+        if (state.mode === 'PLAYING' && state.enemies.length < 2) spawnEnemy();
+      }, 1100);
+    }
+
+    function togglePause(forceState) {
+      if (state.mode !== 'PLAYING' && state.mode !== 'PAUSED') return;
+      const shouldPause = typeof forceState === 'boolean' ? forceState : state.mode === 'PLAYING';
+
+      if (shouldPause) {
+        state.mode = 'PAUSED';
+        document.getElementById('pauseLevelInfo').textContent = `Currently at Level ${state.level} (${state.levelProgress}/${SOLVES_PER_LEVEL} to next)`;
+        pauseOverlayEl.classList.remove('hidden');
+      } else {
+        state.mode = 'PLAYING';
+        pauseOverlayEl.classList.add('hidden');
+      }
+      sound.playKeyTap();
+    }
+
+    function returnToMenu() {
+      state.mode = 'MENU';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      levelUpBannerEl.classList.add('hidden');
+      startScreenEl.classList.remove('hidden');
+      sound.playKeyTap();
+    }
+
+    function endGame(victory) {
+      state.mode = 'GAMEOVER';
+      pauseOverlayEl.classList.add('hidden');
+      levelUpBannerEl.classList.add('hidden');
+      endGameOverlayEl.classList.remove('hidden');
+
+      const badge = document.getElementById('endStatusBadge');
+      const title = document.getElementById('endTitle');
+
+      if (victory) {
+        sound.playVictory();
+        badge.textContent = `Time Expired • Reached Level ${state.level}`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300';
+        title.textContent = 'SECTOR SECURED!';
+        title.className = 'font-orbitron font-black text-2xl sm:text-3xl text-white neon-text-cyan mb-3';
+      } else {
+        badge.textContent = `Shields Depleted • Reached Level ${state.level}`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-rose-500/20 border border-rose-400/40 text-rose-300';
+        title.textContent = 'DEFENSES BREACHED!';
+        title.className = 'font-orbitron font-black text-2xl sm:text-3xl text-rose-300 neon-text-pink mb-3';
+      }
+
+      // Calculate Star Rating (1 to 3 Stars) calibrated to Level & Score progression
+      let starsEarned = 1;
+      if ((state.level >= 5 && state.score >= 2600) || state.score >= 3200) {
+        starsEarned = 3;
+      } else if (state.level >= 3 || state.score >= 1100 || (victory && state.solvedCount >= 6)) {
+        starsEarned = 2;
+      } else if (state.score === 0 && !victory) {
+        starsEarned = 0;
+      }
+
+      const starsContainer = document.getElementById('starsContainer');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= starsEarned;
+        const starWrapper = document.createElement('div');
+        starWrapper.style.animationDelay = `${(i - 1) * 180}ms`;
+        starWrapper.className = earned ? 'star-earned' : 'opacity-30 scale-90';
+        starWrapper.innerHTML = `
+          <svg class="w-12 h-12 sm:w-14 sm:h-14 ${earned ? 'text-amber-400 drop-shadow-[0_0_14px_rgba(251,191,36,0.9)]' : 'text-slate-600'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsContainer.appendChild(starWrapper);
+      }
+
+      const captions = [
+        'Keep practicing! Blast 5 equations to reach Level 2.',
+        'Good start! Push to Level 3+ for 2 & 3 Stars.',
+        'Strong progress! Reach Level 5 & 2,600+ pts for 3 Stars!',
+        'Grandmaster Mathematician! Dominated the upper levels!'
+      ];
+      document.getElementById('starCaption').textContent = captions[starsEarned];
+
+      document.getElementById('finalScoreDisplay').textContent = state.score.toLocaleString();
+      document.getElementById('statMaxLevel').textContent = state.level;
+      document.getElementById('statSolved').textContent = state.solvedCount;
+      const acc = state.shotsFired > 0 ? Math.round((state.solvedCount / state.shotsFired) * 100) : 100;
+      document.getElementById('statAccuracy').textContent = `${acc}%`;
+      document.getElementById('statStreak').textContent = state.bestStreak;
+    }
+
+    // =========================================================================
+    // 8. ENTITIES: SPAWNING, TARGETING, FIRING, PARTICLES
+    // =========================================================================
+    function getTurretPosition() {
+      return {
+        x: canvasWidth / 2,
+        y: canvasHeight - 36
+      };
+    }
+
+    function getDefenseLineY() {
+      return canvasHeight - 76;
+    }
+
+    function getActiveTarget() {
+      if (state.enemies.length === 0) return null;
+      if (state.lockedEnemyId !== null) {
+        const locked = state.enemies.find(e => e.id === state.lockedEnemyId);
+        if (locked) return locked;
+      }
+      // Auto-lock onto the lowest (closest to defense line) equation pod
+      let lowest = state.enemies[0];
+      for (const e of state.enemies) {
+        if (e.y > lowest.y) lowest = e;
+      }
+      state.lockedEnemyId = lowest.id;
+      return lowest;
+    }
+
+    function spawnEnemy() {
+      const cfg = getLevelConfig(state.level);
+      if (state.enemies.length >= cfg.maxEnemies) return;
+
+      const problem = MathGenerator.generate(state.topic, state.level);
+      ctx.font = '700 16px "JetBrains Mono", monospace';
+      const textWidth = ctx.measureText(problem.text).width;
+      const boxWidth = Math.max(152, textWidth + 38);
+      const boxHeight = 46;
+
+      const margin = boxWidth / 2 + 16;
+      const safeSpan = Math.max(20, canvasWidth - margin * 2);
+
+      // Try finding an X slot that avoids overlapping existing upper enemies
+      let spawnX = margin + Math.random() * safeSpan;
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const candidateX = margin + Math.random() * safeSpan;
+        const overlaps = state.enemies.some(e => e.y < 130 && Math.abs(e.x - candidateX) < (e.width + boxWidth) * 0.55);
+        if (!overlaps) {
+          spawnX = candidateX;
+          break;
+        }
+      }
+
+      const palette = [
+        { border: '#00f3ff', glow: 'rgba(0, 243, 255, 0.35)', tagBg: '#083344', tagText: '#67e8f9' },
+        { border: '#a855f7', glow: 'rgba(168, 85, 247, 0.35)', tagBg: '#3b0764', tagText: '#d8b4fe' },
+        { border: '#ff2a85', glow: 'rgba(255, 42, 133, 0.35)', tagBg: '#500724', tagText: '#f9a8d4' },
+        { border: '#ffb800', glow: 'rgba(255, 184, 0, 0.35)', tagBg: '#451a03', tagText: '#fde68a' }
+      ];
+      const theme = palette[Math.floor(Math.random() * palette.length)];
+
+      const enemy = {
+        id: state.nextEnemyId++,
+        x: spawnX,
+        y: -30,
+        vx: (Math.random() - 0.5) * (10 + state.level * 1.5), // subtle drift scales slightly with level
+        vy: cfg.speedBase * (0.92 + Math.random() * 0.18),
+        width: boxWidth,
+        height: boxHeight,
+        equation: problem.text,
+        answer: problem.answer,
+        tag: problem.tag,
+        theme,
+        wobblePhase: Math.random() * Math.PI * 2,
+        hitFlash: 0
+      };
+
+      state.enemies.push(enemy);
+      if (state.lockedEnemyId === null) {
+        state.lockedEnemyId = enemy.id;
+      }
+    }
+
+    function fireProjectile() {
+      if (state.mode !== 'PLAYING') return;
+
+      // Validate numeric input
+      if (state.inputBuffer === '' || state.inputBuffer === '-') {
+        // Gentle shake on input box if empty
+        answerInputDisplayEl.parentElement.classList.add('border-rose-500');
+        setTimeout(() => answerInputDisplayEl.parentElement.classList.remove('border-rose-500'), 200);
+        return;
+      }
+
+      const numericVal = parseInt(state.inputBuffer, 10);
+      if (Number.isNaN(numericVal)) return;
+
+      state.inputBuffer = '';
+      renderInputDisplay();
+      state.shotsFired++;
+
+      const turret = getTurretPosition();
+      let target = getActiveTarget();
+
+      // Smart assist: if the locked target doesn't match numericVal, check if another enemy on screen matches!
+      if (target && target.answer !== numericVal) {
+        const matchingOther = state.enemies
+          .filter(e => e.answer === numericVal)
+          .sort((a, b) => b.y - a.y)[0];
+        if (matchingOther) {
+          target = matchingOther;
+          state.lockedEnemyId = matchingOther.id;
+        }
+      }
+
+      let angle = -Math.PI / 2;
+      if (target) {
+        angle = Math.atan2(target.y - turret.y, target.x - turret.x);
+      }
+
+      state.turretAngle = angle;
+      state.turretRecoil = 10;
+      sound.playLaser();
+
+      const speed = 760;
+      state.projectiles.push({
+        x: turret.x + Math.cos(angle) * 28,
+        y: turret.y + Math.sin(angle) * 28,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        value: numericVal,
+        targetId: target ? target.id : null,
+        trail: []
+      });
+    }
+
+    function spawnExplosion(x, y, color) {
+      for (let i = 0; i < 28; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 210 + 45;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: Math.random() * 4 + 2,
+          color: i % 3 === 0 ? '#ffffff' : color,
+          alpha: 1,
+          decay: Math.random() * 1.6 + 1.1
+        });
+      }
+      spawnRingEffect(x, y, color);
+    }
+
+    function spawnRingEffect(x, y, color) {
+      state.particles.push({
+        isRing: true,
+        x,
+        y,
+        radius: 10,
+        maxRadius: 68,
+        color,
+        alpha: 0.9,
+        decay: 2.6
+      });
+    }
+
+    function spawnFloatingText(x, y, text, color = '#00ff9d') {
+      state.floatingTexts.push({
+        x,
+        y,
+        vy: -52,
+        text,
+        color,
+        alpha: 1,
+        decay: 0.95
+      });
+    }
+
+    // =========================================================================
+    // 9. MAIN UPDATE & RENDER LOOP (60 FPS)
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function update(dt) {
+      // Animate starfield even on menu for vibrant backdrop
+      for (const s of state.starsBg) {
+        s.y += s.speed * dt;
+        if (s.y > canvasHeight) {
+          s.y = -4;
+          s.x = Math.random() * canvasWidth;
+        }
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      // Countdown timer
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHUD();
+        endGame(true);
+        return;
+      }
+
+      // Enemy spawner
+      const cfg = getLevelConfig(state.level);
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnEnemy();
+        state.spawnTimer = cfg.spawnInterval;
+      }
+
+      // Update turret recoil & screen effects
+      state.turretRecoil = Math.max(0, state.turretRecoil - dt * 45);
+      state.screenShake = Math.max(0, state.screenShake - dt * 28);
+      state.damageFlash = Math.max(0, state.damageFlash - dt * 2.2);
+
+      // Smoothly orient turret toward active target
+      const activeTarget = getActiveTarget();
+      if (activeTarget) {
+        const turret = getTurretPosition();
+        const desiredAngle = Math.atan2(activeTarget.y - turret.y, activeTarget.x - turret.x);
+        state.turretAngle += (desiredAngle - state.turretAngle) * Math.min(1, dt * 14);
+      }
+
+      const defenseY = getDefenseLineY();
+
+      // Update Enemies
+      for (let i = state.enemies.length - 1; i >= 0; i--) {
+        const e = state.enemies[i];
+        e.wobblePhase += dt * 3;
+        e.y += e.vy * dt;
+        e.x += (e.vx + Math.sin(e.wobblePhase) * 10) * dt;
+        e.hitFlash = Math.max(0, e.hitFlash - dt * 4);
+
+        const halfW = e.width / 2 + 12;
+        if (e.x < halfW) {
+          e.x = halfW;
+          e.vx = Math.abs(e.vx);
+        } else if (e.x > canvasWidth - halfW) {
+          e.x = canvasWidth - halfW;
+          e.vx = -Math.abs(e.vx);
+        }
+
+        // Check breach of defense line
+        if (e.y + e.height / 2 >= defenseY) {
+          state.enemies.splice(i, 1);
+          if (state.lockedEnemyId === e.id) state.lockedEnemyId = null;
+
+          state.lives--;
+          state.combo = 1;
+          state.currentStreak = 0;
+          state.screenShake = 14;
+          state.damageFlash = 0.65;
+          sound.playDamage();
+
+          spawnExplosion(e.x, defenseY, '#ff2a85');
+          spawnFloatingText(e.x, defenseY - 24, `BREACH! Ans: ${e.answer}`, '#ff2a85');
+          renderLives();
+          updateHUD();
+
+          if (state.lives <= 0) {
+            endGame(false);
+            return;
+          }
+        }
+      }
+
+      // Update Projectiles & Check Collisions
+      for (let i = state.projectiles.length - 1; i >= 0; i--) {
+        const p = state.projectiles[i];
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 8) p.trail.shift();
+
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        // Remove offscreen bolts
+        if (p.x < -50 || p.x > canvasWidth + 50 || p.y < -50 || p.y > canvasHeight + 50) {
+          state.projectiles.splice(i, 1);
+          continue;
+        }
+
+        // Check collision with enemy equation pods
+        let hitHandled = false;
+        for (let j = state.enemies.length - 1; j >= 0; j--) {
+          const e = state.enemies[j];
+          const hitX = Math.abs(p.x - e.x) <= e.width * 0.52 + 10;
+          const hitY = Math.abs(p.y - e.y) <= e.height * 0.55 + 10;
+
+          if (hitX && hitY) {
+            hitHandled = true;
+            if (p.value === e.answer) {
+              // CORRECT SOLUTION! Destroy enemy pod
+              state.enemies.splice(j, 1);
+              if (state.lockedEnemyId === e.id) state.lockedEnemyId = null;
+
+              state.solvedCount++;
+              state.currentStreak++;
+              state.bestStreak = Math.max(state.bestStreak, state.currentStreak);
+
+              // Height bonus + Level score multiplier
+              const heightRatio = Math.max(0, Math.min(1, 1 - e.y / defenseY));
+              const basePts = Math.round((100 + heightRatio * 60) * cfg.scoreMult);
+              const earned = basePts * state.combo;
+              state.score += earned;
+
+              // Increment combo up to x5
+              state.combo = Math.min(5, 1 + Math.floor(state.currentStreak / 2));
+
+              // Advance Level Progress every SOLVES_PER_LEVEL (5 equations)
+              state.levelProgress++;
+              if (state.levelProgress >= SOLVES_PER_LEVEL) {
+                state.level++;
+                state.levelProgress = 0;
+                triggerLevelUp(state.level);
+              } else {
+                sound.playExplosion(state.combo);
+              }
+
+              state.screenShake = 6;
+              spawnExplosion(e.x, e.y, e.theme.border);
+              spawnFloatingText(e.x, e.y - 12, `+${earned}`, '#00ff9d');
+            } else {
+              // WRONG VALUE! Deflect bolt & reset combo
+              e.hitFlash = 1;
+              state.combo = 1;
+              state.currentStreak = 0;
+              sound.playDeflect();
+              spawnRingEffect(p.x, p.y, '#ffb800');
+              spawnFloatingText(e.x, e.y - 22, `${p.value} ≠ ?`, '#ffb800');
+            }
+            break;
+          }
+        }
+
+        if (hitHandled) {
+          state.projectiles.splice(i, 1);
+        }
+      }
+
+      // Update Particles
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        if (pt.isRing) {
+          pt.radius += (pt.maxRadius - pt.radius) * Math.min(1, dt * 8);
+        } else {
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.vx *= 0.96;
+          pt.vy *= 0.96;
+        }
+      }
+
+      // Update Floating Score Popups
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= ft.decay * dt;
+        if (ft.alpha <= 0) {
+          state.floatingTexts.splice(i, 1);
+        }
+      }
+
+      updateHUD();
+    }
+
+    function draw() {
+      ctx.save();
+
+      // Apply screen shake offset
+      if (state.screenShake > 0.2) {
+        const sx = (Math.random() - 0.5) * state.screenShake;
+        const sy = (Math.random() - 0.5) * state.screenShake;
+        ctx.translate(sx, sy);
+      }
+
+      // Deep space background gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+      bgGrad.addColorStop(0, '#040712');
+      bgGrad.addColorStop(0.6, '#080e24');
+      bgGrad.addColorStop(1, '#0d1536');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Subtle perspective synth grid lines
+      ctx.strokeStyle = 'rgba(0, 243, 255, 0.05)';
+      ctx.lineWidth = 1;
+      const gridStep = 56;
+      for (let x = 0; x < canvasWidth; x += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvasHeight; y += gridStep) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasWidth, y);
+        ctx.stroke();
+      }
+
+      // Render Stars
+      for (const s of state.starsBg) {
+        ctx.fillStyle = `rgba(226, 232, 240, ${s.alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Render Defense Shield Line near bottom
+      const defenseY = getDefenseLineY();
+      const shieldGrad = ctx.createLinearGradient(0, defenseY, canvasWidth, defenseY);
+      shieldGrad.addColorStop(0, 'rgba(0, 243, 255, 0.05)');
+      shieldGrad.addColorStop(0.5, 'rgba(0, 243, 255, 0.65)');
+      shieldGrad.addColorStop(1, 'rgba(0, 243, 255, 0.05)');
+      ctx.strokeStyle = shieldGrad;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 6]);
+      ctx.beginPath();
+      ctx.moveTo(0, defenseY);
+      ctx.lineTo(canvasWidth, defenseY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Targeting Laser Sight from Turret to Locked Target
+      const turret = getTurretPosition();
+      const target = getActiveTarget();
+      if (target && state.mode === 'PLAYING') {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 243, 255, 0.22)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 7]);
+        ctx.beginPath();
+        ctx.moveTo(turret.x, turret.y);
+        ctx.lineTo(target.x, target.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw Enemy Equation Pods
+      for (const e of state.enemies) {
+        const isLocked = target && e.id === target.id;
+        drawEnemyPod(e, isLocked);
+      }
+
+      // Draw Projectiles
+      for (const p of state.projectiles) {
+        drawProjectile(p);
+      }
+
+      // Draw Particles
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        if (pt.isRing) {
+          ctx.strokeStyle = pt.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Draw Floating Texts
+      for (const ft of state.floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '800 16px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = ft.color;
+        ctx.shadowBlur = 10;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      // Draw Player Plasma Turret at Bottom Center
+      drawPlayerTurret(turret);
+
+      // Red damage flash overlay when hit
+      if (state.damageFlash > 0.01) {
+        ctx.fillStyle = `rgba(255, 42, 133, ${state.damageFlash * 0.35})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    function drawEnemyPod(e, isLocked) {
+      ctx.save();
+      ctx.translate(e.x, e.y);
+
+      const hw = e.width / 2;
+      const hh = e.height / 2;
+      const r = 14;
+
+      // Outer glow
+      ctx.shadowColor = e.hitFlash > 0 ? '#ffb800' : e.theme.border;
+      ctx.shadowBlur = isLocked ? 20 : 10;
+
+      // Pod body
+      ctx.fillStyle = e.hitFlash > 0 ? 'rgba(120, 53, 15, 0.92)' : 'rgba(11, 17, 38, 0.94)';
+      ctx.strokeStyle = e.hitFlash > 0 ? '#ffb800' : (isLocked ? '#00f3ff' : e.theme.border);
+      ctx.lineWidth = isLocked ? 2.5 : 1.75;
+
+      roundRectPath(ctx, -hw, -hh, e.width, e.height, r);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+
+      // Top category pill badge
+      const pillW = 68;
+      const pillH = 15;
+      ctx.fillStyle = e.theme.tagBg;
+      roundRectPath(ctx, -pillW / 2, -hh - 8, pillW, pillH, 7);
+      ctx.fill();
+
+      ctx.font = '700 9px "Orbitron", sans-serif';
+      ctx.fillStyle = e.theme.tagText;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.tag, 0, -hh - 0.5);
+
+      // Equation text (highlight '?' in bright amber/cyan)
+      ctx.font = '800 16px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.equation, 0, 3);
+
+      // Animated Target Lock Brackets if locked
+      if (isLocked) {
+        const pulse = Math.sin(performance.now() * 0.008) * 3;
+        const bx = hw + 7 + pulse;
+        const by = hh + 6 + pulse;
+        const len = 9;
+        ctx.strokeStyle = '#00f3ff';
+        ctx.lineWidth = 2.2;
+
+        // Top-left
+        ctx.beginPath();
+        ctx.moveTo(-bx, -by + len);
+        ctx.lineTo(-bx, -by);
+        ctx.lineTo(-bx + len, -by);
+        ctx.stroke();
+
+        // Top-right
+        ctx.beginPath();
+        ctx.moveTo(bx - len, -by);
+        ctx.lineTo(bx, -by);
+        ctx.lineTo(bx, -by + len);
+        ctx.stroke();
+
+        // Bottom-left
+        ctx.beginPath();
+        ctx.moveTo(-bx, by - len);
+        ctx.lineTo(-bx, by);
+        ctx.lineTo(-bx + len, by);
+        ctx.stroke();
+
+        // Bottom-right
+        ctx.beginPath();
+        ctx.moveTo(bx - len, by);
+        ctx.lineTo(bx, by);
+        ctx.lineTo(bx, by - len);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawProjectile(p) {
+      // Glowing laser trail
+      for (let i = 0; i < p.trail.length; i++) {
+        const pt = p.trail[i];
+        const ratio = (i + 1) / p.trail.length;
+        ctx.fillStyle = `rgba(0, 243, 255, ${ratio * 0.35})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 6 * ratio, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Energy capsule carrying the typed number
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.shadowColor = '#00f3ff';
+      ctx.shadowBlur = 14;
+
+      ctx.fillStyle = '#00f3ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 15, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#040712';
+      ctx.font = '800 12px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(p.value), 0, 0.5);
+      ctx.restore();
+    }
+
+    function drawPlayerTurret(turret) {
+      ctx.save();
+      ctx.translate(turret.x, turret.y);
+
+      // Base dome
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#00f3ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, 10, 32, Math.PI, 0);
+      ctx.fill();
+      ctx.stroke();
+
+      // Rotating barrel
+      ctx.rotate(state.turretAngle + Math.PI / 2);
+      const recoilOffset = state.turretRecoil;
+
+      ctx.shadowColor = '#00f3ff';
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      roundRectPath(ctx, -8, -36 + recoilOffset, 16, 32, 5);
+      ctx.fill();
+      ctx.stroke();
+
+      // Glowing plasma core
+      ctx.fillStyle = '#00f3ff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 11, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function roundRectPath(context, x, y, width, height, radius) {
+      context.beginPath();
+      context.moveTo(x + radius, y);
+      context.lineTo(x + width - radius, y);
+      context.quadraticCurveTo(x + width, y, x + width, y + radius);
+      context.lineTo(x + width, y + height - radius);
+      context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      context.lineTo(x + radius, y + height);
+      context.quadraticCurveTo(x, y + height, x, y + height - radius);
+      context.lineTo(x, y + radius);
+      context.quadraticCurveTo(x, y, x + radius, y);
+      context.closePath();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Boot up cleanly on window load
+    window.onload = function () {
+      resizeCanvas();
+      initStarfield();
+      renderLives();
+      renderInputDisplay();
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
