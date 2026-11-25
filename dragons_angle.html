@@ -1,0 +1,2491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Dragon's Angle — Medieval Fantasy Geometry Shooter</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-night: #0d0a14;
+      --gold-primary: #f59e0b;
+      --gold-light: #fde68a;
+      --crimson-fire: #ef4444;
+      --arcane-cyan: #38bdf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-night);
+      font-family: 'Inter', sans-serif;
+      color: #fef3c7;
+    }
+
+    .font-medieval {
+      font-family: 'Cinzel', serif;
+    }
+
+    .font-mono-math {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .parchment-panel {
+      background: linear-gradient(165deg, rgba(30, 22, 18, 0.94) 0%, rgba(18, 13, 16, 0.96) 100%);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 2px solid rgba(245, 158, 11, 0.45);
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.16), inset 0 0 24px rgba(245, 158, 11, 0.08);
+    }
+
+    .gold-glow {
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.75), 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .fire-glow {
+      text-shadow: 0 0 14px rgba(239, 68, 68, 0.85), 0 2px 4px rgba(0, 0, 0, 0.9);
+    }
+
+    .btn-medieval {
+      transition: all 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 0 #451a03, 0 0 18px rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-medieval:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-medieval:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #451a03;
+    }
+
+    .rune-key {
+      background: linear-gradient(180deg, rgba(48, 36, 28, 0.96) 0%, rgba(26, 19, 15, 0.98) 100%);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      box-shadow: 0 3px 0 #140d09, inset 0 1px 0 rgba(253, 230, 138, 0.18);
+      transition: transform 0.07s ease, border-color 0.1s ease, background 0.1s ease;
+    }
+
+    .rune-key:hover {
+      border-color: #fbbf24;
+      background: linear-gradient(180deg, rgba(68, 50, 38, 0.96) 0%, rgba(36, 26, 20, 0.98) 100%);
+    }
+
+    .rune-key:active, .rune-key.pressed {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #140d09;
+      border-color: #fde68a;
+      background: rgba(245, 158, 11, 0.28);
+    }
+
+    .bolt-fire-btn {
+      background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+      border: 1px solid rgba(186, 230, 253, 0.65);
+      box-shadow: 0 4px 0 #1e3a8a, 0 0 22px rgba(56, 189, 248, 0.5);
+      transition: transform 0.08s ease, filter 0.12s ease;
+    }
+
+    .bolt-fire-btn:hover {
+      filter: brightness(1.12);
+    }
+
+    .bolt-fire-btn:active, .bolt-fire-btn.pressed {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #1e3a8a, 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-earned {
+      animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes waveBannerAnim {
+      0% { transform: translate(-50%, -20px) scale(0.85); opacity: 0; }
+      15% { transform: translate(-50%, 0) scale(1.04); opacity: 1; }
+      82% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -18px) scale(0.95); opacity: 0; }
+    }
+
+    .wave-banner {
+      animation: waveBannerAnim 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#0d0a14]">
+
+  <!-- TOP MEDIEVAL HUD BAR -->
+  <header class="relative z-20 flex items-center justify-between px-2.5 sm:px-6 py-2 bg-stone-950/95 border-b border-amber-500/30 backdrop-blur-md shrink-0 gap-2">
+    <!-- Left: Knight Lives & Level Progress -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-stone-900/95 border border-rose-500/35 px-2 sm:px-2.5 py-1.5 rounded-xl" title="Knight's Hearts (Lives)">
+        <span class="text-[10px] sm:text-xs font-medieval font-bold uppercase tracking-wider text-rose-300 hidden lg:inline mr-1">Knight</span>
+        <div id="livesContainer" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- Wave / Level Progress -->
+      <div class="flex flex-col justify-center bg-stone-900/95 border border-amber-500/40 px-2.5 sm:px-3 py-1 rounded-xl min-w-[90px] sm:min-w-[120px]" title="Deflect 5 fireballs to advance Rank!">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-medieval font-bold">
+          <span id="hudLevelText" class="text-amber-300">RANK 1</span>
+          <span id="hudLevelCount" class="text-stone-400 font-mono-math text-[10px]">0/5</span>
+        </div>
+        <div class="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden mt-1">
+          <div id="hudLevelBar" class="h-full bg-gradient-to-r from-amber-500 via-orange-500 to-sky-400 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Dragon Health Bar (Compact in HUD) -->
+      <div class="hidden sm:flex flex-col justify-center bg-stone-900/95 border border-red-500/40 px-3 py-1 rounded-xl min-w-[130px] md:min-w-[165px]" title="Ancient Dragon Vitality">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-medieval font-bold">
+          <span class="text-red-400">DRAGON HP</span>
+          <span id="hudDragonHpText" class="text-amber-200 font-mono-math text-[10px]">1000/1000</span>
+        </div>
+        <div class="w-full h-2 bg-stone-800 rounded-full overflow-hidden mt-1 border border-red-950">
+          <div id="hudDragonHpBar" class="h-full bg-gradient-to-r from-red-600 via-orange-500 to-amber-400 transition-all duration-300" style="width: 100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center: Countdown Timer -->
+    <div class="flex items-center gap-1.5 sm:gap-2 bg-stone-900/95 border border-amber-400/40 px-3 sm:px-4 py-1 rounded-xl">
+      <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="timerDisplay" class="font-mono-math font-extrabold text-sm sm:text-xl tracking-wider text-amber-300">02:00</span>
+    </div>
+
+    <!-- Right: Points, Sound Toggle, Pause -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-stone-900/95 border border-emerald-500/35 px-2.5 sm:px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] sm:text-xs font-medieval font-bold uppercase tracking-wider text-emerald-300/80 hidden lg:inline">Glory</span>
+        <span id="scoreDisplay" class="font-mono-math font-extrabold text-sm sm:text-lg text-emerald-400">0</span>
+      </div>
+
+      <button id="soundToggleBtn" type="button" aria-label="Toggle Sound" title="Toggle Sound (M)"
+        class="p-2 sm:p-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-amber-500/35 text-amber-300 transition active:scale-95">
+        <svg id="soundOnIcon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundOffIcon" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+      </button>
+
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause Game (Esc / P)"
+        class="p-2 sm:p-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 border border-amber-500/35 text-amber-300 transition active:scale-95">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN BATTLEFIELD ARENA -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="block w-full h-full cursor-crosshair"></canvas>
+
+    <!-- Floating Hint Pill -->
+    <div class="pointer-events-none absolute top-2.5 left-1/2 -translate-x-1/2 z-10 px-3.5 py-1 rounded-full bg-stone-950/80 border border-amber-500/30 text-[11px] sm:text-xs text-amber-100/90 backdrop-blur-sm whitespace-nowrap">
+      Calculate missing angle <strong class="text-amber-300">x°</strong> &bull; Press <strong class="text-sky-300">SPACE</strong> or <strong class="text-sky-300">SHOOT</strong> to deflect fireball into the Dragon!
+    </div>
+
+    <!-- Rank Up Banner -->
+    <div id="rankUpBanner" class="hidden pointer-events-none absolute top-12 left-1/2 -translate-x-1/2 z-20 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-950/95 via-orange-950/95 to-stone-900/95 border-2 border-amber-400 shadow-[0_0_28px_rgba(245,158,11,0.65)] text-center">
+      <div id="rankUpTitle" class="font-medieval font-black text-base sm:text-xl tracking-wider text-amber-300 gold-glow">
+        RANK 2: KNIGHT CAPTAIN!
+      </div>
+      <div id="rankUpSub" class="text-[11px] sm:text-xs font-semibold text-sky-300 mt-0.5">
+        NEW ANGLE THEOREMS UNLOCKED &bull; +200 GLORY
+      </div>
+    </div>
+
+    <!-- ==================== 1. START SCREEN OVERLAY ==================== -->
+    <section id="startScreen" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-stone-950/80 backdrop-blur-md">
+      <div class="parchment-panel w-full max-w-xl rounded-3xl p-5 sm:p-8 text-center relative">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-medieval font-bold tracking-widest uppercase mb-3">
+          <span>Geometry Siege Defense</span>
+        </div>
+
+        <h1 class="font-medieval font-black text-3xl sm:text-5xl tracking-tight text-amber-300 gold-glow mb-2">
+          DRAGON'S ANGLE
+        </h1>
+        <p class="text-stone-200 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5 leading-relaxed">
+          An ancient wyrm besieges the citadel! Each incoming fireball carries a <strong class="text-amber-300">geometric line diagram</strong> with an unknown angle <strong class="text-sky-300">x°</strong>. Fire the exact degree value to shatter the fireball and strike back at the dragon!
+        </p>
+
+        <!-- Geometry Theorem Focus Selector -->
+        <div class="bg-stone-900/90 border border-amber-500/25 rounded-2xl p-4 mb-6 text-left">
+          <div class="flex items-center justify-between mb-2.5">
+            <label class="font-medieval font-bold text-xs uppercase tracking-wider text-amber-300">Choose Training Scroll</label>
+            <span class="text-[11px] font-medieval text-sky-300 bg-sky-500/15 border border-sky-400/30 px-2.5 py-0.5 rounded-full">
+              Progressive Ranks
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="topicSelector">
+            <button type="button" data-topic="all" class="topic-btn active px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/25 border border-amber-400 text-amber-100 transition">
+              All Theorems
+            </button>
+            <button type="button" data-topic="lines" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-800/80 border border-stone-700 text-stone-300 hover:border-amber-400/50 transition">
+              Lines &amp; Points
+            </button>
+            <button type="button" data-topic="parallel" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-800/80 border border-stone-700 text-stone-300 hover:border-amber-400/50 transition">
+              Parallel Lines
+            </button>
+            <button type="button" data-topic="triangles" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-stone-800/80 border border-stone-700 text-stone-300 hover:border-amber-400/50 transition">
+              Triangles
+            </button>
+          </div>
+        </div>
+
+        <!-- Primary Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button id="startGameBtn" type="button"
+            class="btn-medieval w-full sm:w-auto px-8 py-3.5 rounded-2xl font-medieval font-extrabold text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 border border-amber-200/80">
+            Draw Crossbow
+          </button>
+
+          <button id="openInstructionsBtn" type="button"
+            class="btn-medieval w-full sm:w-auto px-6 py-3.5 rounded-2xl font-medieval font-bold text-xs sm:text-sm tracking-wider uppercase bg-stone-800/95 text-amber-300 border border-amber-500/40 hover:bg-stone-800">
+            Knight's Guide
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <a href="index.html" class="text-xs text-stone-400 hover:text-amber-300 underline transition">
+            &larr; Return to Math Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. INSTRUCTIONS MODAL OVERLAY ==================== -->
+    <section id="instructionsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-stone-950/85 backdrop-blur-md">
+      <div class="parchment-panel w-full max-w-2xl max-h-[90%] overflow-y-auto rounded-3xl p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-amber-500/30 pb-3 mb-4">
+          <h2 class="font-medieval font-extrabold text-lg sm:text-2xl text-amber-300 gold-glow">
+            KNIGHT'S ANGLE CODEX
+          </h2>
+          <button id="closeInstructionsBtn" type="button" class="p-2 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-stone-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-stone-900/90 border border-amber-500/25 rounded-2xl p-3.5">
+              <div class="font-medieval text-amber-400 font-bold text-xs uppercase mb-1.5">1. Read the Fireball Diagram</div>
+              <p class="text-stone-300 leading-relaxed mb-2">
+                Each fireball displays geometric lines and a golden arc marking the unknown angle <strong class="text-amber-300">x°</strong>.
+              </p>
+              <ul class="space-y-1 text-xs text-stone-300">
+                <li>&bull; <strong class="text-amber-200">Right Angle (Square):</strong> Sums to <span class="font-mono-math text-sky-300">90°</span></li>
+                <li>&bull; <strong class="text-amber-200">Straight Line:</strong> Adjacent angles sum to <span class="font-mono-math text-sky-300">180°</span></li>
+                <li>&bull; <strong class="text-amber-200">Vertically Opposite:</strong> Opposite X-angles are <span class="font-mono-math text-sky-300">equal</span></li>
+              </ul>
+            </div>
+
+            <div class="bg-stone-900/90 border border-sky-500/25 rounded-2xl p-3.5">
+              <div class="font-medieval text-sky-400 font-bold text-xs uppercase mb-1.5">2. Higher Rank Theorems</div>
+              <p class="text-stone-300 leading-relaxed mb-2">
+                Every <strong class="text-white">5 fireballs shattered</strong> promotes your Rank and unlocks new geometry diagrams:
+              </p>
+              <ul class="space-y-1 text-xs text-stone-300">
+                <li>&bull; <strong class="text-amber-200">Full Turn (Point):</strong> Sums to <span class="font-mono-math text-sky-300">360°</span></li>
+                <li>&bull; <strong class="text-amber-200">Parallel Lines (Arrows):</strong> Alternate (Z) &amp; Corresponding (F) angles are equal; Co-interior (C) sum to <span class="font-mono-math text-sky-300">180°</span></li>
+                <li>&bull; <strong class="text-amber-200">Triangles:</strong> Interior angles sum to <span class="font-mono-math text-sky-300">180°</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-stone-900/90 border border-emerald-500/25 rounded-2xl p-3.5">
+            <div class="font-medieval text-emerald-400 font-bold text-xs uppercase mb-2">3. Battle Controls &amp; Counter-Attack</div>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-300">
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span><strong>Click/Tap Fireball or Tab:</strong> Switch target lock</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                <span><strong>Digits 0–9:</strong> Dial angle degrees (no ° needed)</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span><strong>Spacebar / Enter / SHOOT:</strong> Fire arcane bolt</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <span><strong>Deflecting Fireballs:</strong> Rebounds into Dragon to deplete its 1,000 HP!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end">
+          <button id="gotItBtn" type="button"
+            class="btn-medieval px-6 py-2.5 rounded-xl font-medieval font-bold text-xs sm:text-sm uppercase bg-amber-500 text-stone-950">
+            To Battle!
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PAUSE OVERLAY ==================== -->
+    <section id="pauseOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md">
+      <div class="parchment-panel w-full max-w-sm rounded-3xl p-6 text-center">
+        <h2 class="font-medieval font-extrabold text-2xl text-amber-300 mb-1">TRUCE CALLED</h2>
+        <p id="pauseLevelInfo" class="text-stone-300 font-medieval text-xs mb-6">Rank 1 &bull; Dragon HP: 1000</p>
+
+        <div class="flex flex-col gap-2.5">
+          <button id="resumeBtn" type="button"
+            class="btn-medieval w-full py-3 rounded-xl font-medieval font-bold text-sm uppercase bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950">
+            Resume Battle
+          </button>
+          <button id="restartFromPauseBtn" type="button"
+            class="btn-medieval w-full py-3 rounded-xl font-medieval font-bold text-xs uppercase bg-stone-800 text-amber-300 border border-amber-500/35">
+            Restart Siege
+          </button>
+          <button id="quitToMenuBtn" type="button"
+            class="btn-medieval w-full py-3 rounded-xl font-medieval font-bold text-xs uppercase bg-stone-900 text-stone-300 border border-stone-700">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. END GAME OVERLAY ==================== -->
+    <section id="endGameOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-stone-950/85 backdrop-blur-md">
+      <div class="parchment-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+        <div id="endStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-medieval font-bold uppercase tracking-widest mb-2 bg-amber-500/20 border border-amber-400/40 text-amber-300">
+          Siege Concluded
+        </div>
+
+        <h2 id="endTitle" class="font-medieval font-black text-2xl sm:text-3xl text-amber-300 gold-glow mb-3">
+          DRAGON VANQUISHED!
+        </h2>
+
+        <!-- 3 Stars Rating -->
+        <div id="starsContainer" class="flex items-center justify-center gap-3 my-3"></div>
+        <p id="starCaption" class="text-xs text-stone-300 mb-5 font-medium">Legendary geometric precision!</p>
+
+        <!-- Glory Score & Stats -->
+        <div class="bg-stone-900/90 border border-amber-500/25 rounded-2xl p-4 mb-6">
+          <div class="text-xs font-medieval uppercase tracking-wider text-stone-400 mb-1">Total Glory Points</div>
+          <div id="finalScoreDisplay" class="font-mono-math font-black text-3xl sm:text-4xl text-emerald-400 mb-3">
+            0
+          </div>
+
+          <div class="grid grid-cols-4 gap-1.5 pt-3 border-t border-stone-800 text-center">
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-stone-400 font-medieval">Rank</div>
+              <div id="statMaxLevel" class="font-mono-math font-bold text-sm sm:text-base text-amber-300">1</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-stone-400 font-medieval">Deflected</div>
+              <div id="statSolved" class="font-mono-math font-bold text-sm sm:text-base text-sky-300">0</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-stone-400 font-medieval">Accuracy</div>
+              <div id="statAccuracy" class="font-mono-math font-bold text-sm sm:text-base text-emerald-300">100%</div>
+            </div>
+            <div>
+              <div class="text-[9px] sm:text-[10px] uppercase text-stone-400 font-medieval">Streak</div>
+              <div id="statStreak" class="font-mono-math font-bold text-sm sm:text-base text-rose-400">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="tryAgainBtn" type="button"
+            class="btn-medieval flex-1 py-3.5 px-5 rounded-2xl font-medieval font-extrabold text-sm uppercase tracking-wider bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 border border-amber-200/80">
+            Try Again
+          </button>
+          <button id="endMenuBtn" type="button"
+            class="btn-medieval py-3.5 px-5 rounded-2xl font-medieval font-bold text-xs uppercase tracking-wider bg-stone-800 text-stone-200 border border-stone-600">
+            Menu
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- BOTTOM ARCANE CROSSBOW CONSOLE -->
+  <footer class="relative z-20 bg-stone-950/95 border-t border-amber-500/30 px-2.5 sm:px-6 py-2 sm:py-3 shrink-0">
+    <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-2 sm:gap-3">
+
+      <!-- Angle Degrees Readout & Delete/Clear -->
+      <div class="flex items-center justify-between w-full md:w-auto gap-2">
+        <div class="flex-1 md:w-48 flex items-center justify-between bg-stone-900 border-2 border-amber-400/60 rounded-2xl px-3.5 py-1.5 sm:py-2 shadow-inner">
+          <span class="text-[10px] font-medieval font-bold uppercase tracking-wider text-amber-400/90">Angle</span>
+          <div class="flex items-baseline gap-0.5">
+            <div id="answerInputDisplay" class="font-mono-math font-extrabold text-xl sm:text-2xl text-white tracking-wider min-h-[28px] sm:min-h-[32px] flex items-center">
+              <span class="text-stone-500 text-sm animate-pulse">_</span>
+            </div>
+            <span class="font-mono-math font-bold text-lg text-amber-400">&deg;</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <button type="button" data-key="BACKSPACE" class="rune-key px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-xl font-medieval font-bold text-xs sm:text-sm text-stone-200" title="Backspace">
+            DEL
+          </button>
+          <button type="button" data-key="CLEAR" class="rune-key px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-xl font-medieval font-bold text-xs text-rose-300" title="Clear">
+            CLR
+          </button>
+        </div>
+      </div>
+
+      <!-- Digits 0-9 + SHOOT Button -->
+      <div class="flex items-center justify-between w-full flex-1 gap-1 sm:gap-1.5">
+        <div class="grid grid-cols-10 gap-1 sm:gap-1.5 flex-1">
+          <button type="button" data-key="1" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">1</button>
+          <button type="button" data-key="2" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">2</button>
+          <button type="button" data-key="3" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">3</button>
+          <button type="button" data-key="4" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">4</button>
+          <button type="button" data-key="5" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">5</button>
+          <button type="button" data-key="6" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">6</button>
+          <button type="button" data-key="7" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">7</button>
+          <button type="button" data-key="8" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">8</button>
+          <button type="button" data-key="9" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">9</button>
+          <button type="button" data-key="0" class="rune-key py-2 sm:py-2.5 rounded-xl font-mono-math font-bold text-sm sm:text-base text-amber-100">0</button>
+        </div>
+
+        <button id="fireBtn" type="button" title="Shoot Arcane Bolt (Spacebar or Enter)"
+          class="bolt-fire-btn px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl font-medieval font-black text-xs sm:text-sm tracking-wider uppercase text-white shrink-0 flex items-center gap-1.5">
+          <span>SHOOT</span>
+          <span class="hidden sm:inline-block text-[10px] font-mono-math font-bold px-1.5 py-0.5 rounded bg-black/30 border border-white/25 text-sky-100">SPACE</span>
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * DRAGON'S ANGLE — MEDIEVAL FANTASY ANGLES SHOOTER
+     * Procedural visual angle diagrams rendered inside incoming dragon fireballs!
+     */
+
+    // =========================================================================
+    // 1. MEDIEVAL & ARCANE WEB AUDIO SYNTHESIZER
+    // =========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playKeyTap() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(740, now + 0.04);
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.05);
+      }
+
+      playCrossbowBolt() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(780, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.16);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+
+      playFireballShatter() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now);
+        osc.frequency.setValueAtTime(880, now + 0.07);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+
+      playDragonHit() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        // Deep roar + impact
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(165, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.34);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.37);
+      }
+
+      playDeflect() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(190, now);
+        osc.frequency.linearRampToValueAtTime(125, now + 0.15);
+        gain.gain.setValueAtTime(0.13, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+
+      playKnightHurt() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(130, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.4);
+        gain.gain.setValueAtTime(0.28, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.43);
+      }
+
+      playRankUp() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.08;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.31);
+        });
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.1;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.17, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.4);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    // =========================================================================
+    // 2. PROCEDURAL ANGLE DIAGRAM GENERATOR
+    // =========================================================================
+    const AngleGenerator = {
+      randInt(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      },
+
+      pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      },
+
+      /**
+       * Generates visual geometry problems with lines, arcs, and unknown x°
+       * tailored by category ('all', 'lines', 'parallel', 'triangles') and Rank.
+       */
+      generate(topic = 'all', rank = 1) {
+        const tier = rank === 1 ? 1 : rank === 2 ? 2 : 3;
+
+        const pools = {
+          lines: {
+            1: [() => this.complementaryRightAngle(), () => this.supplementaryStraightLine()],
+            2: [() => this.verticallyOpposite(), () => this.straightLineThreeAngles()],
+            3: [() => this.anglesAroundPoint(), () => this.rightAngleThreeSplit()]
+          },
+          parallel: {
+            1: [() => this.parallelCorresponding(), () => this.parallelAlternate()],
+            2: [() => this.parallelCoInterior(), () => this.parallelAlternate()],
+            3: [() => this.parallelCoInterior(), () => this.parallelCorresponding()]
+          },
+          triangles: {
+            1: [() => this.triangleInterior(), () => this.rightTriangleInterior()],
+            2: [() => this.isoscelesBaseAngle(), () => this.triangleExteriorAngle()],
+            3: [() => this.isoscelesApexAngle(), () => this.triangleExteriorAngle()]
+          }
+        };
+
+        const activeCats = topic === 'all' ? ['lines', 'parallel', 'triangles'] : [topic];
+        let generators = [];
+
+        activeCats.forEach(cat => {
+          // Always include tier 1 basics, plus unlocked higher-tier theorems
+          generators.push(...pools[cat][1]);
+          if (tier >= 2) generators.push(...pools[cat][2]);
+          if (tier >= 3) generators.push(...pools[cat][3]);
+        });
+
+        return this.pick(generators)();
+      },
+
+      // 1. Complementary Angles (90° corner)
+      complementaryRightAngle() {
+        const given = this.randInt(20, 70);
+        const answer = 90 - given;
+        const xOnTop = Math.random() < 0.5;
+        return {
+          type: 'RIGHT_ANGLE',
+          label: 'Right Angle (90°)',
+          given,
+          answer,
+          xOnTop
+        };
+      },
+
+      // 2. Supplementary Angles on a Straight Line (180°)
+      supplementaryStraightLine() {
+        const given = this.randInt(35, 145);
+        const answer = 180 - given;
+        const xOnLeft = Math.random() < 0.5;
+        return {
+          type: 'STRAIGHT_LINE',
+          label: 'Straight Line (180°)',
+          given,
+          answer,
+          xOnLeft
+        };
+      },
+
+      // 3. Vertically Opposite Angles (Intersecting X lines)
+      verticallyOpposite() {
+        const angle = this.randInt(35, 140);
+        return {
+          type: 'VERT_OPP',
+          label: 'Vertically Opposite',
+          given: angle,
+          answer: angle
+        };
+      },
+
+      // 4. Three Angles on a Straight Line
+      straightLineThreeAngles() {
+        const a = this.randInt(35, 65);
+        const b = this.randInt(40, 70);
+        const answer = 180 - a - b;
+        return {
+          type: 'STRAIGHT_THREE',
+          label: 'Line Sum (180°)',
+          a,
+          b,
+          answer
+        };
+      },
+
+      // 5. Angles Around a Point (360°)
+      anglesAroundPoint() {
+        const a = this.randInt(85, 130);
+        const b = this.randInt(95, 140);
+        const answer = 360 - a - b;
+        return {
+          type: 'AROUND_POINT',
+          label: 'Full Turn (360°)',
+          a,
+          b,
+          answer
+        };
+      },
+
+      // 6. Right Angle Split Into 3 Parts
+      rightAngleThreeSplit() {
+        const a = this.randInt(20, 35);
+        const b = this.randInt(20, 35);
+        const answer = 90 - a - b;
+        return {
+          type: 'RIGHT_ANGLE',
+          label: 'Right Angle (90°)',
+          given: a + b,
+          answer,
+          xOnTop: true
+        };
+      },
+
+      // 7. Parallel Lines — Corresponding Angles (F-shape, equal)
+      parallelCorresponding() {
+        const angle = this.randInt(45, 130);
+        return {
+          type: 'PARALLEL_CORR',
+          label: 'Corresponding ∠s',
+          given: angle,
+          answer: angle
+        };
+      },
+
+      // 8. Parallel Lines — Alternate Interior Angles (Z-shape, equal)
+      parallelAlternate() {
+        const angle = this.randInt(40, 135);
+        return {
+          type: 'PARALLEL_ALT',
+          label: 'Alternate ∠s',
+          given: angle,
+          answer: angle
+        };
+      },
+
+      // 9. Parallel Lines — Co-Interior Angles (C-shape, sum = 180°)
+      parallelCoInterior() {
+        const given = this.randInt(50, 130);
+        return {
+          type: 'PARALLEL_COINT',
+          label: 'Co-interior (180°)',
+          given,
+          answer: 180 - given
+        };
+      },
+
+      // 10. Triangle Interior Angle Sum (180°)
+      triangleInterior() {
+        const a = this.randInt(38, 78);
+        const b = this.randInt(42, 76);
+        return {
+          type: 'TRIANGLE_SUM',
+          label: 'Triangle (180°)',
+          a,
+          b,
+          answer: 180 - a - b
+        };
+      },
+
+      // 11. Right-Angled Triangle
+      rightTriangleInterior() {
+        const a = this.randInt(22, 68);
+        return {
+          type: 'RIGHT_TRIANGLE',
+          label: 'Right Triangle',
+          given: a,
+          answer: 90 - a
+        };
+      },
+
+      // 12. Isosceles Triangle — Find Base Angle
+      isoscelesBaseAngle() {
+        const base = this.randInt(35, 75);
+        const apex = 180 - 2 * base;
+        return {
+          type: 'ISOSCELES_BASE',
+          label: 'Isosceles Triangle',
+          apex,
+          answer: base
+        };
+      },
+
+      // 13. Isosceles Triangle — Find Apex Angle
+      isoscelesApexAngle() {
+        const base = this.randInt(35, 75);
+        const apex = 180 - 2 * base;
+        return {
+          type: 'ISOSCELES_APEX',
+          label: 'Isosceles Triangle',
+          base,
+          answer: apex
+        };
+      },
+
+      // 14. Exterior Angle of a Triangle (= sum of two opposite interior angles)
+      triangleExteriorAngle() {
+        const a = this.randInt(35, 72);
+        const b = this.randInt(38, 75);
+        return {
+          type: 'TRIANGLE_EXT',
+          label: 'Exterior Angle',
+          a,
+          b,
+          answer: a + b
+        };
+      }
+    };
+
+    // =========================================================================
+    // 3. GAME STATE & CONFIGURATION
+    // =========================================================================
+    const GAME_DURATION = 120; // 2 minutes to slay the Dragon
+    const MAX_LIVES = 3;
+    const DRAGON_MAX_HP = 1000;
+    const DEFLECTS_PER_RANK = 5;
+
+    const state = {
+      mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+      topic: 'all',
+      rank: 1,
+      rankProgress: 0,
+      timeLeft: GAME_DURATION,
+      score: 0,
+      lives: MAX_LIVES,
+      dragonHp: DRAGON_MAX_HP,
+      dragonMaxHp: DRAGON_MAX_HP,
+      dragonHurtFlash: 0,
+      dragonBreathAnim: 0,
+      knightRecoil: 0,
+      streak: 0,
+      bestStreak: 0,
+      deflectedCount: 0,
+      shotsFired: 0,
+      inputBuffer: '',
+      fireballs: [],
+      knightBolts: [],
+      reboundOrbs: [],
+      particles: [],
+      floatingTexts: [],
+      embers: [],
+      lockedFireballId: null,
+      spawnTimer: 0,
+      screenShake: 0,
+      damageFlash: 0,
+      nextId: 1
+    };
+
+    // =========================================================================
+    // 4. DOM REFERENCES & EVENT LISTENERS
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    const livesContainerEl = document.getElementById('livesContainer');
+    const hudLevelTextEl = document.getElementById('hudLevelText');
+    const hudLevelCountEl = document.getElementById('hudLevelCount');
+    const hudLevelBarEl = document.getElementById('hudLevelBar');
+    const hudDragonHpTextEl = document.getElementById('hudDragonHpText');
+    const hudDragonHpBarEl = document.getElementById('hudDragonHpBar');
+    const timerDisplayEl = document.getElementById('timerDisplay');
+    const scoreDisplayEl = document.getElementById('scoreDisplay');
+    const answerInputDisplayEl = document.getElementById('answerInputDisplay');
+    const rankUpBannerEl = document.getElementById('rankUpBanner');
+
+    const startScreenEl = document.getElementById('startScreen');
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const pauseOverlayEl = document.getElementById('pauseOverlay');
+    const endGameOverlayEl = document.getElementById('endGameOverlay');
+
+    // Topic buttons
+    document.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playKeyTap();
+        document.querySelectorAll('.topic-btn').forEach(b => {
+          b.classList.remove('active', 'bg-amber-500/25', 'border-amber-400', 'text-amber-100');
+          b.classList.add('bg-stone-800/80', 'border-stone-700', 'text-stone-300');
+        });
+        btn.classList.add('active', 'bg-amber-500/25', 'border-amber-400', 'text-amber-100');
+        btn.classList.remove('bg-stone-800/80', 'border-stone-700', 'text-stone-300');
+        state.topic = btn.dataset.topic;
+      });
+    });
+
+    document.getElementById('startGameBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('tryAgainBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('restartFromPauseBtn').addEventListener('click', () => startNewGame());
+
+    document.getElementById('openInstructionsBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.remove('hidden');
+    });
+
+    document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('gotItBtn').addEventListener('click', () => {
+      sound.playKeyTap();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => togglePause());
+    document.getElementById('resumeBtn').addEventListener('click', () => togglePause(false));
+    document.getElementById('quitToMenuBtn').addEventListener('click', () => returnToMenu());
+    document.getElementById('endMenuBtn').addEventListener('click', () => returnToMenu());
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('soundOnIcon').classList.toggle('hidden', muted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !muted);
+      if (!muted) sound.playKeyTap();
+    });
+
+    // =========================================================================
+    // 5. RESPONSIVE CANVAS & AMBIENT EMBERS
+    // =========================================================================
+    let canvasWidth = 900;
+    let canvasHeight = 520;
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasWidth = rect.width;
+      canvasHeight = rect.height;
+
+      canvas.width = Math.floor(canvasWidth * dpr);
+      canvas.height = Math.floor(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function initEmbers() {
+      state.embers = [];
+      for (let i = 0; i < 55; i++) {
+        state.embers.push({
+          x: Math.random() * canvasWidth,
+          y: Math.random() * canvasHeight,
+          vx: -15 - Math.random() * 25,
+          vy: -10 - Math.random() * 22,
+          size: Math.random() * 2.5 + 0.8,
+          alpha: Math.random() * 0.7 + 0.2
+        });
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // =========================================================================
+    // 6. HUD & KEYBOARD / KEYPAD INPUT HANDLING
+    // =========================================================================
+    function renderLives() {
+      livesContainerEl.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const alive = i < state.lives;
+        const heart = document.createElement('span');
+        heart.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${alive ? 'text-rose-500 scale-100 drop-shadow-[0_0_6px_rgba(244,63,94,0.85)]' : 'text-stone-700 scale-90'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        `;
+        livesContainerEl.appendChild(heart);
+      }
+    }
+
+    function updateHUD() {
+      scoreDisplayEl.textContent = state.score.toLocaleString();
+
+      hudLevelTextEl.textContent = `RANK ${state.rank}`;
+      hudLevelCountEl.textContent = `${state.rankProgress}/${DEFLECTS_PER_RANK}`;
+      hudLevelBarEl.style.width = `${Math.min(100, (state.rankProgress / DEFLECTS_PER_RANK) * 100)}%`;
+
+      const hpClamped = Math.max(0, state.dragonHp);
+      hudDragonHpTextEl.textContent = `${hpClamped}/${state.dragonMaxHp}`;
+      hudDragonHpBarEl.style.width = `${(hpClamped / state.dragonMaxHp) * 100}%`;
+
+      const secs = Math.max(0, Math.ceil(state.timeLeft));
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      timerDisplayEl.textContent = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      if (secs <= 15 && state.mode === 'PLAYING') {
+        timerDisplayEl.classList.remove('text-amber-300');
+        timerDisplayEl.classList.add('text-rose-400', 'animate-pulse');
+      } else {
+        timerDisplayEl.classList.add('text-amber-300');
+        timerDisplayEl.classList.remove('text-rose-400', 'animate-pulse');
+      }
+    }
+
+    let rankBannerTimeout = null;
+    function triggerRankUp(newRank) {
+      sound.playRankUp();
+      const bonus = 200 * newRank;
+      state.score += bonus;
+
+      const titles = ['SQUIRE', 'KNIGHT CAPTAIN', 'ARCANE PALADIN', 'WYRM SLAYER', 'GRAND CHAMPION'];
+      const rankTitle = titles[Math.min(titles.length - 1, newRank - 1)];
+
+      document.getElementById('rankUpTitle').textContent = `RANK ${newRank}: ${rankTitle}!`;
+      document.getElementById('rankUpSub').textContent = `NEW ANGLE THEOREMS & HIGHER DAMAGE • +${bonus} GLORY`;
+
+      rankUpBannerEl.classList.remove('hidden', 'wave-banner');
+      void rankUpBannerEl.offsetWidth;
+      rankUpBannerEl.classList.add('wave-banner');
+
+      if (rankBannerTimeout) clearTimeout(rankBannerTimeout);
+      rankBannerTimeout = setTimeout(() => {
+        rankUpBannerEl.classList.add('hidden');
+        rankUpBannerEl.classList.remove('wave-banner');
+      }, 2400);
+    }
+
+    function renderInputDisplay() {
+      if (state.inputBuffer === '') {
+        answerInputDisplayEl.innerHTML = `<span class="text-stone-500 text-sm animate-pulse">_</span>`;
+      } else {
+        answerInputDisplayEl.textContent = state.inputBuffer;
+      }
+    }
+
+    function handleKeyInput(key) {
+      if (state.mode !== 'PLAYING') return;
+
+      if (key === 'CLEAR') {
+        state.inputBuffer = '';
+        sound.playKeyTap();
+        renderInputDisplay();
+        return;
+      }
+
+      if (key === 'BACKSPACE') {
+        state.inputBuffer = state.inputBuffer.slice(0, -1);
+        sound.playKeyTap();
+        renderInputDisplay();
+        return;
+      }
+
+      if (/^[0-9]$/.test(key)) {
+        if (state.inputBuffer.length < 3) {
+          if (state.inputBuffer === '0') {
+            state.inputBuffer = key;
+          } else {
+            state.inputBuffer += key;
+          }
+          sound.playKeyTap();
+          renderInputDisplay();
+        }
+      }
+    }
+
+    document.querySelectorAll('.rune-key').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.blur();
+        const k = btn.dataset.key;
+        if (k) handleKeyInput(k);
+      });
+    });
+
+    document.getElementById('fireBtn').addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      fireKnightBolt();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if (state.mode === 'PLAYING' || state.mode === 'PAUSED') {
+          e.preventDefault();
+          togglePause();
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar' || e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+        if (e.repeat) return;
+        const fBtn = document.getElementById('fireBtn');
+        fBtn.classList.add('pressed');
+        setTimeout(() => fBtn.classList.remove('pressed'), 100);
+        fireKnightBolt();
+        return;
+      }
+
+      if (e.key >= '0' && e.key <= '9') {
+        e.preventDefault();
+        const btn = document.querySelector(`.rune-key[data-key="${e.key}"]`);
+        if (btn) {
+          btn.classList.add('pressed');
+          setTimeout(() => btn.classList.remove('pressed'), 100);
+        }
+        handleKeyInput(e.key);
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleKeyInput('BACKSPACE');
+      } else if (e.key === 'Delete') {
+        e.preventDefault();
+        handleKeyInput('CLEAR');
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        cycleTargetLock();
+      }
+    }, true);
+
+    // Click/tap fireball on canvas to lock target
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.mode !== 'PLAYING') return;
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      let closest = null;
+      let minDist = Infinity;
+      for (const fb of state.fireballs) {
+        const d = Math.hypot(px - fb.x, py - fb.y);
+        if (d <= fb.radius + 18 && d < minDist) {
+          minDist = d;
+          closest = fb;
+        }
+      }
+
+      if (closest) {
+        state.lockedFireballId = closest.id;
+        sound.playKeyTap();
+        spawnRing(closest.x, closest.y, '#38bdf8');
+      }
+    });
+
+    function cycleTargetLock() {
+      if (state.fireballs.length === 0) return;
+      const sorted = [...state.fireballs].sort((a, b) => a.x - b.x);
+      const idx = sorted.findIndex(f => f.id === state.lockedFireballId);
+      state.lockedFireballId = sorted[(idx + 1) % sorted.length].id;
+      sound.playKeyTap();
+    }
+
+    // =========================================================================
+    // 7. BATTLE LIFECYCLE
+    // =========================================================================
+    function startNewGame() {
+      sound.init();
+      sound.playKeyTap();
+
+      state.mode = 'PLAYING';
+      state.rank = 1;
+      state.rankProgress = 0;
+      state.timeLeft = GAME_DURATION;
+      state.score = 0;
+      state.lives = MAX_LIVES;
+      state.dragonHp = DRAGON_MAX_HP;
+      state.dragonHurtFlash = 0;
+      state.dragonBreathAnim = 0;
+      state.knightRecoil = 0;
+      state.streak = 0;
+      state.bestStreak = 0;
+      state.deflectedCount = 0;
+      state.shotsFired = 0;
+      state.inputBuffer = '';
+      state.fireballs = [];
+      state.knightBolts = [];
+      state.reboundOrbs = [];
+      state.particles = [];
+      state.floatingTexts = [];
+      state.lockedFireballId = null;
+      state.spawnTimer = 0.5;
+      state.screenShake = 0;
+      state.damageFlash = 0;
+
+      startScreenEl.classList.add('hidden');
+      instructionsModalEl.classList.add('hidden');
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      rankUpBannerEl.classList.add('hidden');
+
+      if (document.activeElement && typeof document.activeElement.blur === 'function') {
+        document.activeElement.blur();
+      }
+
+      resizeCanvas();
+      renderLives();
+      renderInputDisplay();
+      updateHUD();
+
+      spawnFireball();
+    }
+
+    function togglePause(forceState) {
+      if (state.mode !== 'PLAYING' && state.mode !== 'PAUSED') return;
+      const shouldPause = typeof forceState === 'boolean' ? forceState : state.mode === 'PLAYING';
+
+      if (shouldPause) {
+        state.mode = 'PAUSED';
+        document.getElementById('pauseLevelInfo').textContent = `Rank ${state.rank} • Dragon HP: ${Math.max(0, state.dragonHp)}/${state.dragonMaxHp}`;
+        pauseOverlayEl.classList.remove('hidden');
+      } else {
+        state.mode = 'PLAYING';
+        pauseOverlayEl.classList.add('hidden');
+      }
+      sound.playKeyTap();
+    }
+
+    function returnToMenu() {
+      state.mode = 'MENU';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      rankUpBannerEl.classList.add('hidden');
+      startScreenEl.classList.remove('hidden');
+      sound.playKeyTap();
+    }
+
+    function endGame(victory, reason = '') {
+      state.mode = 'GAMEOVER';
+      pauseOverlayEl.classList.add('hidden');
+      rankUpBannerEl.classList.add('hidden');
+      endGameOverlayEl.classList.remove('hidden');
+
+      const badge = document.getElementById('endStatusBadge');
+      const title = document.getElementById('endTitle');
+
+      if (victory) {
+        sound.playVictory();
+        badge.textContent = 'Dragon Slain • Citadel Saved';
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-medieval font-bold uppercase tracking-widest mb-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300';
+        title.textContent = 'DRAGON VANQUISHED!';
+        title.className = 'font-medieval font-black text-2xl sm:text-3xl text-amber-300 gold-glow mb-3';
+      } else {
+        badge.textContent = reason || 'Citadel Overrun';
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-medieval font-bold uppercase tracking-widest mb-2 bg-rose-500/20 border border-rose-400/40 text-rose-300';
+        title.textContent = 'THE WYRM PREVAILS!';
+        title.className = 'font-medieval font-black text-2xl sm:text-3xl text-rose-300 fire-glow mb-3';
+      }
+
+      // 1 to 3 Star Rating
+      let starsEarned = 1;
+      if (victory && (state.lives === MAX_LIVES || state.score >= 2400)) {
+        starsEarned = 3;
+      } else if (victory || state.score >= 1200) {
+        starsEarned = 2;
+      } else if (state.score === 0) {
+        starsEarned = 0;
+      }
+
+      const starsContainer = document.getElementById('starsContainer');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= starsEarned;
+        const starWrapper = document.createElement('div');
+        starWrapper.style.animationDelay = `${(i - 1) * 180}ms`;
+        starWrapper.className = earned ? 'star-earned' : 'opacity-30 scale-90';
+        starWrapper.innerHTML = `
+          <svg class="w-12 h-12 sm:w-14 sm:h-14 ${earned ? 'text-amber-400 drop-shadow-[0_0_14px_rgba(251,191,36,0.9)]' : 'text-stone-600'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsContainer.appendChild(starWrapper);
+      }
+
+      const captions = [
+        'Study the angle rules in the Knight\'s Guide and try again!',
+        'Valiant effort! Deflect more fireballs to slay the dragon.',
+        'Great victory! Keep all 3 hearts for a 3-Star Legend rating.',
+        'Grandmaster Geometer! You defeated the dragon with legendary skill!'
+      ];
+      document.getElementById('starCaption').textContent = captions[starsEarned];
+
+      document.getElementById('finalScoreDisplay').textContent = state.score.toLocaleString();
+      document.getElementById('statMaxLevel').textContent = state.rank;
+      document.getElementById('statSolved').textContent = state.deflectedCount;
+      const acc = state.shotsFired > 0 ? Math.round((state.deflectedCount / state.shotsFired) * 100) : 100;
+      document.getElementById('statAccuracy').textContent = `${acc}%`;
+      document.getElementById('statStreak').textContent = state.bestStreak;
+    }
+
+    // =========================================================================
+    // 8. POSITIONS, SPAWNING, FIRING & COUNTER-ATTACKS
+    // =========================================================================
+    function getKnightPos() {
+      return {
+        x: Math.max(58, canvasWidth * 0.11),
+        y: canvasHeight * 0.56
+      };
+    }
+
+    function getDragonPos() {
+      return {
+        x: canvasWidth - Math.max(85, canvasWidth * 0.14),
+        y: canvasHeight * 0.48
+      };
+    }
+
+    function getActiveFireball() {
+      if (state.fireballs.length === 0) return null;
+      if (state.lockedFireballId !== null) {
+        const locked = state.fireballs.find(f => f.id === state.lockedFireballId);
+        if (locked) return locked;
+      }
+      // Auto-lock onto leftmost (closest to Knight) fireball
+      let closest = state.fireballs[0];
+      for (const f of state.fireballs) {
+        if (f.x < closest.x) closest = f;
+      }
+      state.lockedFireballId = closest.id;
+      return closest;
+    }
+
+    function spawnFireball() {
+      const maxSimultaneous = state.rank >= 3 ? 3 : 2;
+      if (state.fireballs.length >= maxSimultaneous) return;
+
+      const problem = AngleGenerator.generate(state.topic, state.rank);
+      const dragon = getDragonPos();
+      const knight = getKnightPos();
+
+      const radius = Math.min(72, Math.max(54, Math.min(canvasWidth * 0.11, canvasHeight * 0.16)));
+
+      // Pick vertical lane so multiple fireballs don't overlap
+      const laneOffsets = [-canvasHeight * 0.18, 0, canvasHeight * 0.18];
+      let targetY = knight.y + laneOffsets[Math.floor(Math.random() * laneOffsets.length)];
+      targetY = Math.max(radius + 36, Math.min(canvasHeight - radius - 26, targetY));
+
+      // Check existing fireballs near dragon mouth to separate lanes
+      for (const existing of state.fireballs) {
+        if (existing.x > dragon.x - 220 && Math.abs(existing.y - targetY) < radius * 2.1) {
+          targetY = targetY > canvasHeight * 0.5 ? radius + 42 : canvasHeight - radius - 32;
+        }
+      }
+
+      const startX = dragon.x - 65;
+      const startY = dragon.y - 10;
+
+      // Speed scales gently with rank
+      const speed = Math.min(95, 36 + (state.rank - 1) * 7.5);
+
+      state.dragonBreathAnim = 1;
+
+      const fb = {
+        id: state.nextId++,
+        x: startX,
+        y: startY,
+        targetY,
+        vx: -speed,
+        radius,
+        problem,
+        wobble: Math.random() * Math.PI * 2,
+        hitFlash: 0
+      };
+
+      state.fireballs.push(fb);
+      if (state.lockedFireballId === null) {
+        state.lockedFireballId = fb.id;
+      }
+    }
+
+    function fireKnightBolt() {
+      if (state.mode !== 'PLAYING') return;
+
+      if (state.inputBuffer === '') {
+        answerInputDisplayEl.parentElement.parentElement.classList.add('border-rose-500');
+        setTimeout(() => answerInputDisplayEl.parentElement.parentElement.classList.remove('border-rose-500'), 200);
+        return;
+      }
+
+      const val = parseInt(state.inputBuffer, 10);
+      if (Number.isNaN(val)) return;
+
+      state.inputBuffer = '';
+      renderInputDisplay();
+      state.shotsFired++;
+
+      const knight = getKnightPos();
+      let target = getActiveFireball();
+
+      // Smart target assist: if another active fireball has this exact angle, aim at it
+      if (target && target.problem.answer !== val) {
+        const matchOther = state.fireballs
+          .filter(f => f.problem.answer === val)
+          .sort((a, b) => a.x - b.x)[0];
+        if (matchOther) {
+          target = matchOther;
+          state.lockedFireballId = matchOther.id;
+        }
+      }
+
+      let angle = 0;
+      if (target) {
+        angle = Math.atan2(target.y - (knight.y - 8), target.x - (knight.x + 28));
+      }
+
+      state.knightRecoil = 10;
+      sound.playCrossbowBolt();
+
+      const boltSpeed = 760;
+      state.knightBolts.push({
+        x: knight.x + 30,
+        y: knight.y - 8,
+        vx: Math.cos(angle) * boltSpeed,
+        vy: Math.sin(angle) * boltSpeed,
+        value: val,
+        trail: []
+      });
+    }
+
+    function spawnExplosion(x, y, color1 = '#f59e0b', color2 = '#ef4444') {
+      for (let i = 0; i < 26; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 200 + 40;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: Math.random() * 4.5 + 2,
+          color: i % 2 === 0 ? color1 : color2,
+          alpha: 1,
+          decay: Math.random() * 1.5 + 1.1
+        });
+      }
+      spawnRing(x, y, color1);
+    }
+
+    function spawnRing(x, y, color) {
+      state.particles.push({
+        isRing: true,
+        x,
+        y,
+        radius: 12,
+        maxRadius: 78,
+        color,
+        alpha: 0.9,
+        decay: 2.5
+      });
+    }
+
+    function spawnFloatingText(x, y, text, color = '#fde68a') {
+      state.floatingTexts.push({
+        x,
+        y,
+        vy: -48,
+        text,
+        color,
+        alpha: 1,
+        decay: 0.9
+      });
+    }
+
+    // =========================================================================
+    // 9. MAIN UPDATE LOOP
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function update(dt) {
+      // Ambient embers
+      for (const em of state.embers) {
+        em.x += em.vx * dt;
+        em.y += em.vy * dt;
+        if (em.x < -10) em.x = canvasWidth + 10;
+        if (em.y < -10) em.y = canvasHeight + 10;
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      // Timer countdown
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHUD();
+        endGame(false, 'Time Ran Out!');
+        return;
+      }
+
+      // Spawn timer
+      const spawnDelay = Math.max(2.1, 4.2 - (state.rank - 1) * 0.35);
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnFireball();
+        state.spawnTimer = spawnDelay;
+      }
+
+      // Decay animations
+      state.dragonHurtFlash = Math.max(0, state.dragonHurtFlash - dt * 3);
+      state.dragonBreathAnim = Math.max(0, state.dragonBreathAnim - dt * 2.5);
+      state.knightRecoil = Math.max(0, state.knightRecoil - dt * 42);
+      state.screenShake = Math.max(0, state.screenShake - dt * 28);
+      state.damageFlash = Math.max(0, state.damageFlash - dt * 2.2);
+
+      const knight = getKnightPos();
+      const dragon = getDragonPos();
+
+      // Update Incoming Dragon Fireballs
+      for (let i = state.fireballs.length - 1; i >= 0; i--) {
+        const fb = state.fireballs[i];
+        fb.wobble += dt * 3.2;
+        fb.x += fb.vx * dt;
+        // Smoothly glide vertically from dragon's mouth into lane
+        fb.y += (fb.targetY - fb.y) * Math.min(1, dt * 2.4);
+        fb.hitFlash = Math.max(0, fb.hitFlash - dt * 4);
+
+        // Check if fireball hits the Knight!
+        if (fb.x - fb.radius <= knight.x + 26) {
+          state.fireballs.splice(i, 1);
+          if (state.lockedFireballId === fb.id) state.lockedFireballId = null;
+
+          state.lives--;
+          state.streak = 0;
+          state.screenShake = 15;
+          state.damageFlash = 0.7;
+          sound.playKnightHurt();
+
+          spawnExplosion(knight.x + 22, fb.y, '#ef4444', '#f97316');
+          spawnFloatingText(knight.x + 40, fb.y - 30, `HIT! Answer was ${fb.problem.answer}°`, '#f87171');
+          renderLives();
+          updateHUD();
+
+          if (state.lives <= 0) {
+            endGame(false, 'Knight Defeated!');
+            return;
+          }
+        }
+      }
+
+      // Update Knight's Arcane Bolts
+      for (let i = state.knightBolts.length - 1; i >= 0; i--) {
+        const b = state.knightBolts[i];
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > 8) b.trail.shift();
+
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+
+        if (b.x > canvasWidth + 60 || b.y < -60 || b.y > canvasHeight + 60) {
+          state.knightBolts.splice(i, 1);
+          continue;
+        }
+
+        // Check collision with any incoming Fireball
+        let boltConsumed = false;
+        for (let j = state.fireballs.length - 1; j >= 0; j--) {
+          const fb = state.fireballs[j];
+          const dist = Math.hypot(b.x - fb.x, b.y - fb.y);
+
+          if (dist <= fb.radius + 14) {
+            boltConsumed = true;
+            if (b.value === fb.problem.answer) {
+              // CORRECT ANGLE! Shatter fireball & launch counter-attack orb back into the Dragon!
+              state.fireballs.splice(j, 1);
+              if (state.lockedFireballId === fb.id) state.lockedFireballId = null;
+
+              state.deflectedCount++;
+              state.streak++;
+              state.bestStreak = Math.max(state.bestStreak, state.streak);
+
+              const damage = 110 + (state.rank - 1) * 20 + Math.min(50, state.streak * 10);
+              const pts = damage + Math.round((fb.x / canvasWidth) * 80);
+              state.score += pts;
+
+              sound.playFireballShatter();
+              spawnExplosion(fb.x, fb.y, '#38bdf8', '#fbbf24');
+              spawnFloatingText(fb.x, fb.y - 22, `${b.value}° DEFLECTED! +${pts}`, '#38bdf8');
+
+              // Launch deflected arcane-fire orb straight at the Dragon!
+              state.reboundOrbs.push({
+                x: fb.x,
+                y: fb.y,
+                targetX: dragon.x - 10,
+                targetY: dragon.y,
+                speed: 820,
+                damage,
+                trail: []
+              });
+
+              // Rank Up progression
+              state.rankProgress++;
+              if (state.rankProgress >= DEFLECTS_PER_RANK) {
+                state.rank++;
+                state.rankProgress = 0;
+                triggerRankUp(state.rank);
+              }
+            } else {
+              // WRONG ANGLE! Bolt deflects off fireball
+              fb.hitFlash = 1;
+              state.streak = 0;
+              sound.playDeflect();
+              spawnRing(b.x, b.y, '#f59e0b');
+              spawnFloatingText(fb.x, fb.y - fb.radius - 10, `${b.value}° ≠ x°`, '#fbbf24');
+            }
+            break;
+          }
+        }
+
+        if (boltConsumed) {
+          state.knightBolts.splice(i, 1);
+        }
+      }
+
+      // Update Deflected Rebound Orbs hitting the Dragon
+      for (let i = state.reboundOrbs.length - 1; i >= 0; i--) {
+        const orb = state.reboundOrbs[i];
+        orb.trail.push({ x: orb.x, y: orb.y });
+        if (orb.trail.length > 9) orb.trail.shift();
+
+        const dx = orb.targetX - orb.x;
+        const dy = orb.targetY - orb.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist <= 28) {
+          // Strike the Dragon!
+          state.reboundOrbs.splice(i, 1);
+          state.dragonHp = Math.max(0, state.dragonHp - orb.damage);
+          state.dragonHurtFlash = 1;
+          state.screenShake = 11;
+          sound.playDragonHit();
+
+          spawnExplosion(orb.targetX, orb.targetY, '#38bdf8', '#f59e0b');
+          spawnFloatingText(orb.targetX - 20, orb.targetY - 50, `-${orb.damage} HP!`, '#fbbf24');
+          updateHUD();
+
+          if (state.dragonHp <= 0) {
+            // Victory bonus for remaining time & hearts
+            state.score += Math.round(state.timeLeft) * 5 + state.lives * 150;
+            updateHUD();
+            endGame(true);
+            return;
+          }
+        } else {
+          orb.x += (dx / dist) * orb.speed * dt;
+          orb.y += (dy / dist) * orb.speed * dt;
+        }
+      }
+
+      // Update Particles
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        if (pt.isRing) {
+          pt.radius += (pt.maxRadius - pt.radius) * Math.min(1, dt * 8);
+        } else {
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.vx *= 0.95;
+          pt.vy *= 0.95;
+        }
+      }
+
+      // Update Floating Texts
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= ft.decay * dt;
+        if (ft.alpha <= 0) state.floatingTexts.splice(i, 1);
+      }
+
+      updateHUD();
+    }
+
+    // =========================================================================
+    // 10. RENDERING: MEDIEVAL CASTLE, DRAGON, KNIGHT & ANGLE FIREBALLS
+    // =========================================================================
+    function draw() {
+      ctx.save();
+
+      if (state.screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+      }
+
+      // Twilight / Volcanic Sky Gradient
+      const skyGrad = ctx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+      skyGrad.addColorStop(0, '#0f172a');
+      skyGrad.addColorStop(0.55, '#1c1224');
+      skyGrad.addColorStop(1, '#2b1116');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Crescent Moon in upper left sky
+      ctx.save();
+      ctx.fillStyle = 'rgba(254, 243, 199, 0.14)';
+      ctx.beginPath();
+      ctx.arc(canvasWidth * 0.22, canvasHeight * 0.2, 42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#131626';
+      ctx.beginPath();
+      ctx.arc(canvasWidth * 0.22 + 14, canvasHeight * 0.2 - 8, 36, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Distant Mountain Silhouette & Castle Battlements
+      drawBackdropScenery();
+
+      // Floating Glowing Embers
+      for (const em of state.embers) {
+        ctx.fillStyle = `rgba(251, 146, 60, ${em.alpha})`;
+        ctx.beginPath();
+        ctx.arc(em.x, em.y, em.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      const knight = getKnightPos();
+      const dragon = getDragonPos();
+
+      // Draw Dragon on the Right Side
+      drawDragon(dragon);
+
+      // Draw Knight on the Left Side
+      drawKnight(knight);
+
+      // Draw Aiming Line from Knight to Locked Fireball
+      const activeFb = getActiveFireball();
+      if (activeFb && state.mode === 'PLAYING') {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(knight.x + 28, knight.y - 8);
+        ctx.lineTo(activeFb.x, activeFb.y);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Draw Fireballs with Geometric Angle Diagrams
+      for (const fb of state.fireballs) {
+        const isLocked = activeFb && fb.id === activeFb.id;
+        drawFireballWithAngle(fb, isLocked);
+      }
+
+      // Draw Knight's Arcane Bolts
+      for (const b of state.knightBolts) {
+        drawKnightBolt(b);
+      }
+
+      // Draw Rebound Orbs flying back into the Dragon
+      for (const orb of state.reboundOrbs) {
+        drawReboundOrb(orb);
+      }
+
+      // Draw Particles
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        if (pt.isRing) {
+          ctx.strokeStyle = pt.color;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Draw Floating Callout Texts
+      for (const ft of state.floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '800 15px "Cinzel", serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 8;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      // Screen red vignette when Knight takes damage
+      if (state.damageFlash > 0.01) {
+        ctx.fillStyle = `rgba(239, 68, 68, ${state.damageFlash * 0.35})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    function drawBackdropScenery() {
+      const groundY = canvasHeight * 0.78;
+
+      // Distant jagged crags
+      ctx.fillStyle = '#14101d';
+      ctx.beginPath();
+      ctx.moveTo(0, groundY);
+      ctx.lineTo(canvasWidth * 0.18, canvasHeight * 0.45);
+      ctx.lineTo(canvasWidth * 0.36, groundY);
+      ctx.lineTo(canvasWidth * 0.58, canvasHeight * 0.38);
+      ctx.lineTo(canvasWidth * 0.82, groundY);
+      ctx.lineTo(canvasWidth, canvasHeight * 0.42);
+      ctx.lineTo(canvasWidth, groundY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Stone Citadel Floor
+      const floorGrad = ctx.createLinearGradient(0, groundY, 0, canvasHeight);
+      floorGrad.addColorStop(0, '#1c1917');
+      floorGrad.addColorStop(1, '#0c0a09');
+      ctx.fillStyle = floorGrad;
+      ctx.fillRect(0, groundY, canvasWidth, canvasHeight - groundY);
+
+      // Castle Battlement Wall behind Knight (left side)
+      ctx.fillStyle = '#292524';
+      const wallW = Math.max(85, canvasWidth * 0.14);
+      ctx.fillRect(0, groundY - 64, wallW, 64);
+      // Crenellations
+      for (let x = 6; x < wallW - 10; x += 22) {
+        ctx.fillRect(x, groundY - 78, 14, 14);
+      }
+    }
+
+    function drawKnight(pos) {
+      ctx.save();
+      ctx.translate(pos.x - state.knightRecoil, pos.y);
+
+      // Crimson Cape fluttering
+      const capeWave = Math.sin(performance.now() * 0.006) * 5;
+      ctx.fillStyle = '#b91c1c';
+      ctx.beginPath();
+      ctx.moveTo(-8, -14);
+      ctx.quadraticCurveTo(-32, 4 + capeWave, -36, 28 + capeWave);
+      ctx.lineTo(-10, 26);
+      ctx.closePath();
+      ctx.fill();
+
+      // Armored Torso
+      ctx.fillStyle = '#94a3b8';
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-12, -16, 24, 34, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Gold Chest Emblem
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(2, -2, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Knight Helmet & Plume
+      ctx.fillStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.arc(0, -28, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Visor slit
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(2, -31, 10, 4);
+
+      // Golden Helmet Plume
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.ellipse(-8, -40, 10, 5, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Kite Shield on left arm
+      ctx.fillStyle = '#1e3a8a';
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-16, -10);
+      ctx.lineTo(-2, -10);
+      ctx.lineTo(-2, 10);
+      ctx.lineTo(-9, 20);
+      ctx.lineTo(-16, 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Arcane Crossbow aimed right
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(8, -10, 26, 6);
+      // Glowing Bow Arc
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(26, -7, 15, -Math.PI * 0.45, Math.PI * 0.45);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawDragon(pos) {
+      ctx.save();
+      const hoverY = Math.sin(performance.now() * 0.0032) * 10;
+      ctx.translate(pos.x, pos.y + hoverY);
+
+      const isHurt = state.dragonHurtFlash > 0.1;
+      const bodyColor = isHurt ? '#fca5a5' : '#7f1d1d';
+      const scaleAccent = isHurt ? '#ffffff' : '#b91c1c';
+      const hornColor = '#fde68a';
+
+      // Dragon Wings (flapping smoothly)
+      const wingFlap = Math.sin(performance.now() * 0.005) * 18;
+      ctx.fillStyle = isHurt ? '#fecaca' : '#450a0a';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(10, -25);
+      ctx.quadraticCurveTo(45, -95 + wingFlap, 95, -65 + wingFlap);
+      ctx.quadraticCurveTo(65, -20, 35, 5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Tail sweeping behind
+      ctx.strokeStyle = bodyColor;
+      ctx.lineWidth = 14;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(35, 38);
+      ctx.quadraticCurveTo(85, 65, 95, 25 + wingFlap * 0.5);
+      ctx.stroke();
+
+      // Muscular Dragon Torso & Neck
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.ellipse(22, 18, 36, 46, -0.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Armored Belly Plates
+      ctx.fillStyle = '#d97706';
+      ctx.beginPath();
+      ctx.ellipse(6, 22, 16, 32, -0.25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Dragon Head facing Left
+      ctx.save();
+      const jawOpen = state.dragonBreathAnim * 0.32;
+      ctx.translate(-14, -26);
+
+      // Swept Horns
+      ctx.fillStyle = hornColor;
+      ctx.beginPath();
+      ctx.moveTo(8, -14);
+      ctx.lineTo(42, -34);
+      ctx.lineTo(18, -4);
+      ctx.closePath();
+      ctx.fill();
+
+      // Upper Snout
+      ctx.fillStyle = scaleAccent;
+      ctx.beginPath();
+      ctx.moveTo(-42, -4);
+      ctx.lineTo(14, -18);
+      ctx.lineTo(18, 4);
+      ctx.lineTo(-38, 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Lower Jaw
+      ctx.save();
+      ctx.rotate(-jawOpen);
+      ctx.fillStyle = bodyColor;
+      ctx.beginPath();
+      ctx.moveTo(-34, 8);
+      ctx.lineTo(12, 4);
+      ctx.lineTo(10, 16);
+      ctx.lineTo(-30, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Glowing Dragon Eye
+      ctx.fillStyle = '#fbbf24';
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(-8, -6, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Fiery glow inside mouth when breathing fire
+      if (state.dragonBreathAnim > 0.1) {
+        ctx.fillStyle = `rgba(251, 146, 60, ${state.dragonBreathAnim})`;
+        ctx.beginPath();
+        ctx.arc(-34, 6, 12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    /**
+     * Draws an incoming Dragon Fireball containing a clear geometric line diagram
+     * with arcs and labels for the unknown angle x°.
+     */
+    function drawFireballWithAngle(fb, isLocked) {
+      ctx.save();
+      ctx.translate(fb.x, fb.y);
+
+      const r = fb.radius;
+      const flicker = Math.sin(performance.now() * 0.015 + fb.wobble) * 5;
+
+      // Trailing Flame Plume to the Right
+      const flameGrad = ctx.createLinearGradient(0, 0, r * 1.9, 0);
+      flameGrad.addColorStop(0, 'rgba(249, 115, 22, 0.85)');
+      flameGrad.addColorStop(0.5, 'rgba(239, 68, 68, 0.45)');
+      flameGrad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+      ctx.fillStyle = flameGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, -r * 0.88);
+      ctx.quadraticCurveTo(r * 1.2, -r * 0.4 + flicker, r * 1.95, 0);
+      ctx.quadraticCurveTo(r * 1.2, r * 0.4 - flicker, 0, r * 0.88);
+      ctx.closePath();
+      ctx.fill();
+
+      // Fireball Outer Aura
+      ctx.shadowColor = fb.hitFlash > 0 ? '#38bdf8' : '#f97316';
+      ctx.shadowBlur = isLocked ? 24 : 14;
+
+      // Dark Slate-Obsidian Core Circle so geometric lines have crisp contrast!
+      ctx.fillStyle = fb.hitFlash > 0 ? '#1e293b' : '#120d16';
+      ctx.strokeStyle = isLocked ? '#38bdf8' : '#f97316';
+      ctx.lineWidth = isLocked ? 3.5 : 2.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+
+      // Theorem Subtitle Pill above Fireball
+      ctx.fillStyle = 'rgba(12, 10, 9, 0.9)';
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.45)';
+      ctx.lineWidth = 1;
+      const badgeW = 114;
+      ctx.beginPath();
+      ctx.roundRect(-badgeW / 2, -r - 18, badgeW, 16, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '700 9px "Cinzel", serif';
+      ctx.fillStyle = '#fde68a';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(fb.problem.label, 0, -r - 10);
+
+      // Render the Geometric Line Diagram inside the Fireball!
+      drawAngleDiagram(ctx, fb.problem, r * 0.78);
+
+      // Target Lock Reticle if currently targeted
+      if (isLocked) {
+        const pulse = Math.sin(performance.now() * 0.008) * 3;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.2;
+        ctx.setLineDash([8, 6]);
+        ctx.beginPath();
+        ctx.arc(0, 0, r + 7 + pulse, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      ctx.restore();
+    }
+
+    /**
+     * Renders crisp geometric lines, right-angle squares, parallel arrows,
+     * and angle degree labels inside a given radius R.
+     */
+    function drawAngleDiagram(c, p, R) {
+      c.save();
+      c.lineCap = 'round';
+      c.lineJoin = 'round';
+
+      const lineColor = '#f8fafc';
+      const givenColor = '#38bdf8';
+      const unknownColor = '#fbbf24';
+
+      const drawLabel = (text, lx, ly, isUnknown = false) => {
+        c.font = '800 11px "JetBrains Mono", monospace';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        // Dark halo for guaranteed readability over lines
+        c.strokeStyle = '#09070d';
+        c.lineWidth = 3.5;
+        c.strokeText(text, lx, ly);
+        c.fillStyle = isUnknown ? unknownColor : givenColor;
+        c.fillText(text, lx, ly);
+      };
+
+      if (p.type === 'RIGHT_ANGLE') {
+        const vx = -R * 0.45;
+        const vy = R * 0.45;
+        const len = R * 1.05;
+
+        // Vertical & horizontal rays
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(vx, vy - len);
+        c.lineTo(vx, vy);
+        c.lineTo(vx + len, vy);
+        c.stroke();
+
+        // Right-angle corner box
+        const sq = 10;
+        c.strokeStyle = '#94a3b8';
+        c.lineWidth = 1.4;
+        c.strokeRect(vx, vy - sq, sq, sq);
+
+        // Dividing ray
+        const splitRad = ((p.xOnTop ? p.given : p.answer) * Math.PI) / 180;
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(vx, vy);
+        c.lineTo(vx + Math.cos(splitRad) * len, vy - Math.sin(splitRad) * len);
+        c.stroke();
+
+        const topText = p.xOnTop ? 'x°' : `${p.given}°`;
+        const botText = p.xOnTop ? `${p.given}°` : 'x°';
+        drawLabel(topText, vx + len * 0.38, vy - len * 0.72, p.xOnTop);
+        drawLabel(botText, vx + len * 0.72, vy - len * 0.25, !p.xOnTop);
+      }
+
+      else if (p.type === 'STRAIGHT_LINE') {
+        const cy = R * 0.28;
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(-R * 0.85, cy);
+        c.lineTo(R * 0.85, cy);
+        c.stroke();
+
+        const leftAngle = p.xOnLeft ? p.answer : p.given;
+        const rad = (leftAngle * Math.PI) / 180;
+        c.beginPath();
+        c.moveTo(0, cy);
+        c.lineTo(-Math.cos(rad) * R * 0.82, cy - Math.sin(rad) * R * 0.82);
+        c.stroke();
+
+        // Arcs
+        c.strokeStyle = p.xOnLeft ? unknownColor : givenColor;
+        c.lineWidth = 1.6;
+        c.beginPath();
+        c.arc(0, cy, 14, Math.PI, Math.PI + rad);
+        c.stroke();
+
+        drawLabel(p.xOnLeft ? 'x°' : `${p.given}°`, -R * 0.44, cy - R * 0.34, p.xOnLeft);
+        drawLabel(p.xOnLeft ? `${p.given}°` : 'x°', R * 0.44, cy - R * 0.34, !p.xOnLeft);
+      }
+
+      else if (p.type === 'STRAIGHT_THREE') {
+        const cy = R * 0.32;
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(-R * 0.88, cy);
+        c.lineTo(R * 0.88, cy);
+        c.stroke();
+
+        // Two rays creating 3 angles
+        c.beginPath();
+        c.moveTo(0, cy);
+        c.lineTo(-R * 0.55, cy - R * 0.65);
+        c.moveTo(0, cy);
+        c.lineTo(R * 0.55, cy - R * 0.65);
+        c.stroke();
+
+        drawLabel(`${p.a}°`, -R * 0.54, cy - R * 0.24, false);
+        drawLabel('x°', 0, cy - R * 0.54, true);
+        drawLabel(`${p.b}°`, R * 0.54, cy - R * 0.24, false);
+      }
+
+      else if (p.type === 'VERT_OPP') {
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(-R * 0.78, -R * 0.48);
+        c.lineTo(R * 0.78, R * 0.48);
+        c.moveTo(-R * 0.78, R * 0.48);
+        c.lineTo(R * 0.78, -R * 0.48);
+        c.stroke();
+
+        drawLabel(`${p.given}°`, -R * 0.5, 0, false);
+        drawLabel('x°', R * 0.5, 0, true);
+      }
+
+      else if (p.type === 'AROUND_POINT') {
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(0, 0);
+        c.lineTo(0, -R * 0.82);
+        c.moveTo(0, 0);
+        c.lineTo(-R * 0.72, R * 0.42);
+        c.moveTo(0, 0);
+        c.lineTo(R * 0.72, R * 0.42);
+        c.stroke();
+
+        drawLabel(`${p.a}°`, -R * 0.42, -R * 0.25, false);
+        drawLabel(`${p.b}°`, R * 0.42, -R * 0.25, false);
+        drawLabel('x°', 0, R * 0.48, true);
+      }
+
+      else if (p.type === 'PARALLEL_CORR' || p.type === 'PARALLEL_ALT' || p.type === 'PARALLEL_COINT') {
+        const topY = -R * 0.34;
+        const botY = R * 0.34;
+
+        // Two horizontal parallel lines
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(-R * 0.82, topY);
+        c.lineTo(R * 0.82, topY);
+        c.moveTo(-R * 0.82, botY);
+        c.lineTo(R * 0.82, botY);
+        c.stroke();
+
+        // Parallel arrow ticks
+        c.strokeStyle = '#94a3b8';
+        c.lineWidth = 1.5;
+        [-R * 0.65].forEach(ax => {
+          [topY, botY].forEach(ay => {
+            c.beginPath();
+            c.moveTo(ax - 4, ay - 4);
+            c.lineTo(ax + 2, ay);
+            c.lineTo(ax - 4, ay + 4);
+            c.stroke();
+          });
+        });
+
+        // Transversal line cutting both
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.1;
+        c.beginPath();
+        c.moveTo(-R * 0.35, R * 0.76);
+        c.lineTo(R * 0.35, -R * 0.76);
+        c.stroke();
+
+        if (p.type === 'PARALLEL_CORR') {
+          drawLabel(`${p.given}°`, R * 0.36, topY - 14, false);
+          drawLabel('x°', R * 0.14, botY - 14, true);
+        } else if (p.type === 'PARALLEL_ALT') {
+          drawLabel(`${p.given}°`, -R * 0.24, topY + 14, false);
+          drawLabel('x°', R * 0.24, botY - 14, true);
+        } else {
+          // Co-interior (same side between parallel lines)
+          drawLabel(`${p.given}°`, R * 0.34, topY + 14, false);
+          drawLabel('x°', R * 0.16, botY - 14, true);
+        }
+      }
+
+      else if (p.type === 'TRIANGLE_SUM' || p.type === 'RIGHT_TRIANGLE' || p.type === 'ISOSCELES_BASE' || p.type === 'ISOSCELES_APEX') {
+        const ax = 0, ay = -R * 0.68;
+        const bx = -R * 0.72, by = R * 0.54;
+        const cx = R * 0.72, cy = R * 0.54;
+
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(ax, ay);
+        c.lineTo(bx, by);
+        c.lineTo(cx, cy);
+        c.closePath();
+        c.stroke();
+
+        if (p.type === 'TRIANGLE_SUM') {
+          drawLabel('x°', ax, ay + 24, true);
+          drawLabel(`${p.a}°`, bx + 24, by - 10, false);
+          drawLabel(`${p.b}°`, cx - 24, cy - 10, false);
+        } else if (p.type === 'RIGHT_TRIANGLE') {
+          // Right angle box at bottom-left
+          c.strokeStyle = '#94a3b8';
+          c.lineWidth = 1.4;
+          c.strokeRect(bx + 4, by - 11, 9, 9);
+          drawLabel('x°', ax + 3, ay + 25, true);
+          drawLabel(`${p.given}°`, cx - 25, cy - 10, false);
+        } else if (p.type === 'ISOSCELES_BASE') {
+          // Equal side tick marks
+          c.strokeStyle = '#fbbf24';
+          c.lineWidth = 2;
+          c.beginPath();
+          c.moveTo((ax + bx) / 2 - 5, (ay + by) / 2 - 2);
+          c.lineTo((ax + bx) / 2 + 5, (ay + by) / 2 + 2);
+          c.moveTo((ax + cx) / 2 - 5, (ay + cy) / 2 + 2);
+          c.lineTo((ax + cx) / 2 + 5, (ay + cy) / 2 - 2);
+          c.stroke();
+
+          drawLabel(`${p.apex}°`, ax, ay + 24, false);
+          drawLabel('x°', bx + 22, by - 10, true);
+        } else if (p.type === 'ISOSCELES_APEX') {
+          c.strokeStyle = '#fbbf24';
+          c.lineWidth = 2;
+          c.beginPath();
+          c.moveTo((ax + bx) / 2 - 5, (ay + by) / 2 - 2);
+          c.lineTo((ax + bx) / 2 + 5, (ay + by) / 2 + 2);
+          c.moveTo((ax + cx) / 2 - 5, (ay + cy) / 2 + 2);
+          c.lineTo((ax + cx) / 2 + 5, (ay + cy) / 2 - 2);
+          c.stroke();
+
+          drawLabel('x°', ax, ay + 24, true);
+          drawLabel(`${p.base}°`, bx + 24, by - 10, false);
+        }
+      }
+
+      else if (p.type === 'TRIANGLE_EXT') {
+        const ax = -R * 0.25, ay = -R * 0.62;
+        const bx = -R * 0.78, by = R * 0.48;
+        const cx = R * 0.25, cy = R * 0.48;
+
+        c.strokeStyle = lineColor;
+        c.lineWidth = 2.2;
+        c.beginPath();
+        c.moveTo(ax, ay);
+        c.lineTo(bx, by);
+        c.lineTo(R * 0.85, cy); // extended base line
+        c.moveTo(ax, ay);
+        c.lineTo(cx, cy);
+        c.stroke();
+
+        drawLabel(`${p.a}°`, ax - 3, ay + 24, false);
+        drawLabel(`${p.b}°`, bx + 24, by - 10, false);
+        drawLabel('x°', cx + 24, cy - 11, true);
+      }
+
+      c.restore();
+    }
+
+    function drawKnightBolt(b) {
+      for (let i = 0; i < b.trail.length; i++) {
+        const pt = b.trail[i];
+        const ratio = (i + 1) / b.trail.length;
+        ctx.fillStyle = `rgba(56, 189, 248, ${ratio * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 6 * ratio, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.shadowColor = '#38bdf8';
+      ctx.shadowBlur = 14;
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.beginPath();
+      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '800 11px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${b.value}°`, 0, 0.5);
+      ctx.restore();
+    }
+
+    function drawReboundOrb(orb) {
+      for (let i = 0; i < orb.trail.length; i++) {
+        const pt = orb.trail[i];
+        const ratio = (i + 1) / orb.trail.length;
+        ctx.fillStyle = `rgba(251, 191, 36, ${ratio * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 10 * ratio, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.save();
+      ctx.translate(orb.x, orb.y);
+      ctx.shadowColor = '#fbbf24';
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = '#fde68a';
+      ctx.beginPath();
+      ctx.arc(0, 0, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = function () {
+      resizeCanvas();
+      initEmbers();
+      renderLives();
+      renderInputDisplay();
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
