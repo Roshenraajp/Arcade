@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cell Defender — Cellular Pathway Puzzle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-bio: #041311;
+      --bio-emerald: #10b981;
+      --bio-teal: #2dd4bf;
+      --bio-lime: #a3e635;
+      --bio-amber: #fbbf24;
+      --bio-rose: #fb7185;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-bio);
+      font-family: 'Inter', sans-serif;
+      color: #ecfdf5;
+    }
+
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .font-mono-bio {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .bio-panel {
+      background: linear-gradient(165deg, rgba(6, 30, 27, 0.94) 0%, rgba(4, 19, 17, 0.97) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(45, 212, 191, 0.35);
+      box-shadow: 0 0 42px rgba(16, 185, 129, 0.18), inset 0 0 24px rgba(45, 212, 191, 0.07);
+    }
+
+    .bio-glow {
+      text-shadow: 0 0 12px rgba(45, 212, 191, 0.8), 0 0 26px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-bio {
+      transition: all 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 0 rgba(2, 20, 18, 0.85), 0 0 18px rgba(45, 212, 191, 0.25);
+    }
+
+    .btn-bio:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-bio:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(2, 20, 18, 0.85);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-earned {
+      animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes pulseBanner {
+      0% { transform: translate(-50%, -18px) scale(0.88); opacity: 0; }
+      15% { transform: translate(-50%, 0) scale(1.03); opacity: 1; }
+      82% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -16px) scale(0.95); opacity: 0; }
+    }
+
+    .stage-banner {
+      animation: pulseBanner 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#041311]">
+
+  <!-- TOP MICROSCOPIC HUD BAR -->
+  <header class="relative z-20 flex items-center justify-between px-2.5 sm:px-6 py-2 bg-teal-950/90 border-b border-teal-500/30 backdrop-blur-md shrink-0 gap-2">
+    <!-- Left: Cell Stability (Lives) & Stage -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-teal-950 border border-rose-400/35 px-2 sm:px-2.5 py-1.5 rounded-xl" title="Cell Stability (Lives)">
+        <span class="text-[10px] sm:text-xs font-orbitron uppercase tracking-wider text-rose-300 hidden lg:inline mr-1">Stability</span>
+        <div id="livesContainer" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- Stage Indicator -->
+      <div class="flex flex-col justify-center bg-teal-950 border border-teal-400/40 px-2.5 sm:px-3.5 py-1 rounded-xl min-w-[92px] sm:min-w-[125px]">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-orbitron font-bold">
+          <span id="hudStageText" class="text-teal-300">STAGE 1</span>
+          <span id="hudTierText" class="text-lime-300 font-mono-bio text-[10px]">5×5 GRID</span>
+        </div>
+        <div class="w-full h-1.5 bg-teal-900 rounded-full overflow-hidden mt-1">
+          <div id="hudStageBar" class="h-full bg-gradient-to-r from-emerald-400 via-teal-300 to-lime-300 transition-all duration-300" style="width: 10%"></div>
+        </div>
+      </div>
+
+      <!-- Moves / Par Counter -->
+      <div class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 font-orbitron text-xs font-bold" title="Fewer rotations earn efficiency bonus points!">
+        <span>ROTATIONS</span>
+        <span id="movesValue" class="text-amber-300 font-mono-bio text-sm">0</span>
+      </div>
+    </div>
+
+    <!-- Center: Countdown Timer -->
+    <div class="flex items-center gap-1.5 sm:gap-2 bg-teal-950 border border-teal-400/40 px-3 sm:px-5 py-1 rounded-xl">
+      <svg class="w-4 h-4 text-teal-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="timerDisplay" class="font-orbitron font-extrabold text-sm sm:text-xl tracking-wider text-teal-200">02:00</span>
+    </div>
+
+    <!-- Right: Points, Sound Toggle, Pause -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-teal-950 border border-emerald-400/35 px-2.5 sm:px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] sm:text-xs font-orbitron uppercase tracking-wider text-emerald-300/80 hidden lg:inline">Bio-Score</span>
+        <span id="scoreDisplay" class="font-orbitron font-extrabold text-sm sm:text-lg text-emerald-300">0</span>
+      </div>
+
+      <button id="soundToggleBtn" type="button" aria-label="Toggle Sound" title="Toggle Sound (M)"
+        class="p-2 sm:p-2.5 rounded-xl bg-teal-950 hover:bg-teal-900 border border-teal-400/35 text-teal-300 transition active:scale-95">
+        <svg id="soundOnIcon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundOffIcon" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+      </button>
+
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause Game (Esc / P)"
+        class="p-2 sm:p-2.5 rounded-xl bg-teal-950 hover:bg-teal-900 border border-amber-400/35 text-amber-300 transition active:scale-95">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- BIOLOGICAL PATHWAY OBJECTIVE BANNER -->
+  <div class="relative z-10 bg-teal-950/90 border-b border-teal-500/25 px-3 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+    <div class="flex items-center gap-2.5 text-center sm:text-left">
+      <span id="pathwayBadge" class="px-2.5 py-0.5 rounded-lg bg-lime-400/20 border border-lime-400/40 text-lime-300 font-orbitron font-bold text-[10px] sm:text-xs uppercase shrink-0">
+        ATP ENERGY
+      </span>
+      <p id="pathwayObjectiveText" class="text-xs sm:text-sm font-semibold text-emerald-50">
+        Route <strong class="text-lime-300">ATP Energy</strong> from the <strong class="text-teal-300">Mitochondria</strong> to the <strong class="text-amber-300">Ribosome</strong> (avoid Toxic Waste)!
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="resetPuzzleBtn" type="button" title="Reset current grid tiles"
+        class="px-3 py-1 rounded-xl bg-teal-900/90 hover:bg-teal-800 border border-teal-400/35 text-teal-200 font-orbitron font-bold text-[10px] sm:text-xs uppercase transition active:scale-95">
+        Reset Tiles
+      </button>
+      <button id="pulseVerifyBtn" type="button" title="Test & Pulse Cellular Pathway (Space / Enter)"
+        class="px-4 py-1 rounded-xl bg-gradient-to-r from-lime-400 to-emerald-400 hover:brightness-110 text-teal-950 font-orbitron font-black text-[10px] sm:text-xs uppercase shadow-[0_0_16px_rgba(163,230,53,0.45)] transition active:scale-95">
+        Pulse Flow &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN PUZZLE CANVAS ARENA -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="block w-full h-full cursor-pointer"></canvas>
+
+    <!-- Stage Cleared Banner -->
+    <div id="stageClearBanner" class="hidden pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-20 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-950/95 via-teal-900/95 to-cyan-950/95 border-2 border-lime-300 shadow-[0_0_28px_rgba(163,230,53,0.65)] text-center">
+      <div id="stageClearTitle" class="font-orbitron font-black text-base sm:text-xl tracking-wider text-lime-300 bio-glow">
+        PATHWAY SYNCHRONIZED!
+      </div>
+      <div id="stageClearSub" class="text-[11px] sm:text-xs font-semibold text-teal-200 mt-0.5">
+        +350 BIO-SCORE &bull; NEXT CELLULAR STAGE
+      </div>
+    </div>
+
+    <!-- ==================== 1. START SCREEN OVERLAY ==================== -->
+    <section id="startScreen" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-teal-950/85 backdrop-blur-md">
+      <div class="bio-panel w-full max-w-xl rounded-3xl p-5 sm:p-8 text-center relative">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-teal-400/40 text-teal-300 text-xs font-orbitron tracking-widest uppercase mb-3">
+          <span>Intracellular Logic &amp; Pathway Puzzle</span>
+        </div>
+
+        <h1 class="font-orbitron font-black text-3xl sm:text-5xl tracking-tight text-white bio-glow mb-2">
+          CELL DEFENDER
+        </h1>
+        <p class="text-emerald-100/85 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5 leading-relaxed">
+          Rewire living cellular pathways! <strong class="text-teal-300">Click or tap conduit tiles</strong> to rotate them and connect the <strong class="text-lime-300">Source Organelle</strong> to the correct <strong class="text-amber-300">Target Organelle</strong>—while steering clear of <strong class="text-rose-400">Lysosome Toxins</strong> and decoys!
+        </p>
+
+        <!-- Biology System Filter -->
+        <div class="bg-teal-950/90 border border-teal-500/30 rounded-2xl p-4 mb-6 text-left">
+          <div class="flex items-center justify-between mb-2.5">
+            <label class="font-orbitron text-xs uppercase tracking-wider text-teal-300">Select Cellular Pathway Unit</label>
+            <span class="text-[11px] font-orbitron text-lime-300 bg-lime-500/15 border border-lime-400/30 px-2.5 py-0.5 rounded-full">
+              Progressive Grids
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="topicSelector">
+            <button type="button" data-topic="all" class="topic-btn active px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-teal-500/25 border border-teal-300 text-white transition">
+              All Pathways
+            </button>
+            <button type="button" data-topic="organelles" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-teal-900/60 border border-teal-800 text-emerald-200/80 hover:border-teal-400/50 transition">
+              Organelles
+            </button>
+            <button type="button" data-topic="genetics" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-teal-900/60 border border-teal-800 text-emerald-200/80 hover:border-teal-400/50 transition">
+              DNA &amp; Proteins
+            </button>
+            <button type="button" data-topic="plants" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-teal-900/60 border border-teal-800 text-emerald-200/80 hover:border-teal-400/50 transition">
+              Plant &amp; Energy
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button id="startGameBtn" type="button"
+            class="btn-bio w-full sm:w-auto px-8 py-3.5 rounded-2xl font-orbitron font-extrabold text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-emerald-400 to-teal-500 text-teal-950 border border-emerald-200/80">
+            Start Puzzle
+          </button>
+
+          <button id="openInstructionsBtn" type="button"
+            class="btn-bio w-full sm:w-auto px-6 py-3.5 rounded-2xl font-orbitron font-bold text-xs sm:text-sm tracking-wider uppercase bg-teal-900/90 text-teal-200 border border-teal-400/40 hover:bg-teal-800">
+            How to Solve
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <a href="index.html" class="text-xs text-teal-300/75 hover:text-lime-300 underline transition">
+            &larr; Return to Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. INSTRUCTIONS MODAL OVERLAY ==================== -->
+    <section id="instructionsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-teal-950/90 backdrop-blur-md">
+      <div class="bio-panel w-full max-w-2xl max-h-[90%] overflow-y-auto rounded-3xl p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-teal-500/30 pb-3 mb-4">
+          <h2 class="font-orbitron font-extrabold text-lg sm:text-2xl text-teal-300 bio-glow">
+            CELLULAR CIRCUIT GUIDE
+          </h2>
+          <button id="closeInstructionsBtn" type="button" class="p-2 rounded-xl bg-teal-900 hover:bg-teal-800 text-teal-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-emerald-100">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-teal-950/90 border border-teal-500/25 rounded-2xl p-3.5">
+              <div class="font-orbitron text-teal-300 font-bold text-xs uppercase mb-1.5">1. Read the Biological Function</div>
+              <p class="text-emerald-100/80 leading-relaxed mb-2">
+                Each stage gives a real cellular mission—for example: <em class="text-lime-300">"Deliver mRNA instructions from Nucleus to the site of Protein Synthesis."</em>
+              </p>
+              <div class="p-2 rounded-xl bg-black/40 font-mono-bio text-xs text-teal-200 border border-teal-800">
+                Source: <span class="text-lime-300 font-bold">Nucleus</span><br>
+                Correct Target: <span class="text-amber-300 font-bold">Ribosome</span> (Avoid decoy organelles!)
+              </div>
+            </div>
+
+            <div class="bg-teal-950/90 border border-lime-500/25 rounded-2xl p-3.5">
+              <div class="font-orbitron text-lime-300 font-bold text-xs uppercase mb-1.5">2. Rotate &amp; Route Conduits</div>
+              <p class="text-emerald-100/80 leading-relaxed mb-2">
+                <strong class="text-white">Click or Tap</strong> any microtubule conduit tile to rotate it 90&deg; clockwise. Live bio-energy glows along connected channels!
+              </p>
+              <ul class="space-y-1 text-xs text-emerald-100/85">
+                <li>&bull; <strong class="text-teal-300">Required Catalysts:</strong> Pass through glowing green cofactor nodes when present</li>
+                <li>&bull; <strong class="text-rose-400">Toxic Hazards:</strong> Never connect the flow into red toxin pods!</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-teal-950/90 border border-emerald-500/25 rounded-2xl p-3.5">
+            <div class="font-orbitron text-emerald-300 font-bold text-xs uppercase mb-2">3. Verify Flow &amp; Scoring</div>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-emerald-100/85">
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-lime-400"></span>
+                <span><strong>Auto-Complete or Pulse Flow:</strong> Reaching the right organelle completes the stage</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span><strong>Efficiency Bonus:</strong> Solve in minimal rotations for extra points</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-rose-400"></span>
+                <span><strong>Wrong Target / Toxin:</strong> Costs 1 Cell Stability heart</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                <span><strong>Larger Grids:</strong> Stages advance from 5&times;5 up to 6&times;6!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end">
+          <button id="gotItBtn" type="button"
+            class="btn-bio px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs sm:text-sm uppercase bg-emerald-400 text-teal-950">
+            Enter the Cell!
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PAUSE OVERLAY ==================== -->
+    <section id="pauseOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-teal-950/85 backdrop-blur-md">
+      <div class="bio-panel w-full max-w-sm rounded-3xl p-6 text-center">
+        <h2 class="font-orbitron font-extrabold text-2xl text-white mb-1">CELLULAR STASIS</h2>
+        <p id="pauseLevelInfo" class="text-teal-300 font-orbitron text-xs mb-6">Stage 1 &bull; 0 Rotations</p>
+
+        <div class="flex flex-col gap-2.5">
+          <button id="resumeBtn" type="button"
+            class="btn-bio w-full py-3 rounded-xl font-orbitron font-bold text-sm uppercase bg-gradient-to-r from-emerald-400 to-teal-500 text-teal-950">
+            Resume Puzzle
+          </button>
+          <button id="restartFromPauseBtn" type="button"
+            class="btn-bio w-full py-3 rounded-xl font-orbitron font-bold text-xs uppercase bg-teal-900 text-amber-300 border border-amber-400/35">
+            Restart at Stage 1
+          </button>
+          <button id="quitToMenuBtn" type="button"
+            class="btn-bio w-full py-3 rounded-xl font-orbitron font-bold text-xs uppercase bg-teal-950 text-emerald-200 border border-teal-700">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. END GAME OVERLAY ==================== -->
+    <section id="endGameOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-teal-950/90 backdrop-blur-md">
+      <div class="bio-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+        <div id="endStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300">
+          Homeostasis Achieved
+        </div>
+
+        <h2 id="endTitle" class="font-orbitron font-black text-2xl sm:text-3xl text-white bio-glow mb-3">
+          PATHWAYS RESTORED!
+        </h2>
+
+        <!-- 3 Stars Rating -->
+        <div id="starsContainer" class="flex items-center justify-center gap-3 my-3"></div>
+        <p id="starCaption" class="text-xs text-emerald-100/80 mb-5 font-medium">Master cellular architect!</p>
+
+        <!-- Total Bio-Score & Breakdown -->
+        <div class="bg-teal-950/90 border border-teal-500/30 rounded-2xl p-4 mb-6">
+          <div class="text-xs font-orbitron uppercase tracking-wider text-teal-300/80 mb-1">Total Bio-Score</div>
+          <div id="finalScoreDisplay" class="font-orbitron font-black text-3xl sm:text-4xl text-lime-300 bio-glow mb-3">
+            0
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-3 border-t border-teal-800/80 text-center">
+            <div>
+              <div class="text-[10px] uppercase text-teal-300/70 font-orbitron">Stages</div>
+              <div id="statSolved" class="font-mono-bio font-bold text-base text-teal-200">0</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-teal-300/70 font-orbitron">Rotations</div>
+              <div id="statMoves" class="font-mono-bio font-bold text-base text-amber-300">0</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-teal-300/70 font-orbitron">Stability</div>
+              <div id="statLivesLeft" class="font-mono-bio font-bold text-base text-rose-300">3/3</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="tryAgainBtn" type="button"
+            class="btn-bio flex-1 py-3.5 px-5 rounded-2xl font-orbitron font-extrabold text-sm uppercase tracking-wider bg-gradient-to-r from-emerald-400 to-teal-500 text-teal-950 border border-emerald-200/80">
+            Try Again
+          </button>
+          <button id="endMenuBtn" type="button"
+            class="btn-bio py-3.5 px-5 rounded-2xl font-orbitron font-bold text-xs uppercase tracking-wider bg-teal-900 text-emerald-100 border border-teal-600">
+            Menu
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * CELL DEFENDER — INTRACELLULAR PATHWAY PUZZLE
+     * Rotate microtubule conduits to route biological signals & energy between organelles!
+     */
+
+    // =========================================================================
+    // 1. BIO-CIRCUIT WEB AUDIO SYNTHESIZER
+    // =========================================================================
+    class BioPuzzleAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playRotate(connectedCount = 1) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const freq = Math.min(820, 340 + connectedCount * 28);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.25, now + 0.055);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      playStageComplete() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.075;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.29);
+        });
+      }
+
+      playHazardError() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, now);
+        osc.frequency.exponentialRampToValueAtTime(55, now + 0.34);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.37);
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.1;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.38);
+        });
+      }
+    }
+
+    const sound = new BioPuzzleAudio();
+
+    // =========================================================================
+    // 2. BIOLOGICAL PATHWAY SCENARIOS (Source -> Correct Organelle vs Decoys)
+    // =========================================================================
+    const PATHWAY_SCENARIOS = [
+      {
+        topic: 'organelles',
+        badge: 'ATP ENERGY',
+        sourceName: 'Mitochondria',
+        sourceShape: 'mito',
+        targetName: 'Ribosome',
+        targetShape: 'ribo',
+        decoys: [
+          { name: 'Vacuole', shape: 'vacuole' },
+          { name: 'Cell Wall', shape: 'wall' }
+        ],
+        prompt: 'Route ATP Energy from Mitochondria to the site of Protein Synthesis!'
+      },
+      {
+        topic: 'genetics',
+        badge: 'TRANSCRIPTION',
+        sourceName: 'Nucleus',
+        sourceShape: 'nucleus',
+        targetName: 'Ribosome',
+        targetShape: 'ribo',
+        decoys: [
+          { name: 'Chloroplast', shape: 'chloro' },
+          { name: 'Mitochondria', shape: 'mito' }
+        ],
+        prompt: 'Deliver mRNA code from Nucleus to the organelle that builds Proteins!'
+      },
+      {
+        topic: 'plants',
+        badge: 'PHOTOSYNTHESIS',
+        sourceName: 'Chloroplast',
+        sourceShape: 'chloro',
+        targetName: 'Mitochondria',
+        targetShape: 'mito',
+        decoys: [
+          { name: 'Nucleus', shape: 'nucleus' },
+          { name: 'Ribosome', shape: 'ribo' }
+        ],
+        prompt: 'Send Glucose made in Chloroplast to the site of Aerobic Respiration!'
+      },
+      {
+        topic: 'organelles',
+        badge: 'SECRETION',
+        sourceName: 'Rough ER',
+        sourceShape: 'er',
+        targetName: 'Golgi Body',
+        targetShape: 'golgi',
+        decoys: [
+          { name: 'Chloroplast', shape: 'chloro' },
+          { name: 'Vacuole', shape: 'vacuole' }
+        ],
+        prompt: 'Transport polypeptides from Rough ER to the organelle that packages vesicles!'
+      },
+      {
+        topic: 'plants',
+        badge: 'OSMOSIS FLOW',
+        sourceName: 'Cell Membrane',
+        sourceShape: 'membrane',
+        targetName: 'Central Vacuole',
+        targetShape: 'vacuole',
+        decoys: [
+          { name: 'Nucleus', shape: 'nucleus' },
+          { name: 'Ribosome', shape: 'ribo' }
+        ],
+        prompt: 'Channel absorbed water into the plant organelle that maintains Turgor Pressure!'
+      },
+      {
+        topic: 'genetics',
+        badge: 'DNA REPLICATION',
+        sourceName: 'Cytoplasm',
+        sourceShape: 'ribo',
+        targetName: 'Nucleus',
+        targetShape: 'nucleus',
+        decoys: [
+          { name: 'Golgi Body', shape: 'golgi' },
+          { name: 'Cell Wall', shape: 'wall' }
+        ],
+        prompt: 'Route free DNA Nucleotides to the organelle housing Chromosomes!'
+      },
+      {
+        topic: 'plants',
+        badge: 'TRANSPIRATION',
+        sourceName: 'Root Hair Cell',
+        sourceShape: 'membrane',
+        targetName: 'Xylem Vessel',
+        targetShape: 'vessel',
+        decoys: [
+          { name: 'Phloem Tube', shape: 'golgi' },
+          { name: 'Ribosome', shape: 'ribo' }
+        ],
+        prompt: 'Route mineral ions & water into the dead hollow tissue that transports water upward!'
+      },
+      {
+        topic: 'organelles',
+        badge: 'ENZYME CATALYSIS',
+        sourceName: 'Golgi Body',
+        sourceShape: 'golgi',
+        targetName: 'Lysosome',
+        targetShape: 'nucleus',
+        decoys: [
+          { name: 'Chloroplast', shape: 'chloro' },
+          { name: 'Cell Wall', shape: 'wall' }
+        ],
+        prompt: 'Deliver digestive hydrolytic enzymes to the cell\'s recycling vesicle!'
+      }
+    ];
+
+    // =========================================================================
+    // 3. PUZZLE GRID GENERATOR (Guaranteed Solvable Cellular Circuit)
+    // =========================================================================
+    // Directions: 0 = Up, 1 = Right, 2 = Down, 3 = Left
+    const DIRS = [
+      { dr: -1, dc: 0, opp: 2 },
+      { dr: 0, dc: 1, opp: 3 },
+      { dr: 1, dc: 0, opp: 0 },
+      { dr: 0, dc: -1, opp: 1 }
+    ];
+
+    const GAME_DURATION = 120;
+    const MAX_LIVES = 3;
+
+    const state = {
+      mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+      topic: 'all',
+      stage: 1,
+      timeLeft: GAME_DURATION,
+      score: 0,
+      lives: MAX_LIVES,
+      stagesSolved: 0,
+      stageMoves: 0,
+      totalMoves: 0,
+      parMoves: 6,
+      gridSize: 5,
+      grid: [], // 2D array of cell objects
+      initialRotations: [],
+      scenario: null,
+      connectedCells: new Set(),
+      requiredCatalysts: 0,
+      activatedCatalysts: 0,
+      pulseWaveProgress: -1, // animated verification pulse
+      particles: [],
+      bgCells: [],
+      screenShake: 0,
+      errorFlash: 0,
+      stageTransitionLock: false
+    };
+
+    /**
+     * Generates a guaranteed solvable puzzle board:
+     * 1. Carves a non-intersecting random walk from Source (left column) to Target (right column).
+     * 2. Places optional green Catalyst Cofactor nodes along the solution path on Stage 2+.
+     * 3. Places Decoy Organelles and Red Toxin Hazards on off-path cells so routing matters!
+     * 4. Scrambles conduit orientations randomly while ensuring puzzle isn't already solved.
+     */
+    function buildStagePuzzle(stageNum) {
+      const size = stageNum >= 4 ? 6 : 5;
+      state.gridSize = size;
+
+      const pool = PATHWAY_SCENARIOS.filter(s => state.topic === 'all' || s.topic === state.topic);
+      const scenario = pool[(stageNum - 1) % pool.length];
+      state.scenario = scenario;
+
+      // Update top objective bar
+      document.getElementById('pathwayBadge').textContent = scenario.badge;
+      document.getElementById('pathwayObjectiveText').innerHTML =
+        `Connect <strong class="text-lime-300">${scenario.sourceName}</strong> &rarr; <strong class="text-amber-300">${scenario.targetName}</strong> <span class="text-teal-200/80 text-xs">(${scenario.prompt})</span>`;
+
+      // Carve a valid path from col 0 to col size-1
+      let path = [];
+      for (let attempt = 0; attempt < 40; attempt++) {
+        const startRow = Math.floor(Math.random() * size);
+        const visited = Array.from({ length: size }, () => Array(size).fill(false));
+        const candidate = [{ r: startRow, c: 0 }];
+        visited[startRow][0] = true;
+
+        let currR = startRow;
+        let currC = 0;
+        let stuck = false;
+
+        while (currC < size - 1) {
+          const neighbors = [];
+          for (let d = 0; d < 4; d++) {
+            const nr = currR + DIRS[d].dr;
+            const nc = currC + DIRS[d].dc;
+            if (nr >= 0 && nr < size && nc >= 0 && nc < size && !visited[nr][nc]) {
+              // Bias slightly toward moving right so paths have crisp turns without trapping
+              const weight = d === 1 ? 3 : 2;
+              for (let w = 0; w < weight; w++) neighbors.push({ r: nr, c: nc });
+            }
+          }
+          if (neighbors.length === 0) {
+            stuck = true;
+            break;
+          }
+          const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+          visited[next.r][next.c] = true;
+          candidate.push(next);
+          currR = next.r;
+          currC = next.c;
+        }
+
+        if (!stuck && candidate.length >= size + 2) {
+          path = candidate;
+          break;
+        }
+      }
+
+      // Fallback guaranteed snake path if random walk ever misses
+      if (path.length === 0) {
+        path = [];
+        for (let c = 0; c < size; c++) path.push({ r: Math.floor(size / 2), c });
+      }
+
+      // Initialize blank grid
+      const grid = Array.from({ length: size }, (_, r) =>
+        Array.from({ length: size }, (_, c) => ({
+          r,
+          c,
+          kind: 'CONDUIT', // 'SOURCE' | 'TARGET' | 'DECOY' | 'HAZARD' | 'CONDUIT'
+          label: '',
+          shape: '',
+          isCatalyst: false,
+          baseConnections: [false, false, false, false], // [U, R, D, L]
+          rotation: 0, // 0, 1, 2, 3 (90 deg steps clockwise)
+          animAngle: 0
+        }))
+      );
+
+      // Assign exact required connections along the solution path
+      for (let i = 0; i < path.length; i++) {
+        const curr = path[i];
+        const cell = grid[curr.r][curr.c];
+
+        if (i > 0) {
+          const prev = path[i - 1];
+          const dirFromPrev = getDirBetween(curr, prev);
+          cell.baseConnections[dirFromPrev] = true;
+        }
+        if (i < path.length - 1) {
+          const next = path[i + 1];
+          const dirToNext = getDirBetween(curr, next);
+          cell.baseConnections[dirToNext] = true;
+        }
+
+        if (i === 0) {
+          cell.kind = 'SOURCE';
+          cell.label = scenario.sourceName;
+          cell.shape = scenario.sourceShape;
+        } else if (i === path.length - 1) {
+          cell.kind = 'TARGET';
+          cell.label = scenario.targetName;
+          cell.shape = scenario.targetShape;
+        }
+      }
+
+      // Place Catalyst Cofactor nodes along middle of path on Stage 2+
+      let catalystCount = 0;
+      if (stageNum >= 2 && path.length >= 5) {
+        const midIdx = Math.floor(path.length / 2);
+        grid[path[midIdx].r][path[midIdx].c].isCatalyst = true;
+        catalystCount++;
+        if (stageNum >= 4 && path.length >= 7) {
+          const secondIdx = Math.max(1, midIdx - 2);
+          if (!grid[path[secondIdx].r][path[secondIdx].c].isCatalyst) {
+            grid[path[secondIdx].r][path[secondIdx].c].isCatalyst = true;
+            catalystCount++;
+          }
+        }
+      }
+      state.requiredCatalysts = catalystCount;
+
+      // Gather off-path cells for Decoys, Hazards, and Filler Conduits
+      const onPathSet = new Set(path.map(p => `${p.r},${p.c}`));
+      const offPathCells = [];
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (!onPathSet.has(`${r},${c}`)) offPathCells.push(grid[r][c]);
+        }
+      }
+      offPathCells.sort(() => Math.random() - 0.5);
+
+      // Place Decoy Organelles (1 or 2 wrong targets)
+      const decoyList = scenario.decoys;
+      for (let d = 0; d < decoyList.length && offPathCells.length > 0; d++) {
+        const decoyCell = offPathCells.pop();
+        decoyCell.kind = 'DECOY';
+        decoyCell.label = decoyList[d].name;
+        decoyCell.shape = decoyList[d].shape;
+        decoyCell.baseConnections = [true, true, true, true]; // Accepts flow from any side if mistakenly connected!
+      }
+
+      // Place Toxic Lysosome Hazards (1 to 3 depending on stage)
+      const hazardCount = Math.min(3, 1 + Math.floor(stageNum / 2));
+      for (let h = 0; h < hazardCount && offPathCells.length > 0; h++) {
+        const hazCell = offPathCells.pop();
+        hazCell.kind = 'HAZARD';
+        hazCell.label = 'TOXIN';
+        hazCell.baseConnections = [true, true, true, true];
+      }
+
+      // Fill remaining off-path tiles with realistic straight, corner, or T-junction conduits
+      const fillerTemplates = [
+        [true, false, true, false],  // Straight
+        [true, true, false, false],  // Corner
+        [true, true, true, false]    // T-junction
+      ];
+      for (const cell of offPathCells) {
+        const tpl = fillerTemplates[Math.floor(Math.random() * fillerTemplates.length)];
+        cell.baseConnections = [...tpl];
+        cell.rotation = Math.floor(Math.random() * 4);
+        cell.animAngle = cell.rotation * (Math.PI / 2);
+      }
+
+      // Scramble solution path conduit tiles (keep SOURCE and TARGET orientation fixed)
+      let minRotationsNeeded = 0;
+      for (let i = 1; i < path.length - 1; i++) {
+        const cell = grid[path[i].r][path[i].c];
+        const isStraight =
+          (cell.baseConnections[0] && cell.baseConnections[2] && !cell.baseConnections[1] && !cell.baseConnections[3]) ||
+          (cell.baseConnections[1] && cell.baseConnections[3] && !cell.baseConnections[0] && !cell.baseConnections[2]);
+
+        const rot = isStraight ? 1 : [1, 2, 3][Math.floor(Math.random() * 3)];
+        cell.rotation = rot;
+        cell.animAngle = rot * (Math.PI / 2);
+        minRotationsNeeded += (4 - rot) % 4;
+      }
+
+      state.grid = grid;
+      state.parMoves = Math.max(3, minRotationsNeeded);
+      state.stageMoves = 0;
+      state.initialRotations = grid.map(row => row.map(cell => cell.rotation));
+
+      recomputeFlowNetwork(false);
+    }
+
+    function getDirBetween(from, to) {
+      if (to.r < from.r) return 0; // Up
+      if (to.c > from.c) return 1; // Right
+      if (to.r > from.r) return 2; // Down
+      return 3; // Left
+    }
+
+    function getRotatedConnections(cell) {
+      const rot = ((cell.rotation % 4) + 4) % 4;
+      const res = [false, false, false, false];
+      for (let d = 0; d < 4; d++) {
+        if (cell.baseConnections[d]) {
+          res[(d + rot) % 4] = true;
+        }
+      }
+      return res;
+    }
+
+    /**
+     * Traverses connected conduits starting from the Source Organelle via BFS
+     * to illuminate live bio-energy flow and detect completion or hazards.
+     */
+    function recomputeFlowNetwork(triggerAutoCheck = true) {
+      const size = state.gridSize;
+      const visited = new Set();
+      const queue = [];
+
+      let sourceCell = null;
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (state.grid[r][c].kind === 'SOURCE') {
+            sourceCell = state.grid[r][c];
+            break;
+          }
+        }
+      }
+
+      if (!sourceCell) return;
+
+      visited.add(`${sourceCell.r},${sourceCell.c}`);
+      queue.push(sourceCell);
+
+      let reachedTarget = false;
+      let hitHazardOrDecoy = null;
+      let catalystsLit = 0;
+
+      while (queue.length > 0) {
+        const curr = queue.shift();
+        if (curr.isCatalyst) catalystsLit++;
+        if (curr.kind === 'TARGET') reachedTarget = true;
+        if (curr.kind === 'HAZARD' || curr.kind === 'DECOY') {
+          hitHazardOrDecoy = curr;
+        }
+
+        const openDirs = getRotatedConnections(curr);
+        for (let d = 0; d < 4; d++) {
+          if (!openDirs[d]) continue;
+          const nr = curr.r + DIRS[d].dr;
+          const nc = curr.c + DIRS[d].dc;
+          if (nr < 0 || nr >= size || nc < 0 || nc >= size) continue;
+
+          const neighbor = state.grid[nr][nc];
+          const neighborOpen = getRotatedConnections(neighbor);
+          // Both tiles must share an aligned opening
+          if (neighborOpen[DIRS[d].opp]) {
+            const key = `${nr},${nc}`;
+            if (!visited.has(key)) {
+              visited.add(key);
+              queue.push(neighbor);
+            }
+          }
+        }
+      }
+
+      state.connectedCells = visited;
+      state.activatedCatalysts = catalystsLit;
+
+      if (triggerAutoCheck && !state.stageTransitionLock) {
+        if (hitHazardOrDecoy) {
+          handleHazardConnection(hitHazardOrDecoy);
+        } else if (reachedTarget && catalystsLit >= state.requiredCatalysts) {
+          handleStageSuccess();
+        }
+      }
+    }
+
+    function handleHazardConnection(badCell) {
+      sound.playHazardError();
+      state.lives--;
+      state.screenShake = 14;
+      state.errorFlash = 0.7;
+
+      // Rotate the connected conduit away so it doesn't repeatedly trigger
+      const pos = getCellScreenCenter(badCell.r, badCell.c);
+      spawnBurst(pos.x, pos.y, '#fb7185');
+
+      // Undo the last move by rotating the adjacent connected conduit 90 deg
+      for (let d = 0; d < 4; d++) {
+        const nr = badCell.r + DIRS[d].dr;
+        const nc = badCell.c + DIRS[d].dc;
+        if (nr >= 0 && nr < state.gridSize && nc >= 0 && nc < state.gridSize) {
+          const adj = state.grid[nr][nc];
+          if (adj.kind === 'CONDUIT' && state.connectedCells.has(`${nr},${nc}`)) {
+            adj.rotation = (adj.rotation + 1) % 4;
+            break;
+          }
+        }
+      }
+
+      recomputeFlowNetwork(false);
+      renderLives();
+      updateHUD();
+
+      if (state.lives <= 0) {
+        endGame(false);
+      }
+    }
+
+    function handleStageSuccess() {
+      state.stageTransitionLock = true;
+      sound.playStageComplete();
+
+      const efficiencyBonus = Math.max(0, (state.parMoves + 4 - state.stageMoves) * 35);
+      const stagePts = 250 + state.stage * 50 + efficiencyBonus;
+      state.score += stagePts;
+      state.stagesSolved++;
+      state.pulseWaveProgress = 0;
+
+      // Spawn celebratory particles across all connected cells
+      state.connectedCells.forEach(key => {
+        const [r, c] = key.split(',').map(Number);
+        const pt = getCellScreenCenter(r, c);
+        spawnBurst(pt.x, pt.y, '#a3e635', 8);
+      });
+
+      const banner = document.getElementById('stageClearBanner');
+      document.getElementById('stageClearTitle').textContent = `STAGE ${state.stage} SYNCHRONIZED!`;
+      document.getElementById('stageClearSub').textContent = `+${stagePts} BIO-SCORE (EFFICIENCY BONUS +${efficiencyBonus})`;
+      banner.classList.remove('hidden', 'stage-banner');
+      void banner.offsetWidth;
+      banner.classList.add('stage-banner');
+
+      updateHUD();
+
+      setTimeout(() => {
+        banner.classList.add('hidden');
+        if (state.mode === 'PLAYING') {
+          state.stage++;
+          state.stageTransitionLock = false;
+          buildStagePuzzle(state.stage);
+          updateHUD();
+        }
+      }, 1500);
+    }
+
+    function verifyFlowManually() {
+      if (state.mode !== 'PLAYING' || state.stageTransitionLock) return;
+      state.pulseWaveProgress = 0;
+      sound.playRotate(state.connectedCells.size);
+
+      // Check if player hit target or missed catalysts
+      let reachedTarget = false;
+      state.connectedCells.forEach(key => {
+        const [r, c] = key.split(',').map(Number);
+        if (state.grid[r][c].kind === 'TARGET') reachedTarget = true;
+      });
+
+      if (reachedTarget && state.activatedCatalysts < state.requiredCatalysts) {
+        // Connected target without passing through required green Catalyst!
+        sound.playHazardError();
+        state.screenShake = 8;
+        state.errorFlash = 0.4;
+      } else {
+        recomputeFlowNetwork(true);
+      }
+    }
+
+    // =========================================================================
+    // 4. DOM REFERENCES & CONTROLS
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    const livesContainerEl = document.getElementById('livesContainer');
+    const hudStageTextEl = document.getElementById('hudStageText');
+    const hudTierTextEl = document.getElementById('hudTierText');
+    const hudStageBarEl = document.getElementById('hudStageBar');
+    const movesValueEl = document.getElementById('movesValue');
+    const timerDisplayEl = document.getElementById('timerDisplay');
+    const scoreDisplayEl = document.getElementById('scoreDisplay');
+
+    const startScreenEl = document.getElementById('startScreen');
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const pauseOverlayEl = document.getElementById('pauseOverlay');
+    const endGameOverlayEl = document.getElementById('endGameOverlay');
+
+    // Topic buttons
+    document.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playRotate(2);
+        document.querySelectorAll('.topic-btn').forEach(b => {
+          b.classList.remove('active', 'bg-teal-500/25', 'border-teal-300', 'text-white');
+          b.classList.add('bg-teal-900/60', 'border-teal-800', 'text-emerald-200/80');
+        });
+        btn.classList.add('active', 'bg-teal-500/25', 'border-teal-300', 'text-white');
+        btn.classList.remove('bg-teal-900/60', 'border-teal-800', 'text-emerald-200/80');
+        state.topic = btn.dataset.topic;
+      });
+    });
+
+    document.getElementById('startGameBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('tryAgainBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('restartFromPauseBtn').addEventListener('click', () => startNewGame());
+
+    document.getElementById('openInstructionsBtn').addEventListener('click', () => {
+      sound.playRotate(2);
+      instructionsModalEl.classList.remove('hidden');
+    });
+
+    document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+      sound.playRotate(1);
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('gotItBtn').addEventListener('click', () => {
+      sound.playRotate(2);
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => togglePause());
+    document.getElementById('resumeBtn').addEventListener('click', () => togglePause(false));
+    document.getElementById('quitToMenuBtn').addEventListener('click', () => returnToMenu());
+    document.getElementById('endMenuBtn').addEventListener('click', () => returnToMenu());
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('soundOnIcon').classList.toggle('hidden', muted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !muted);
+      if (!muted) sound.playRotate(2);
+    });
+
+    document.getElementById('resetPuzzleBtn').addEventListener('click', () => {
+      if (state.mode !== 'PLAYING' || state.stageTransitionLock) return;
+      for (let r = 0; r < state.gridSize; r++) {
+        for (let c = 0; c < state.gridSize; c++) {
+          state.grid[r][c].rotation = state.initialRotations[r][c];
+        }
+      }
+      state.stageMoves = 0;
+      sound.playRotate(1);
+      recomputeFlowNetwork(false);
+      updateHUD();
+    });
+
+    document.getElementById('pulseVerifyBtn').addEventListener('click', () => verifyFlowManually());
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if (state.mode === 'PLAYING' || state.mode === 'PAUSED') {
+          e.preventDefault();
+          togglePause();
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+      if (state.mode === 'PLAYING' && (e.code === 'Space' || e.key === 'Enter')) {
+        e.preventDefault();
+        verifyFlowManually();
+      }
+    });
+
+    // Click/tap on puzzle grid tile to rotate 90 degrees clockwise
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.mode !== 'PLAYING' || state.stageTransitionLock) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      const metrics = getGridMetrics();
+      const col = Math.floor((px - metrics.startX) / metrics.cellSize);
+      const row = Math.floor((py - metrics.startY) / metrics.cellSize);
+
+      if (row >= 0 && row < state.gridSize && col >= 0 && col < state.gridSize) {
+        const cell = state.grid[row][col];
+        if (cell.kind === 'CONDUIT') {
+          cell.rotation = (cell.rotation + 1) % 4;
+          state.stageMoves++;
+          state.totalMoves++;
+          recomputeFlowNetwork(true);
+          sound.playRotate(state.connectedCells.size);
+          updateHUD();
+        } else {
+          // Gentle pulse ring on fixed organelles
+          const center = getCellScreenCenter(row, col);
+          spawnBurst(center.x, center.y, '#2dd4bf', 5);
+          sound.playRotate(1);
+        }
+      }
+    });
+
+    // =========================================================================
+    // 5. RESPONSIVE CANVAS & GRID GEOMETRY
+    // =========================================================================
+    let canvasWidth = 860;
+    let canvasHeight = 520;
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasWidth = rect.width;
+      canvasHeight = rect.height;
+
+      canvas.width = Math.floor(canvasWidth * dpr);
+      canvas.height = Math.floor(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function getGridMetrics() {
+      const padding = Math.min(28, canvasWidth * 0.04);
+      const availW = canvasWidth - padding * 2;
+      const availH = canvasHeight - padding * 2;
+      const maxBoardPx = Math.min(availW, availH, 560);
+      const cellSize = Math.floor(maxBoardPx / state.gridSize);
+      const boardSize = cellSize * state.gridSize;
+      const startX = Math.floor((canvasWidth - boardSize) / 2);
+      const startY = Math.floor((canvasHeight - boardSize) / 2);
+      return { startX, startY, cellSize, boardSize };
+    }
+
+    function getCellScreenCenter(r, c) {
+      const m = getGridMetrics();
+      return {
+        x: m.startX + (c + 0.5) * m.cellSize,
+        y: m.startY + (r + 0.5) * m.cellSize
+      };
+    }
+
+    function initAmbientCells() {
+      state.bgCells = [];
+      for (let i = 0; i < 18; i++) {
+        state.bgCells.push({
+          x: Math.random() * canvasWidth,
+          y: Math.random() * canvasHeight,
+          vx: (Math.random() - 0.5) * 12,
+          vy: (Math.random() - 0.5) * 12,
+          r: 18 + Math.random() * 26,
+          alpha: 0.05 + Math.random() * 0.06
+        });
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // =========================================================================
+    // 6. HUD & LIFECYCLE MANAGEMENT
+    // =========================================================================
+    function renderLives() {
+      livesContainerEl.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const alive = i < state.lives;
+        const heart = document.createElement('span');
+        heart.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${alive ? 'text-rose-400 scale-100 drop-shadow-[0_0_6px_rgba(251,113,133,0.85)]' : 'text-teal-900 scale-90'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        `;
+        livesContainerEl.appendChild(heart);
+      }
+    }
+
+    function updateHUD() {
+      scoreDisplayEl.textContent = state.score.toLocaleString();
+      movesValueEl.textContent = state.stageMoves;
+
+      hudStageTextEl.textContent = `STAGE ${state.stage}`;
+      hudTierTextEl.textContent = `${state.gridSize}×${state.gridSize} GRID`;
+      const progressPct = Math.min(100, ((state.stage - 1) / 6) * 100 + 12);
+      hudStageBarEl.style.width = `${progressPct}%`;
+
+      const secs = Math.max(0, Math.ceil(state.timeLeft));
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      timerDisplayEl.textContent = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      if (secs <= 15 && state.mode === 'PLAYING') {
+        timerDisplayEl.classList.remove('text-teal-200');
+        timerDisplayEl.classList.add('text-rose-400', 'animate-pulse');
+      } else {
+        timerDisplayEl.classList.add('text-teal-200');
+        timerDisplayEl.classList.remove('text-rose-400', 'animate-pulse');
+      }
+    }
+
+    function startNewGame() {
+      sound.init();
+      sound.playRotate(3);
+
+      state.mode = 'PLAYING';
+      state.stage = 1;
+      state.timeLeft = GAME_DURATION;
+      state.score = 0;
+      state.lives = MAX_LIVES;
+      state.stagesSolved = 0;
+      state.stageMoves = 0;
+      state.totalMoves = 0;
+      state.particles = [];
+      state.screenShake = 0;
+      state.errorFlash = 0;
+      state.stageTransitionLock = false;
+
+      startScreenEl.classList.add('hidden');
+      instructionsModalEl.classList.add('hidden');
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+
+      resizeCanvas();
+      buildStagePuzzle(1);
+      renderLives();
+      updateHUD();
+    }
+
+    function togglePause(forceState) {
+      if (state.mode !== 'PLAYING' && state.mode !== 'PAUSED') return;
+      const shouldPause = typeof forceState === 'boolean' ? forceState : state.mode === 'PLAYING';
+      if (shouldPause) {
+        state.mode = 'PAUSED';
+        document.getElementById('pauseLevelInfo').textContent = `Stage ${state.stage} • ${state.stageMoves} Rotations`;
+        pauseOverlayEl.classList.remove('hidden');
+      } else {
+        state.mode = 'PLAYING';
+        pauseOverlayEl.classList.add('hidden');
+      }
+      sound.playRotate(1);
+    }
+
+    function returnToMenu() {
+      state.mode = 'MENU';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      startScreenEl.classList.remove('hidden');
+      sound.playRotate(1);
+    }
+
+    function endGame(victory) {
+      state.mode = 'GAMEOVER';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.remove('hidden');
+
+      const badge = document.getElementById('endStatusBadge');
+      const title = document.getElementById('endTitle');
+
+      if (victory) {
+        sound.playVictory();
+        badge.textContent = `Time Complete • ${state.stagesSolved} Pathways Solved`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-emerald-500/20 border border-emerald-400/40 text-emerald-300';
+        title.textContent = 'HOMEOSTASIS RESTORED!';
+      } else {
+        badge.textContent = `Cellular Toxicity • Stage ${state.stage}`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-orbitron uppercase tracking-widest mb-2 bg-rose-500/20 border border-rose-400/40 text-rose-300';
+        title.textContent = 'PATHWAY DISRUPTED!';
+      }
+
+      let starsEarned = 1;
+      if (state.stagesSolved >= 5 || state.score >= 1800) {
+        starsEarned = 3;
+      } else if (state.stagesSolved >= 2 || state.score >= 700) {
+        starsEarned = 2;
+      } else if (state.stagesSolved === 0 && !victory) {
+        starsEarned = 0;
+      }
+
+      const starsContainer = document.getElementById('starsContainer');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= starsEarned;
+        const starWrapper = document.createElement('div');
+        starWrapper.style.animationDelay = `${(i - 1) * 180}ms`;
+        starWrapper.className = earned ? 'star-earned' : 'opacity-30 scale-90';
+        starWrapper.innerHTML = `
+          <svg class="w-12 h-12 sm:w-14 sm:h-14 ${earned ? 'text-lime-300 drop-shadow-[0_0_14px_rgba(163,230,53,0.9)]' : 'text-teal-800'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsContainer.appendChild(starWrapper);
+      }
+
+      const captions = [
+        'Avoid red Toxin pods and decoy organelles—try again!',
+        'Good start! Solve 2+ cellular pathways for 2 Stars.',
+        'Strong logic! Complete 5+ pathways for 3 Bio-Stars!',
+        'Master Cellular Architect! Flawless pathway routing!'
+      ];
+      document.getElementById('starCaption').textContent = captions[starsEarned];
+
+      document.getElementById('finalScoreDisplay').textContent = state.score.toLocaleString();
+      document.getElementById('statSolved').textContent = state.stagesSolved;
+      document.getElementById('statMoves').textContent = state.totalMoves;
+      document.getElementById('statLivesLeft').textContent = `${Math.max(0, state.lives)}/${MAX_LIVES}`;
+    }
+
+    function spawnBurst(x, y, color, count = 14) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 130 + 30;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: Math.random() * 3.5 + 1.5,
+          color,
+          alpha: 1,
+          decay: 1.6 + Math.random()
+        });
+      }
+    }
+
+    // =========================================================================
+    // 7. UPDATE & MICROSCOPIC PUZZLE BOARD RENDERING
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function update(dt) {
+      for (const c of state.bgCells) {
+        c.x += c.vx * dt;
+        c.y += c.vy * dt;
+        if (c.x < -30) c.x = canvasWidth + 30;
+        if (c.x > canvasWidth + 30) c.x = -30;
+        if (c.y < -30) c.y = canvasHeight + 30;
+        if (c.y > canvasHeight + 30) c.y = -30;
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      if (!state.stageTransitionLock) {
+        state.timeLeft -= dt;
+        if (state.timeLeft <= 0) {
+          state.timeLeft = 0;
+          updateHUD();
+          endGame(true);
+          return;
+        }
+      }
+
+      state.screenShake = Math.max(0, state.screenShake - dt * 28);
+      state.errorFlash = Math.max(0, state.errorFlash - dt * 2.2);
+
+      // Smoothly animate conduit tile rotations
+      for (let r = 0; r < state.gridSize; r++) {
+        for (let c = 0; c < state.gridSize; c++) {
+          const cell = state.grid[r][c];
+          const targetAngle = cell.rotation * (Math.PI / 2);
+          // Shortest angular interpolation forward
+          let diff = targetAngle - cell.animAngle;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI * 2) diff -= Math.PI * 2;
+          cell.animAngle += diff * Math.min(1, dt * 18);
+        }
+      }
+
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
+
+      updateHUD();
+    }
+
+    function draw() {
+      ctx.save();
+
+      if (state.screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+      }
+
+      // Deep Cytoplasm Background
+      const bgGrad = ctx.createRadialGradient(canvasWidth * 0.5, canvasHeight * 0.5, 40, canvasWidth * 0.5, canvasHeight * 0.5, Math.max(canvasWidth, canvasHeight));
+      bgGrad.addColorStop(0, '#092823');
+      bgGrad.addColorStop(1, '#03100e');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Ambient drifting cellular vesicles
+      for (const c of state.bgCells) {
+        ctx.fillStyle = `rgba(45, 212, 191, ${c.alpha})`;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (state.grid.length > 0) {
+        drawPuzzleBoard();
+      }
+
+      // Particles
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (state.errorFlash > 0.01) {
+        ctx.fillStyle = `rgba(251, 113, 133, ${state.errorFlash * 0.35})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    function drawPuzzleBoard() {
+      const m = getGridMetrics();
+      const size = state.gridSize;
+      const pulsePhase = performance.now() * 0.006;
+
+      // Outer Phospholipid Membrane Frame around Board
+      ctx.save();
+      ctx.fillStyle = 'rgba(4, 22, 19, 0.88)';
+      ctx.strokeStyle = 'rgba(45, 212, 191, 0.42)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(m.startX - 10, m.startY - 10, m.boardSize + 20, m.boardSize + 20, 22);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          const cell = state.grid[r][c];
+          const x = m.startX + c * m.cellSize;
+          const y = m.startY + r * m.cellSize;
+          const cx = x + m.cellSize / 2;
+          const cy = y + m.cellSize / 2;
+          const pad = 4;
+          const tileW = m.cellSize - pad * 2;
+          const isLit = state.connectedCells.has(`${r},${c}`);
+
+          ctx.save();
+
+          // Tile Base Card
+          if (cell.kind === 'SOURCE') {
+            ctx.fillStyle = '#064e3b';
+            ctx.strokeStyle = '#a3e635';
+            ctx.lineWidth = 2.5;
+          } else if (cell.kind === 'TARGET') {
+            ctx.fillStyle = isLit ? '#78350f' : '#291d0e';
+            ctx.strokeStyle = isLit ? '#fde047' : '#fbbf24';
+            ctx.lineWidth = 2.5;
+          } else if (cell.kind === 'DECOY') {
+            ctx.fillStyle = '#1e1b4b';
+            ctx.strokeStyle = '#818cf8';
+            ctx.lineWidth = 2;
+          } else if (cell.kind === 'HAZARD') {
+            ctx.fillStyle = '#4c0519';
+            ctx.strokeStyle = '#fb7185';
+            ctx.lineWidth = 2;
+          } else {
+            ctx.fillStyle = isLit ? 'rgba(13, 61, 54, 0.95)' : 'rgba(7, 34, 30, 0.92)';
+            ctx.strokeStyle = isLit ? 'rgba(163, 230, 53, 0.65)' : 'rgba(45, 212, 191, 0.22)';
+            ctx.lineWidth = isLit ? 2 : 1.2;
+          }
+
+          ctx.beginPath();
+          ctx.roundRect(x + pad, y + pad, tileW, tileW, 14);
+          ctx.fill();
+          ctx.stroke();
+
+          // Draw Microtubule Conduit Arms (rotated smoothly)
+          ctx.save();
+          ctx.translate(cx, cy);
+          if (cell.kind === 'CONDUIT') {
+            ctx.rotate(cell.animAngle);
+          }
+
+          const armLen = m.cellSize * 0.46;
+          const pipeW = Math.max(10, m.cellSize * 0.17);
+
+          // Outer Conduit Wall
+          ctx.strokeStyle = isLit ? '#a3e635' : '#115e59';
+          ctx.lineWidth = pipeW;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          for (let d = 0; d < 4; d++) {
+            if (!cell.baseConnections[d]) continue;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(DIRS[d].dc * armLen, DIRS[d].dr * armLen);
+          }
+          ctx.stroke();
+
+          // Inner Luminescent Bio-Flow Core
+          ctx.strokeStyle = isLit ? '#ecfccb' : '#2dd4bf';
+          ctx.lineWidth = pipeW * 0.42;
+          ctx.beginPath();
+          for (let d = 0; d < 4; d++) {
+            if (!cell.baseConnections[d]) continue;
+            ctx.moveTo(0, 0);
+            ctx.lineTo(DIRS[d].dc * armLen, DIRS[d].dr * armLen);
+          }
+          ctx.stroke();
+
+          // Animated flowing bio-pulse dots inside energized conduits
+          if (isLit && cell.kind === 'CONDUIT') {
+            const pulseR = 3 + Math.sin(pulsePhase + r + c) * 1.2;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, pulseR, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+
+          // Draw Special Organelle / Catalyst / Hazard Badges on Top of Center
+          if (cell.kind === 'SOURCE' || cell.kind === 'TARGET' || cell.kind === 'DECOY') {
+            const badgeR = tileW * 0.36;
+            ctx.fillStyle = cell.kind === 'SOURCE' ? '#022c22' : cell.kind === 'TARGET' ? '#451a03' : '#1e1b4b';
+            ctx.strokeStyle = cell.kind === 'SOURCE' ? '#a3e635' : cell.kind === 'TARGET' ? '#fbbf24' : '#818cf8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 4, badgeR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            drawOrganelleGlyph(ctx, cell.shape, cx, cy - 4, badgeR * 0.62,
+              cell.kind === 'SOURCE' ? '#a3e635' : cell.kind === 'TARGET' ? '#fde047' : '#a5b4fc');
+
+            // Organelle Name Pill
+            ctx.font = '800 9.5px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(cell.label, cx, y + tileW - 6);
+          } else if (cell.kind === 'HAZARD') {
+            // Spiked Lysosome Toxin Hazard
+            ctx.fillStyle = '#881337';
+            ctx.strokeStyle = '#fb7185';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, tileW * 0.28, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = '800 9px "Orbitron", sans-serif';
+            ctx.fillStyle = '#fecdd3';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('TOXIN', cx, cy);
+          } else if (cell.isCatalyst) {
+            // Required Cofactor / ATP Catalyst Ring
+            ctx.fillStyle = isLit ? '#a3e635' : '#064e3b';
+            ctx.strokeStyle = '#a3e635';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, tileW * 0.19, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = '800 8.5px "Orbitron", sans-serif';
+            ctx.fillStyle = isLit ? '#041311' : '#a3e635';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ATP', cx, cy + 0.5);
+          }
+
+          ctx.restore();
+        }
+      }
+    }
+
+    function drawOrganelleGlyph(c, shape, cx, cy, sz, color) {
+      c.save();
+      c.translate(cx, cy);
+      c.strokeStyle = color;
+      c.fillStyle = color;
+      c.lineWidth = 1.6;
+
+      if (shape === 'mito') {
+        c.beginPath();
+        c.ellipse(0, 0, sz * 1.1, sz * 0.6, -0.2, 0, Math.PI * 2);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(-sz * 0.6, 0);
+        c.lineTo(-sz * 0.2, -sz * 0.28);
+        c.lineTo(sz * 0.2, sz * 0.28);
+        c.lineTo(sz * 0.6, 0);
+        c.stroke();
+      } else if (shape === 'chloro') {
+        c.beginPath();
+        c.ellipse(0, 0, sz * 1.1, sz * 0.62, 0, 0, Math.PI * 2);
+        c.stroke();
+        c.fillRect(-sz * 0.45, -3, 6, 2.5);
+        c.fillRect(sz * 0.1, 1, 6, 2.5);
+      } else if (shape === 'nucleus') {
+        c.beginPath();
+        c.arc(0, 0, sz * 0.78, 0, Math.PI * 2);
+        c.stroke();
+        c.beginPath();
+        c.arc(0, 0, sz * 0.32, 0, Math.PI * 2);
+        c.fill();
+      } else {
+        c.beginPath();
+        c.arc(-sz * 0.3, 0, sz * 0.32, 0, Math.PI * 2);
+        c.arc(sz * 0.32, 0, sz * 0.32, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.restore();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = function () {
+      resizeCanvas();
+      initAmbientCells();
+      renderLives();
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
