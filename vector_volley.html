@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Vector Volley — Projectile Kinematics &amp; Ballistics Lab</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-obsidian: #060b14;
+      --bg-slate: #0f172a;
+      --cyan-telemetry: #38bdf8;
+      --amber-vector: #f59e0b;
+      --emerald-sensor: #10b981;
+      --crimson-barrier: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg-obsidian);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .telemetry-panel {
+      background: rgba(11, 18, 34, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 10px 32px -8px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .cyan-glow {
+      text-shadow: 0 0 14px rgba(56, 189, 248, 0.65), 0 0 28px rgba(56, 189, 248, 0.25);
+    }
+
+    /* Custom Range Sliders */
+    input[type="range"].telemetry-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 999px;
+      background: #1e293b;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"].telemetry-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #f8fafc;
+      transition: transform 0.12s ease;
+    }
+
+    input[type="range"].telemetry-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    input[type="range"].slider-cyan::-webkit-slider-thumb {
+      background: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+    }
+
+    input[type="range"].slider-amber::-webkit-slider-thumb {
+      background: #f59e0b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+    }
+
+    input[type="range"].telemetry-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid #f8fafc;
+      cursor: pointer;
+    }
+
+    input[type="range"].slider-cyan::-moz-range-thumb {
+      background: #38bdf8;
+    }
+
+    input[type="range"].slider-amber::-moz-range-thumb {
+      background: #f59e0b;
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+      75% { transform: scale(1.2) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-pop {
+      animation: starPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-[100dvh] w-screen overflow-hidden bg-[#060b14]">
+
+  <!-- ==================== TOP TELEMETRY HUD BAR ==================== -->
+  <header class="w-full bg-slate-950/95 border-b border-sky-500/25 px-2.5 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0 z-20">
+    <!-- Left: Arcade Hub Link & Game Title -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <a href="./index.html"
+        class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-sky-500/35 text-sky-300 text-xs font-bold tracking-wide transition active:scale-95">
+        <span>&larr;</span>
+        <span>Arcade Hub</span>
+      </a>
+      <div class="hidden md:block">
+        <h1 class="font-extrabold text-sm lg:text-base tracking-tight text-white leading-none">
+          VECTOR <span class="text-sky-400">VOLLEY</span>
+        </h1>
+        <span id="hudModeLabel" class="text-[11px] font-mono-tech text-slate-400">Standard Kinematics</span>
+      </div>
+    </div>
+
+    <!-- Center: Level, Score, Shots & Target Telemetry -->
+    <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+      <div class="px-2 sm:px-3 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-center">
+        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Stage</div>
+        <div id="hudLevel" class="font-mono-tech font-extrabold text-xs sm:text-sm text-sky-300">01/10</div>
+      </div>
+
+      <div class="px-2 sm:px-3 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-center">
+        <div class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Score</div>
+        <div id="hudScore" class="font-mono-tech font-extrabold text-xs sm:text-sm text-emerald-300">0</div>
+      </div>
+
+      <div class="px-2 sm:px-3 py-1 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center gap-1.5" title="Remaining Plasma Charges">
+        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 hidden lg:inline">Charges</span>
+        <div id="hudShots" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- Target Range & Elevation Readout -->
+      <div class="hidden sm:flex items-center gap-2.5 px-3 py-1 rounded-xl bg-emerald-950/40 border border-emerald-500/35 font-mono-tech text-xs">
+        <div>
+          <span class="text-slate-400 text-[10px]">&Delta;x:</span>
+          <span id="hudTargetDx" class="text-emerald-300 font-bold">180m</span>
+        </div>
+        <span class="text-slate-600">|</span>
+        <div>
+          <span class="text-slate-400 text-[10px]">&Delta;y:</span>
+          <span id="hudTargetDy" class="text-emerald-300 font-bold">+0m</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Environment Pill, Hint, Formulas, Sound & Modes -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <div id="envReadoutPill" class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-amber-500/35 font-mono-tech text-xs text-amber-300">
+        <span id="hudGravity">g = 9.80 m/s&sup2;</span>
+        <span class="text-slate-600">&bull;</span>
+        <span id="hudWind">Wind: 0.0 m/s&sup2;</span>
+      </div>
+
+      <button id="btnHint" type="button" title="Calculate Physics Hint (-100 pts) [H]"
+        class="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/45 text-amber-200 text-xs font-bold transition active:scale-95">
+        Hint <span class="hidden sm:inline">[H]</span>
+      </button>
+
+      <button id="btnFormulas" type="button" title="Kinematics Formula Sheet (F)"
+        class="px-2.5 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/45 text-sky-200 text-xs font-bold transition active:scale-95">
+        <span class="font-mono-tech">f(x)</span> <span class="hidden md:inline">Formulas</span>
+      </button>
+
+      <button id="soundToggleBtn" type="button" title="Toggle Audio (M)"
+        class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-tech text-xs transition active:scale-95">
+        SFX: ON
+      </button>
+
+      <button id="btnOpenModes" type="button" title="Select Physics Curriculum Mode"
+        class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-bold transition active:scale-95">
+        Modes
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN INTERACTIVE BALLISTICS CANVAS ==================== -->
+  <main id="canvasWrapper" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="rangeCanvas" class="block w-full h-full cursor-crosshair"></canvas>
+
+    <!-- Top Floating Telemetry Feedback Banner -->
+    <div id="telemetryBanner" class="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 rounded-full bg-slate-950/90 border border-sky-400/35 text-xs font-mono-tech text-slate-200 shadow-lg text-center max-w-[92vw] truncate">
+      Drag the aiming reticle or adjust &theta; &amp; v&#8320; below, then press FIRE [Space].
+    </div>
+
+    <!-- ==================== START / CURRICULUM MODE MODAL ==================== -->
+    <section id="startOverlay" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#060b14]/88 backdrop-blur-md">
+      <div class="telemetry-panel rounded-3xl max-w-4xl w-full p-5 sm:p-8 text-center max-h-[92dvh] overflow-y-auto">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/15 border border-sky-400/35 text-sky-300 text-xs font-mono-tech uppercase tracking-widest mb-3">
+          <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+          <span>Electromagnetic Ballistics &amp; Kinematics Lab</span>
+        </div>
+
+        <h2 class="font-black text-3xl sm:text-5xl text-white cyan-glow tracking-tight mb-2">
+          VECTOR VOLLEY
+        </h2>
+        <p class="text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed mb-6">
+          Calibrate launch angle (<strong class="text-sky-300 font-mono-tech">&theta;</strong>) and initial velocity (<strong class="text-amber-300 font-mono-tech">v&#8320;</strong>) on an electromagnetic railgun. Decompose velocity vectors, thread plasma spheres through <strong class="text-purple-300">Apex Rings</strong>, and strike <strong class="text-emerald-300">Target Sensors</strong> across 10 escalating test ranges.
+        </p>
+
+        <!-- 3 Curriculum Modes -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-left mb-6">
+          <button type="button" data-mode="standard"
+            class="mode-select-btn group rounded-2xl p-4 sm:p-5 bg-slate-900/95 hover:bg-slate-800/95 border-2 border-sky-400/70 shadow-[0_0_24px_rgba(56,189,248,0.18)] transition flex flex-col justify-between text-left">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 font-mono-tech text-[10px] font-bold uppercase">Mode 01</span>
+                <span class="font-mono-tech text-xs text-sky-300">g = 9.8 m/s&sup2;</span>
+              </div>
+              <h3 class="font-extrabold text-base text-white group-hover:text-sky-300 mb-1">Standard Kinematics</h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Pure 2D parabolic motion over elevated platforms and crimson energy walls with zero wind resistance.
+              </p>
+            </div>
+            <div class="mt-4 font-mono-tech text-xs font-bold text-sky-300 flex items-center justify-between">
+              <span>Launch Test Range</span>
+              <span>&rarr;</span>
+            </div>
+          </button>
+
+          <button type="button" data-mode="wind"
+            class="mode-select-btn group rounded-2xl p-4 sm:p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-amber-500/45 hover:border-amber-400 transition flex flex-col justify-between text-left">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-mono-tech text-[10px] font-bold uppercase">Mode 02</span>
+                <span class="font-mono-tech text-xs text-amber-300">a&#8346; Crosswind</span>
+              </div>
+              <h3 class="font-extrabold text-base text-white group-hover:text-amber-300 mb-1">Crosswind Ballistics</h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Compensate for live horizontal headwinds and tailwinds (<span class="font-mono-tech">x = v&#8320;&#8339;t + &frac12;a&#8346;t&sup2;</span>) using animated wind streams.
+              </p>
+            </div>
+            <div class="mt-4 font-mono-tech text-xs font-bold text-amber-300 flex items-center justify-between">
+              <span>Launch Wind Tunnel</span>
+              <span>&rarr;</span>
+            </div>
+          </button>
+
+          <button type="button" data-mode="planetary"
+            class="mode-select-btn group rounded-2xl p-4 sm:p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-emerald-500/45 hover:border-emerald-400 transition flex flex-col justify-between text-left">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono-tech text-[10px] font-bold uppercase">Mode 03</span>
+                <span class="font-mono-tech text-xs text-emerald-300">Moon &bull; Mars &bull; Jupiter</span>
+              </div>
+              <h3 class="font-extrabold text-base text-white group-hover:text-emerald-300 mb-1">Planetary Gravity Lab</h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                Adapt your kinematics across low-gravity Moon (<span class="font-mono-tech">1.62</span>), Mars (<span class="font-mono-tech">3.72</span>), Earth (<span class="font-mono-tech">9.81</span>), and high-G Jupiter (<span class="font-mono-tech">24.79 m/s&sup2;</span>).
+              </p>
+            </div>
+            <div class="mt-4 font-mono-tech text-xs font-bold text-emerald-300 flex items-center justify-between">
+              <span>Launch Off-World Lab</span>
+              <span>&rarr;</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Controls Quick Legend -->
+        <div class="flex flex-wrap items-center justify-center gap-3 text-[11px] font-mono-tech text-slate-400 border-t border-slate-800 pt-4">
+          <span><strong class="text-sky-300">Drag Canvas</strong> or <strong class="text-sky-300">&uarr;/&darr;</strong> Angle</span>
+          <span>&bull;</span>
+          <span><strong class="text-amber-300">&larr;/&rarr;</strong> Velocity</span>
+          <span>&bull;</span>
+          <span><strong class="text-emerald-300">Space / Enter</strong> Fire</span>
+          <span>&bull;</span>
+          <span><strong class="text-slate-200">F</strong> Formulas</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== KINEMATICS FORMULA MODAL ==================== -->
+    <section id="formulaModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-[#060b14]/88 backdrop-blur-md">
+      <div class="telemetry-panel rounded-3xl max-w-3xl w-full max-h-[90dvh] overflow-y-auto p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 mb-5">
+          <div>
+            <h3 class="font-extrabold text-lg sm:text-xl text-sky-300">2D PROJECTILE KINEMATICS REFERENCE</h3>
+            <p class="text-xs text-slate-400">Equations governing parabolic motion in uniform gravitational &amp; wind fields</p>
+          </div>
+          <button id="btnCloseFormulas" type="button"
+            class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-tech text-xs font-bold">
+            ESC / Close
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs mb-5">
+          <div class="p-4 rounded-2xl bg-slate-900/95 border border-sky-500/35">
+            <div class="font-bold text-sky-300 uppercase tracking-wider mb-1">1. Velocity Vector Components</div>
+            <div class="font-mono-tech text-sm text-white bg-slate-950 p-2.5 rounded-xl mb-2">
+              v&#8320;&#8339; = v&#8320; &middot; cos(&theta;)<br>
+              v&#8320;&#7527; = v&#8320; &middot; sin(&theta;)
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              Horizontal and vertical motion act independently. At <strong class="text-sky-300">45&deg;</strong>, horizontal range is maximized on flat terrain.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/95 border border-amber-500/35">
+            <div class="font-bold text-amber-300 uppercase tracking-wider mb-1">2. Position Over Time t</div>
+            <div class="font-mono-tech text-sm text-white bg-slate-950 p-2.5 rounded-xl mb-2">
+              &Delta;x(t) = v&#8320;&#8339;t + &frac12;a&#8346;t&sup2;<br>
+              &Delta;y(t) = v&#8320;&#7527;t &minus; &frac12;gt&sup2;
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              Gravity (<span class="font-mono-tech">g</span>) accelerates downward continuously, while crosswind (<span class="font-mono-tech">a&#8346;</span>) accelerates horizontally.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/95 border border-emerald-500/35">
+            <div class="font-bold text-emerald-300 uppercase tracking-wider mb-1">3. Flat-Ground Horizontal Range</div>
+            <div class="font-mono-tech text-sm text-white bg-slate-950 p-2.5 rounded-xl mb-2">
+              R = (v&#8320;&sup2; &middot; sin(2&theta;)) / g
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              Complementary angles (e.g., <strong class="text-emerald-300">30&deg;</strong> and <strong class="text-emerald-300">60&deg;</strong>) land at the exact same flat range <span class="font-mono-tech">R</span>! Use higher angles to clear tall walls.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-900/95 border border-purple-500/35">
+            <div class="font-bold text-purple-300 uppercase tracking-wider mb-1">4. Maximum Apex Height</div>
+            <div class="font-mono-tech text-sm text-white bg-slate-950 p-2.5 rounded-xl mb-2">
+              H&#8344;&#8336;&#8339; = (v&#8320; &middot; sin(&theta;))&sup2; / (2g)
+            </div>
+            <p class="text-slate-300 leading-relaxed">
+              At the peak of the parabola (<span class="font-mono-tech">v&#7527; = 0</span>), thread your projectile through purple <strong class="text-purple-300">Apex Rings</strong> for bonus points.
+            </p>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button id="btnResumeFromFormulas" type="button"
+            class="px-5 py-2.5 rounded-xl bg-sky-400 text-slate-950 font-extrabold text-xs uppercase tracking-wider">
+            Back to Ballistics Lab
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== END-OF-RUN SUMMARY OVERLAY ==================== -->
+    <section id="endOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#060b14]/90 backdrop-blur-md">
+      <div class="telemetry-panel rounded-3xl max-w-md w-full p-6 sm:p-8 text-center">
+        <div id="endStatusPill" class="inline-block px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-mono-tech text-xs font-bold uppercase tracking-widest mb-2">
+          Range Calibration Complete
+        </div>
+
+        <h2 id="endTitle" class="font-black text-2xl sm:text-3xl text-white cyan-glow mb-2">
+          BALLISTICS MASTER!
+        </h2>
+        <p id="endSubtitle" class="text-xs sm:text-sm text-slate-300 mb-4">
+          Telemetry logged across the test range.
+        </p>
+
+        <!-- 3-Star Rating -->
+        <div id="endStars" class="flex items-center justify-center gap-3 my-3"></div>
+        <p id="endCaption" class="text-xs text-slate-400 mb-5">Precision parabolic trajectories!</p>
+
+        <!-- Stats Grid -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Lab Score</div>
+          <div id="endFinalScore" class="font-mono-tech font-black text-3xl sm:text-4xl text-emerald-300 mb-3">0</div>
+
+          <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center">
+            <div>
+              <div class="text-[10px] uppercase text-slate-400 font-bold">Targets Hit</div>
+              <div id="endStatHits" class="font-mono-tech font-bold text-sm sm:text-base text-sky-300">0/10</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-slate-400 font-bold">Accuracy</div>
+              <div id="endStatAcc" class="font-mono-tech font-bold text-sm sm:text-base text-amber-300">100%</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-slate-400 font-bold">Apex Rings</div>
+              <div id="endStatRings" class="font-mono-tech font-bold text-sm sm:text-base text-purple-300">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="btnPlayAgain" type="button"
+            class="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-sky-400 to-emerald-400 text-slate-950 font-extrabold text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition active:scale-95">
+            Run Range Again
+          </button>
+          <a href="./index.html"
+            class="py-3 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center transition">
+            Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ==================== BOTTOM TACTILE TELEMETRY CONTROL DECK ==================== -->
+  <footer class="w-full bg-slate-950/95 border-t border-sky-500/25 px-3 sm:px-6 py-2.5 sm:py-3 shrink-0 z-20">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-4 items-center">
+
+      <!-- 1. Launch Angle Control (theta) -->
+      <div class="lg:col-span-4 bg-slate-900/90 border border-sky-500/30 rounded-2xl px-3.5 py-2">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-sky-300">Launch Angle (&theta;)</span>
+          <div class="flex items-center gap-1.5">
+            <button id="btnAngleDown" type="button" aria-label="Decrease Angle"
+              class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-mono-tech font-bold text-xs leading-none active:scale-90">
+              &minus;
+            </button>
+            <span id="angleReadout" class="font-mono-tech font-extrabold text-sm text-white min-w-[46px] text-center">45.0&deg;</span>
+            <button id="btnAngleUp" type="button" aria-label="Increase Angle"
+              class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-300 font-mono-tech font-bold text-xs leading-none active:scale-90">
+              +
+            </button>
+          </div>
+        </div>
+        <input id="angleSlider" type="range" min="10" max="85" step="0.5" value="45"
+          class="telemetry-slider slider-cyan w-full" />
+      </div>
+
+      <!-- 2. Initial Velocity Control (v0) -->
+      <div class="lg:col-span-4 bg-slate-900/90 border border-amber-500/30 rounded-2xl px-3.5 py-2">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-300">Muzzle Velocity (v&#8320;)</span>
+          <div class="flex items-center gap-1.5">
+            <button id="btnVelDown" type="button" aria-label="Decrease Velocity"
+              class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-mono-tech font-bold text-xs leading-none active:scale-90">
+              &minus;
+            </button>
+            <span id="velReadout" class="font-mono-tech font-extrabold text-sm text-white min-w-[66px] text-center">45.0 m/s</span>
+            <button id="btnVelUp" type="button" aria-label="Increase Velocity"
+              class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-300 font-mono-tech font-bold text-xs leading-none active:scale-90">
+              +
+            </button>
+          </div>
+        </div>
+        <input id="velSlider" type="range" min="15" max="85" step="0.5" value="45"
+          class="telemetry-slider slider-amber w-full" />
+      </div>
+
+      <!-- 3. Live Vector Decomposition & FIRE Action -->
+      <div class="lg:col-span-4 flex items-center justify-between gap-2.5">
+        <div class="flex-1 bg-slate-900/90 border border-slate-700/90 rounded-2xl px-3 py-2 font-mono-tech text-[11px]">
+          <div class="flex items-center justify-between">
+            <span class="text-slate-400">v&#8320;&#8339; = v&#8320;cos&theta;</span>
+            <span id="vxReadout" class="text-sky-300 font-bold">31.8 m/s</span>
+          </div>
+          <div class="flex items-center justify-between mt-0.5">
+            <span class="text-slate-400">v&#8320;&#7527; = v&#8320;sin&theta;</span>
+            <span id="vyReadout" class="text-amber-300 font-bold">31.8 m/s</span>
+          </div>
+        </div>
+
+        <button id="btnFire" type="button"
+          class="px-5 sm:px-7 py-3.5 rounded-2xl bg-gradient-to-r from-sky-400 via-cyan-400 to-emerald-400 hover:brightness-110 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_24px_rgba(56,189,248,0.45)] transition active:scale-95 shrink-0">
+          FIRE [Space]
+        </button>
+      </div>
+
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * VECTOR VOLLEY — PROJECTILE KINEMATICS & BALLISTICS LAB
+     * True fixed-timestep 2D kinematics simulation with vector decomposition,
+     * wind acceleration, planetary gravity fields, and persistent trajectory telemetry.
+     */
+
+    // =========================================================================
+    // 1. WEB AUDIO API RAILGUN & TELEMETRY SYNTHESIZER
+    // =========================================================================
+    class BallisticsAudio {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (e) {
+          this.ctx = null;
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playDialTick() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(760, now);
+          gain.gain.setValueAtTime(0.035, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.035);
+        } catch (e) {}
+      }
+
+      playRailgunFire(velocity) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const startFreq = 420 + velocity * 7;
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(startFreq, now);
+          osc.frequency.exponentialRampToValueAtTime(95, now + 0.24);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.27);
+        } catch (e) {}
+      }
+
+      playApexRing() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          [880, 1174.66].forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+            gain.gain.setValueAtTime(0.11, now + idx * 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.18);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + idx * 0.05);
+            osc.stop(now + idx * 0.05 + 0.19);
+          });
+        } catch (e) {}
+      }
+
+      playTargetHit(firstShot = false) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const notes = firstShot ? [523.25, 659.25, 783.99, 1046.5] : [440, 554.37, 659.25];
+          notes.forEach((f, idx) => {
+            const now = this.ctx.currentTime + idx * 0.07;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.29);
+          });
+        } catch (e) {}
+      }
+
+      playBarrierDeflect() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(185, now);
+          osc.frequency.exponentialRampToValueAtTime(62, now + 0.24);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        } catch (e) {}
+      }
+    }
+
+    const sfx = new BallisticsAudio();
+
+    // =========================================================================
+    // 2. PLANETARY ENVIRONMENTS & 10 HANDCRAFTED PHYSICS STAGES
+    // =========================================================================
+    const PLANETS = [
+      { name: 'Earth Lab', g: 9.81, skyTop: '#060b14', skyBot: '#0f172a', horizon: '#1e293b', accent: '#38bdf8' },
+      { name: 'Lunar Range', g: 1.62, skyTop: '#05070d', skyBot: '#111827', horizon: '#334155', accent: '#e2e8f0' },
+      { name: 'Mars Basin', g: 3.72, skyTop: '#160a09', skyBot: '#2b1210', horizon: '#7c2d12', accent: '#fb923c' },
+      { name: 'Jupiter Orbit', g: 24.79, skyTop: '#140d07', skyBot: '#291a0e', horizon: '#92400e', accent: '#fbbf24' }
+    ];
+
+    /**
+     * World coordinates are in real metric units (meters):
+     * Launcher sits at (x = 0m, y = launcherY).
+     * Field spans x in [0, 320m], y in [0, 175m].
+     */
+    const STAGES = [
+      {
+        title: 'Calibration Flat Range',
+        targetX: 160,
+        targetY: 0,
+        targetR: 9,
+        launcherY: 0,
+        barriers: [],
+        apexRing: { x: 80, y: 40, r: 12 },
+        wind: 0,
+        planetIdx: 0,
+        shots: 5,
+        tip: 'Flat ground range: R = v0²·sin(2θ)/g. Try θ = 45° and solve for v0!'
+      },
+      {
+        title: 'Midfield Energy Wall',
+        targetX: 185,
+        targetY: 0,
+        targetR: 8.5,
+        launcherY: 0,
+        barriers: [{ x: 95, y0: 0, y1: 52, w: 6 }],
+        apexRing: { x: 95, y: 74, r: 12 },
+        wind: -1.8,
+        planetIdx: 1,
+        shots: 5,
+        tip: 'A 52m crimson barrier blocks low shots. Use a high-arc trajectory (θ > 55°)!'
+      },
+      {
+        title: 'Elevated Observatory Deck',
+        targetX: 205,
+        targetY: 42,
+        targetR: 8.5,
+        launcherY: 0,
+        barriers: [],
+        apexRing: { x: 125, y: 76, r: 12 },
+        wind: 2.2,
+        planetIdx: 2,
+        shots: 5,
+        tip: 'Target sits +42m higher than the launcher—extra vertical velocity v0y is required.'
+      },
+      {
+        title: 'Canyon Overlook Drop',
+        targetX: 225,
+        targetY: 0,
+        targetR: 8.5,
+        launcherY: 48,
+        barriers: [{ x: 125, y0: 0, y1: 42, w: 6 }],
+        apexRing: { x: 85, y: 76, r: 11.5 },
+        wind: -2.6,
+        planetIdx: 0,
+        shots: 5,
+        tip: 'Firing from a +48m cliff extends your horizontal flight time before impact!'
+      },
+      {
+        title: 'Twin Deflector Slalom',
+        targetX: 230,
+        targetY: 22,
+        targetR: 8,
+        launcherY: 0,
+        barriers: [
+          { x: 90, y0: 0, y1: 48, w: 6 },
+          { x: 165, y0: 66, y1: 155, w: 6 }
+        ],
+        apexRing: { x: 128, y: 62, r: 11 },
+        wind: 1.9,
+        planetIdx: 1,
+        shots: 5,
+        tip: 'Thread the needle: clear the 48m lower wall while staying underneath the 66m upper gate!'
+      },
+      {
+        title: 'Long-Range Telemetry Array',
+        targetX: 270,
+        targetY: 16,
+        targetR: 8,
+        launcherY: 0,
+        barriers: [{ x: 140, y0: 0, y1: 46, w: 6 }],
+        apexRing: { x: 135, y: 82, r: 11 },
+        wind: -3.1,
+        planetIdx: 3,
+        shots: 5,
+        tip: 'Long 270m downrange sensor—maximize range efficiency near θ = 45°–52°.'
+      },
+      {
+        title: 'Citadel Spire Platform',
+        targetX: 175,
+        targetY: 68,
+        targetR: 8,
+        launcherY: 0,
+        barriers: [{ x: 110, y0: 0, y1: 60, w: 6 }],
+        apexRing: { x: 112, y: 94, r: 11 },
+        wind: 2.8,
+        planetIdx: 2,
+        shots: 5,
+        tip: 'Steep launch angle (60°–72°) reaches +68m altitude with a gentle descent onto the pad.'
+      },
+      {
+        title: 'Bunker Breach Corridor',
+        targetX: 245,
+        targetY: 0,
+        targetR: 8,
+        launcherY: 18,
+        barriers: [
+          { x: 145, y0: 44, y1: 155, w: 6 },
+          { x: 195, y0: 0, y1: 22, w: 6 }
+        ],
+        apexRing: { x: 105, y: 42, r: 11 },
+        wind: -2.4,
+        planetIdx: 0,
+        shots: 4,
+        tip: 'Low-angle line drive (θ ≈ 22°–32°) slips beneath the 44m ceiling barrier!'
+      },
+      {
+        title: 'Orbital Relay Dish',
+        targetX: 260,
+        targetY: 54,
+        targetR: 7.5,
+        launcherY: 0,
+        barriers: [{ x: 150, y0: 0, y1: 66, w: 6 }],
+        apexRing: { x: 145, y: 102, r: 10.5 },
+        wind: 3.4,
+        planetIdx: 3,
+        shots: 4,
+        tip: 'High-altitude target behind a 66m shield—balance high v0y with controlled horizontal range.'
+      },
+      {
+        title: 'Grand Ballistics Gauntlet',
+        targetX: 285,
+        targetY: 36,
+        targetR: 7.5,
+        launcherY: 12,
+        barriers: [
+          { x: 105, y0: 0, y1: 52, w: 6 },
+          { x: 205, y0: 76, y1: 155, w: 6 }
+        ],
+        apexRing: { x: 155, y: 74, r: 10.5 },
+        wind: -3.6,
+        planetIdx: 2,
+        shots: 4,
+        tip: 'Final certification: arc over the 52m wall and under the 76m gate to strike at 285m!'
+      }
+    ];
+
+    // =========================================================================
+    // 3. GAME STATE & WORLD-TO-CANVAS PROJECTION
+    // =========================================================================
+    const WORLD_MAX_X = 320; // meters
+    const WORLD_MAX_Y = 165; // meters
+
+    const state = {
+      screen: 'start', // 'start' | 'playing' | 'end'
+      mode: 'standard', // 'standard' | 'wind' | 'planetary'
+      stageIdx: 0,
+      score: 0,
+      shotsLeft: 5,
+      shotsUsedThisStage: 0,
+      totalShotsFired: 0,
+      targetsHit: 0,
+      apexRingsCollected: 0,
+
+      angleDeg: 45,
+      velocity: 45,
+      gravity: 9.81,
+      windAccel: 0,
+      planet: PLANETS[0],
+
+      stage: null,
+      ringCollectedThisStage: false,
+      stageTransitioning: false,
+
+      projectile: null, // { x, y, vx, vy, t, maxH, trail: [] }
+      pastTrails: [],   // Array of { points, maxH, maxHPoint, landX, hit }
+      particles: [],
+      windStreaks: [],
+      floatingLabels: [],
+      isDraggingReticle: false,
+      screenShake: 0
+    };
+
+    const canvas = document.getElementById('rangeCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    let canvasW = 960;
+    let canvasH = 540;
+
+    function resizeCanvas() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasW = Math.max(320, rect.width);
+      canvasH = Math.max(240, rect.height);
+      canvas.width = Math.floor(canvasW * dpr);
+      canvas.height = Math.floor(canvasH * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function getMetrics() {
+      const padLeft = Math.max(46, canvasW * 0.065);
+      const padRight = Math.max(36, canvasW * 0.05);
+      const groundScreenY = canvasH - Math.max(38, canvasH * 0.09);
+      const topScreenY = Math.max(44, canvasH * 0.09);
+      const scaleX = (canvasW - padLeft - padRight) / WORLD_MAX_X;
+      const scaleY = (groundScreenY - topScreenY) / WORLD_MAX_Y;
+      return { padLeft, groundScreenY, scaleX, scaleY };
+    }
+
+    function worldToScreen(wx, wy) {
+      const m = getMetrics();
+      return {
+        x: m.padLeft + wx * m.scaleX,
+        y: m.groundScreenY - wy * m.scaleY
+      };
+    }
+
+    function screenToWorld(sx, sy) {
+      const m = getMetrics();
+      return {
+        x: (sx - m.padLeft) / m.scaleX,
+        y: (m.groundScreenY - sy) / m.scaleY
+      };
+    }
+
+    // =========================================================================
+    // 4. CONTROLS, SLIDERS, KEYBOARD & CANVAS RETICLE DRAGGING
+    // =========================================================================
+    const angleSlider = document.getElementById('angleSlider');
+    const velSlider = document.getElementById('velSlider');
+    const angleReadout = document.getElementById('angleReadout');
+    const velReadout = document.getElementById('velReadout');
+    const vxReadout = document.getElementById('vxReadout');
+    const vyReadout = document.getElementById('vyReadout');
+
+    function setLaunchParams(newAngle, newVel, playTick = false) {
+      state.angleDeg = Math.max(10, Math.min(85, Math.round(newAngle * 2) / 2));
+      state.velocity = Math.max(15, Math.min(85, Math.round(newVel * 2) / 2));
+
+      angleSlider.value = state.angleDeg;
+      velSlider.value = state.velocity;
+      angleReadout.textContent = `${state.angleDeg.toFixed(1)}°`;
+      velReadout.textContent = `${state.velocity.toFixed(1)} m/s`;
+
+      const rad = (state.angleDeg * Math.PI) / 180;
+      const vx = state.velocity * Math.cos(rad);
+      const vy = state.velocity * Math.sin(rad);
+      vxReadout.textContent = `${vx.toFixed(1)} m/s`;
+      vyReadout.textContent = `${vy.toFixed(1)} m/s`;
+
+      if (playTick) sfx.playDialTick();
+    }
+
+    angleSlider.addEventListener('input', (e) => {
+      setLaunchParams(parseFloat(e.target.value), state.velocity, true);
+    });
+
+    velSlider.addEventListener('input', (e) => {
+      setLaunchParams(state.angleDeg, parseFloat(e.target.value), true);
+    });
+
+    document.getElementById('btnAngleDown').addEventListener('click', () => setLaunchParams(state.angleDeg - 0.5, state.velocity, true));
+    document.getElementById('btnAngleUp').addEventListener('click', () => setLaunchParams(state.angleDeg + 0.5, state.velocity, true));
+    document.getElementById('btnVelDown').addEventListener('click', () => setLaunchParams(state.angleDeg, state.velocity - 0.5, true));
+    document.getElementById('btnVelUp').addEventListener('click', () => setLaunchParams(state.angleDeg, state.velocity + 0.5, true));
+
+    document.getElementById('btnFire').addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      fireProjectile();
+    });
+
+    document.getElementById('btnHint').addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      triggerPhysicsHint();
+    });
+
+    document.getElementById('btnFormulas').addEventListener('click', () => {
+      document.getElementById('formulaModal').classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseFormulas').addEventListener('click', () => {
+      document.getElementById('formulaModal').classList.add('hidden');
+    });
+
+    document.getElementById('btnResumeFromFormulas').addEventListener('click', () => {
+      document.getElementById('formulaModal').classList.add('hidden');
+    });
+
+    document.getElementById('btnOpenModes').addEventListener('click', () => {
+      state.screen = 'start';
+      document.getElementById('startOverlay').classList.remove('hidden');
+      document.getElementById('endOverlay').classList.add('hidden');
+    });
+
+    document.getElementById('soundToggleBtn').addEventListener('click', (e) => {
+      const muted = sfx.toggleMute();
+      e.currentTarget.textContent = muted ? 'SFX: OFF' : 'SFX: ON';
+      if (!muted) sfx.playDialTick();
+    });
+
+    document.querySelectorAll('.mode-select-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        startNewRun(btn.dataset.mode);
+      });
+    });
+
+    document.getElementById('btnPlayAgain').addEventListener('click', () => {
+      startNewRun(state.mode);
+    });
+
+    // Canvas Pointer Dragging for Direct Reticle Aiming
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.screen !== 'playing' || state.projectile || state.stageTransitioning) return;
+      sfx.init();
+      state.isDraggingReticle = true;
+      updateAimFromPointer(e);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!state.isDraggingReticle || state.screen !== 'playing') return;
+      updateAimFromPointer(e);
+    });
+
+    window.addEventListener('pointerup', () => {
+      state.isDraggingReticle = false;
+    });
+
+    function updateAimFromPointer(e) {
+      if (!state.stage) return;
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const origin = worldToScreen(0, state.stage.launcherY);
+
+      const dx = Math.max(12, px - origin.x);
+      const dy = Math.max(8, origin.y - py);
+      const angleRad = Math.atan2(dy, dx);
+      const deg = (angleRad * 180) / Math.PI;
+
+      const distPx = Math.hypot(dx, dy);
+      const vel = 15 + Math.min(70, Math.max(0, (distPx - 28) * 0.34));
+      setLaunchParams(deg, vel, false);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const formulaModal = document.getElementById('formulaModal');
+      if (e.key === 'Escape') {
+        if (!formulaModal.classList.contains('hidden')) {
+          formulaModal.classList.add('hidden');
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === 'f') {
+        formulaModal.classList.toggle('hidden');
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+      if (state.screen !== 'playing' || !formulaModal.classList.contains('hidden')) return;
+
+      if (e.key.toLowerCase() === 'h') {
+        triggerPhysicsHint();
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setLaunchParams(state.angleDeg + (e.shiftKey ? 2 : 0.5), state.velocity, true);
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setLaunchParams(state.angleDeg - (e.shiftKey ? 2 : 0.5), state.velocity, true);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setLaunchParams(state.angleDeg, state.velocity + (e.shiftKey ? 2 : 0.5), true);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setLaunchParams(state.angleDeg, state.velocity - (e.shiftKey ? 2 : 0.5), true);
+      } else if (e.code === 'Space' || e.key === 'Enter') {
+        e.preventDefault();
+        fireProjectile();
+      }
+    });
+
+    // =========================================================================
+    // 5. STAGE INITIALIZATION, HUD & HINT CALCULATOR
+    // =========================================================================
+    function startNewRun(mode) {
+      sfx.init();
+      state.mode = mode;
+      state.screen = 'playing';
+      state.stageIdx = 0;
+      state.score = 0;
+      state.totalShotsFired = 0;
+      state.targetsHit = 0;
+      state.apexRingsCollected = 0;
+
+      const modeNames = {
+        standard: 'Standard Kinematics',
+        wind: 'Crosswind Ballistics',
+        planetary: 'Planetary Gravity Lab'
+      };
+      document.getElementById('hudModeLabel').textContent = modeNames[mode] || 'Standard Kinematics';
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('endOverlay').classList.add('hidden');
+
+      resizeCanvas();
+      initWindStreaks();
+      loadStage(0);
+    }
+
+    function loadStage(idx) {
+      state.stageIdx = idx;
+      const base = STAGES[idx];
+      state.stage = JSON.parse(JSON.stringify(base));
+      state.shotsLeft = base.shots;
+      state.shotsUsedThisStage = 0;
+      state.ringCollectedThisStage = false;
+      state.stageTransitioning = false;
+      state.projectile = null;
+      state.pastTrails = [];
+      state.particles = [];
+      state.floatingLabels = [];
+
+      // Configure Environment by Curriculum Mode
+      if (state.mode === 'standard') {
+        state.planet = PLANETS[0];
+        state.gravity = 9.80;
+        state.windAccel = 0;
+      } else if (state.mode === 'wind') {
+        state.planet = PLANETS[0];
+        state.gravity = 9.80;
+        state.windAccel = base.wind !== 0 ? base.wind : 2.0;
+      } else {
+        state.planet = PLANETS[base.planetIdx % PLANETS.length];
+        state.gravity = state.planet.g;
+        state.windAccel = 0;
+      }
+
+      setLaunchParams(45, Math.min(75, Math.max(25, Math.round(Math.sqrt(base.targetX * state.gravity)))), false);
+      updateHUD();
+      setBanner(`Stage ${idx + 1}: ${base.title} — ${base.tip}`, 'text-sky-200');
+    }
+
+    function updateHUD() {
+      const st = state.stage;
+      if (!st) return;
+
+      document.getElementById('hudLevel').textContent = `${String(state.stageIdx + 1).padStart(2, '0')}/${STAGES.length}`;
+      document.getElementById('hudScore').textContent = state.score.toLocaleString();
+
+      const dy = st.targetY - st.launcherY;
+      document.getElementById('hudTargetDx').textContent = `${st.targetX}m`;
+      document.getElementById('hudTargetDy').textContent = `${dy >= 0 ? '+' : ''}${dy}m`;
+
+      document.getElementById('hudGravity').textContent = `${state.planet.name}: g = ${state.gravity.toFixed(2)} m/s²`;
+      if (state.windAccel === 0) {
+        document.getElementById('hudWind').textContent = 'Wind: 0.0 m/s²';
+      } else {
+        const dir = state.windAccel > 0 ? 'Tailwind' : 'Headwind';
+        document.getElementById('hudWind').textContent = `Wind: ${state.windAccel > 0 ? '+' : ''}${state.windAccel.toFixed(1)} m/s² (${dir})`;
+      }
+
+      // Render Remaining Plasma Charges
+      const shotsEl = document.getElementById('hudShots');
+      shotsEl.innerHTML = '';
+      for (let i = 0; i < st.shots; i++) {
+        const active = i < state.shotsLeft;
+        const pip = document.createElement('span');
+        pip.className = `w-2.5 h-2.5 rounded-full transition-all ${
+          active ? 'bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.85)]' : 'bg-slate-800 border border-slate-700'
+        }`;
+        shotsEl.appendChild(pip);
+      }
+    }
+
+    function setBanner(html, colorClass = 'text-slate-200') {
+      const el = document.getElementById('telemetryBanner');
+      el.className = `pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 z-10 px-4 py-1.5 rounded-full bg-slate-950/92 border border-sky-400/35 text-xs font-mono-tech ${colorClass} shadow-lg text-center max-w-[92vw] truncate`;
+      el.innerHTML = html;
+    }
+
+    function triggerPhysicsHint() {
+      if (state.screen !== 'playing' || !state.stage || state.stageTransitioning) return;
+      const st = state.stage;
+      const dy = st.targetY - st.launcherY;
+
+      // Recommend an angle window that clears barriers & reaches elevation
+      let recAngle = 45;
+      if (st.barriers.some(b => b.y0 === 0 && b.y1 >= 45) || dy >= 40) {
+        recAngle = 62;
+      } else if (st.barriers.some(b => b.y0 > 0 && b.y0 <= 50)) {
+        recAngle = 28;
+      }
+
+      const rad = (recAngle * Math.PI) / 180;
+      const denom = 2 * Math.cos(rad) * Math.cos(rad) * (st.targetX * Math.tan(rad) - dy);
+      let hintText = `Target at Δx = ${st.targetX}m, Δy = ${dy >= 0 ? '+' : ''}${dy}m. Try launch angle θ ≈ ${recAngle}°`;
+
+      if (denom > 0) {
+        const estV0 = Math.sqrt((state.gravity * st.targetX * st.targetX) / denom);
+        const lowV = Math.max(15, Math.floor(estV0 - 4));
+        const highV = Math.min(85, Math.ceil(estV0 + 4));
+        hintText += ` with v₀ around ${lowV}–${highV} m/s!`;
+      }
+
+      state.score = Math.max(0, state.score - 100);
+      updateHUD();
+      sfx.playDialTick();
+      setBanner(`TELEMETRY HINT: ${hintText}`, 'text-amber-300');
+    }
+
+    // =========================================================================
+    // 6. PROJECTILE LAUNCH & FIXED-TIMESTEP KINEMATICS INTEGRATION
+    // =========================================================================
+    function fireProjectile() {
+      if (state.screen !== 'playing' || state.projectile || state.stageTransitioning || state.shotsLeft <= 0) return;
+
+      const rad = (state.angleDeg * Math.PI) / 180;
+      const vx0 = state.velocity * Math.cos(rad);
+      const vy0 = state.velocity * Math.sin(rad);
+
+      state.shotsLeft--;
+      state.shotsUsedThisStage++;
+      state.totalShotsFired++;
+      updateHUD();
+
+      sfx.playRailgunFire(state.velocity);
+      const muzzlePos = worldToScreen(0, state.stage.launcherY);
+      spawnParticles(muzzlePos.x, muzzlePos.y, '#38bdf8', 18);
+
+      state.projectile = {
+        x: 0,
+        y: state.stage.launcherY,
+        vx: vx0,
+        vy: vy0,
+        t: 0,
+        maxH: state.stage.launcherY,
+        maxHPoint: { x: 0, y: state.stage.launcherY },
+        trail: [{ x: 0, y: state.stage.launcherY }]
+      };
+
+      setBanner(`In Flight: v₀x = ${vx0.toFixed(1)} m/s, v₀y = ${vy0.toFixed(1)} m/s...`, 'text-sky-300');
+    }
+
+    function stepProjectilePhysics(dt) {
+      const p = state.projectile;
+      const st = state.stage;
+      if (!p || !st) return;
+
+      // Sub-step integration (4 sub-steps per frame) for crisp collision accuracy
+      const subSteps = 4;
+      const subDt = dt / subSteps;
+
+      for (let s = 0; s < subSteps; s++) {
+        p.t += subDt;
+        p.vx += state.windAccel * subDt;
+        p.vy -= state.gravity * subDt;
+        p.x += p.vx * subDt;
+        p.y += p.vy * subDt;
+
+        if (p.y > p.maxH) {
+          p.maxH = p.y;
+          p.maxHPoint = { x: p.x, y: p.y };
+        }
+
+        // Check Apex Ring Bonus Checkpoint
+        if (st.apexRing && !state.ringCollectedThisStage) {
+          const distRing = Math.hypot(p.x - st.apexRing.x, p.y - st.apexRing.y);
+          if (distRing <= st.apexRing.r + 2.5) {
+            state.ringCollectedThisStage = true;
+            state.apexRingsCollected++;
+            state.score += 250;
+            updateHUD();
+            sfx.playApexRing();
+            const rScr = worldToScreen(st.apexRing.x, st.apexRing.y);
+            spawnParticles(rScr.x, rScr.y, '#c084fc', 22);
+            spawnFloatingLabel(rScr.x, rScr.y - 18, 'APEX RING +250!', '#d8b4fe');
+          }
+        }
+
+        // Check Target Sensor Hit
+        const distTarget = Math.hypot(p.x - st.targetX, p.y - st.targetY);
+        if (distTarget <= st.targetR + 2.2) {
+          recordTrajectory(p, true);
+          handleTargetHit();
+          return;
+        }
+
+        // Check Crimson Energy Barrier Collisions
+        for (const b of st.barriers) {
+          if (Math.abs(p.x - b.x) <= b.w * 0.5 + 1.8 && p.y >= b.y0 && p.y <= b.y1) {
+            recordTrajectory(p, false);
+            handleShotMiss('DEFLECTED BY ENERGY BARRIER!', true);
+            return;
+          }
+        }
+
+        // Check Ground or Out-of-Bounds Impact
+        if (p.y <= 0 || p.x > WORLD_MAX_X + 12 || p.x < -12) {
+          p.y = Math.max(0, p.y);
+          recordTrajectory(p, false);
+          const deltaErr = Math.round(p.x - st.targetX);
+          const errLabel = deltaErr > 0 ? `Overshot by +${deltaErr}m` : `Short by ${Math.abs(deltaErr)}m`;
+          handleShotMiss(`Impact at R = ${p.x.toFixed(1)}m (${errLabel}) | Hmax = ${p.maxH.toFixed(1)}m`, false);
+          return;
+        }
+      }
+
+      p.trail.push({ x: p.x, y: p.y });
+    }
+
+    function recordTrajectory(p, hit) {
+      p.trail.push({ x: p.x, y: p.y });
+      state.pastTrails.push({
+        points: [...p.trail],
+        maxH: p.maxH,
+        maxHPoint: { ...p.maxHPoint },
+        landX: p.x,
+        hit
+      });
+      if (state.pastTrails.length > 3) {
+        state.pastTrails.shift();
+      }
+      state.projectile = null;
+    }
+
+    function handleTargetHit() {
+      state.stageTransitioning = true;
+      state.targetsHit++;
+
+      const firstShot = state.shotsUsedThisStage === 1;
+      const basePts = 500 + state.stageIdx * 100;
+      const efficiencyBonus = state.shotsLeft * 150 + (firstShot ? 300 : 0);
+      const gained = basePts + efficiencyBonus;
+      state.score += gained;
+      updateHUD();
+
+      sfx.playTargetHit(firstShot);
+      const tScr = worldToScreen(state.stage.targetX, state.stage.targetY);
+      spawnParticles(tScr.x, tScr.y, '#10b981', 34);
+      spawnFloatingLabel(
+        tScr.x,
+        tScr.y - 26,
+        firstShot ? `FIRST-SHOT BULLSEYE! +${gained}` : `SENSOR HIT! +${gained}`,
+        '#34d399'
+      );
+
+      setBanner(
+        `${firstShot ? 'FIRST-SHOT BULLSEYE!' : 'TARGET SENSOR LOCKED!'} +${gained} PTS — Advancing to next test range...`,
+        'text-emerald-300'
+      );
+
+      setTimeout(() => {
+        if (state.stageIdx + 1 < STAGES.length) {
+          loadStage(state.stageIdx + 1);
+        } else {
+          finishRun(true);
+        }
+      }, 1350);
+    }
+
+    function handleShotMiss(message, hitBarrier) {
+      sfx.playBarrierDeflect();
+      state.screenShake = hitBarrier ? 10 : 5;
+      const lastPt = state.pastTrails[state.pastTrails.length - 1];
+      if (lastPt && lastPt.points.length > 0) {
+        const endW = lastPt.points[lastPt.points.length - 1];
+        const endS = worldToScreen(endW.x, endW.y);
+        spawnParticles(endS.x, endS.y, hitBarrier ? '#f43f5e' : '#f59e0b', 18);
+      }
+
+      if (state.shotsLeft <= 0) {
+        state.stageTransitioning = true;
+        setBanner(`Out of plasma charges! ${message} — Advancing stage...`, 'text-rose-300');
+        setTimeout(() => {
+          if (state.stageIdx + 1 < STAGES.length) {
+            loadStage(state.stageIdx + 1);
+          } else {
+            finishRun(false);
+          }
+        }, 1500);
+      } else {
+        setBanner(`${message} — Adjust θ or v₀ and fire again!`, hitBarrier ? 'text-rose-300' : 'text-amber-300');
+      }
+    }
+
+    function finishRun(completedAll) {
+      state.screen = 'end';
+      const overlay = document.getElementById('endOverlay');
+      overlay.classList.remove('hidden');
+
+      const acc = state.totalShotsFired > 0
+        ? Math.min(100, Math.round((state.targetsHit / state.totalShotsFired) * 100))
+        : 0;
+
+      let stars = 1;
+      if (state.targetsHit >= 9 || state.score >= 7500) stars = 3;
+      else if (state.targetsHit >= 5 || state.score >= 3800) stars = 2;
+      else if (state.targetsHit === 0) stars = 0;
+
+      document.getElementById('endStatusPill').textContent = completedAll
+        ? '10/10 Ballistics Ranges Tested'
+        : 'Range Calibration Complete';
+      document.getElementById('endTitle').textContent =
+        stars === 3 ? 'CHIEF BALLISTICS PHYSICIST!' : stars === 2 ? 'SENIOR TELEMETRY ENGINEER!' : 'CADET RANGER!';
+      document.getElementById('endSubtitle').textContent =
+        `Completed ${state.stage.title} under ${state.planet.name} conditions.`;
+
+      const starsEl = document.getElementById('endStars');
+      starsEl.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= stars;
+        const div = document.createElement('div');
+        div.style.animationDelay = `${(i - 1) * 160}ms`;
+        div.className = earned ? 'star-pop' : 'opacity-25 scale-90';
+        div.innerHTML = `
+          <svg class="w-12 h-12 ${earned ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.85)]' : 'text-slate-600'}" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsEl.appendChild(div);
+      }
+
+      document.getElementById('endFinalScore').textContent = state.score.toLocaleString();
+      document.getElementById('endStatHits').textContent = `${state.targetsHit}/${STAGES.length}`;
+      document.getElementById('endStatAcc').textContent = `${acc}%`;
+      document.getElementById('endStatRings').textContent = state.apexRingsCollected;
+    }
+
+    // =========================================================================
+    // 7. PARTICLES, WIND STREAKS & CANVAS RENDERING PIPELINE
+    // =========================================================================
+    function initWindStreaks() {
+      state.windStreaks = [];
+      for (let i = 0; i < 24; i++) {
+        state.windStreaks.push({
+          x: Math.random() * canvasW,
+          y: Math.random() * canvasH * 0.85,
+          len: 24 + Math.random() * 44,
+          speed: 90 + Math.random() * 140
+        });
+      }
+    }
+
+    function spawnParticles(sx, sy, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 40 + Math.random() * 180;
+        state.particles.push({
+          x: sx,
+          y: sy,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: 2 + Math.random() * 3.5,
+          color,
+          alpha: 1,
+          decay: 1.5 + Math.random()
+        });
+      }
+    }
+
+    function spawnFloatingLabel(sx, sy, text, color) {
+      state.floatingLabels.push({
+        x: sx,
+        y: sy,
+        vy: -42,
+        text,
+        color,
+        alpha: 1,
+        decay: 0.85
+      });
+    }
+
+    function updateVisuals(dt) {
+      state.screenShake = Math.max(0, state.screenShake - dt * 26);
+
+      // Animate Wind Streaks when windAccel != 0
+      if (state.windAccel !== 0) {
+        const dir = state.windAccel > 0 ? 1 : -1;
+        const mult = Math.abs(state.windAccel) * 0.65;
+        for (const w of state.windStreaks) {
+          w.x += dir * w.speed * mult * dt;
+          if (dir > 0 && w.x > canvasW + 60) w.x = -60;
+          if (dir < 0 && w.x < -60) w.x = canvasW + 60;
+        }
+      }
+
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) state.particles.splice(i, 1);
+      }
+
+      for (let i = state.floatingLabels.length - 1; i >= 0; i--) {
+        const fl = state.floatingLabels[i];
+        fl.y += fl.vy * dt;
+        fl.alpha -= fl.decay * dt;
+        if (fl.alpha <= 0) state.floatingLabels.splice(i, 1);
+      }
+    }
+
+    function drawRange() {
+      ctx.save();
+      if (state.screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+      }
+
+      // 1. Sky Gradient (adapts to Earth, Moon, Mars, or Jupiter)
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, canvasH);
+      skyGrad.addColorStop(0, state.planet.skyTop);
+      skyGrad.addColorStop(1, state.planet.skyBot);
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, canvasW, canvasH);
+
+      const m = getMetrics();
+
+      // 2. Metric Coordinate Telemetry Grid (every 20m)
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.065)';
+      ctx.lineWidth = 1;
+      ctx.font = '600 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
+
+      for (let wx = 0; wx <= WORLD_MAX_X; wx += 40) {
+        const sx = m.padLeft + wx * m.scaleX;
+        ctx.beginPath();
+        ctx.moveTo(sx, 0);
+        ctx.lineTo(sx, m.groundScreenY);
+        ctx.stroke();
+        ctx.textAlign = 'center';
+        ctx.fillText(`${wx}m`, sx, m.groundScreenY + 15);
+      }
+
+      for (let wy = 20; wy <= WORLD_MAX_Y; wy += 20) {
+        const sy = m.groundScreenY - wy * m.scaleY;
+        ctx.beginPath();
+        ctx.moveTo(m.padLeft, sy);
+        ctx.lineTo(canvasW, sy);
+        ctx.stroke();
+        ctx.textAlign = 'right';
+        ctx.fillText(`${wy}m`, m.padLeft - 8, sy + 3);
+      }
+
+      // 3. Crosswind Streaks (Mode 2)
+      if (state.windAccel !== 0) {
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.22)';
+        ctx.lineWidth = 1.5;
+        for (const w of state.windStreaks) {
+          ctx.beginPath();
+          ctx.moveTo(w.x, w.y);
+          ctx.lineTo(w.x + w.len, w.y);
+          ctx.stroke();
+        }
+      }
+
+      // 4. Ground Deck
+      ctx.fillStyle = '#09111e';
+      ctx.fillRect(0, m.groundScreenY, canvasW, canvasH - m.groundScreenY);
+      ctx.strokeStyle = state.planet.accent;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, m.groundScreenY);
+      ctx.lineTo(canvasW, m.groundScreenY);
+      ctx.stroke();
+
+      const st = state.stage;
+      if (!st) {
+        ctx.restore();
+        return;
+      }
+
+      // 5. Launcher Pedestal (if elevated) & Target Pedestal (if elevated)
+      if (st.launcherY > 0) {
+        const lTop = worldToScreen(0, st.launcherY);
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(lTop.x - 24, lTop.y, 48, m.groundScreenY - lTop.y);
+        ctx.strokeRect(lTop.x - 24, lTop.y, 48, m.groundScreenY - lTop.y);
+      }
+
+      if (st.targetY > 0) {
+        const tTop = worldToScreen(st.targetX, st.targetY);
+        ctx.fillStyle = '#0f2922';
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 1.5;
+        ctx.fillRect(tTop.x - 22, tTop.y, 44, m.groundScreenY - tTop.y);
+        ctx.strokeRect(tTop.x - 22, tTop.y, 44, m.groundScreenY - tTop.y);
+      }
+
+      // 6. Crimson Deflector Barriers
+      for (const b of st.barriers) {
+        const pTop = worldToScreen(b.x, b.y1);
+        const pBot = worldToScreen(b.x, b.y0);
+        const bw = Math.max(8, b.w * m.scaleX);
+        const bh = Math.max(10, pBot.y - pTop.y);
+
+        ctx.fillStyle = 'rgba(244, 63, 94, 0.24)';
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(244, 63, 94, 0.55)';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.roundRect(pTop.x - bw / 2, pTop.y, bw, bh, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      }
+
+      // 7. Bonus Apex Ring Checkpoint
+      if (st.apexRing) {
+        const rPos = worldToScreen(st.apexRing.x, st.apexRing.y);
+        const rPx = Math.max(16, st.apexRing.r * m.scaleX);
+        ctx.save();
+        ctx.strokeStyle = state.ringCollectedThisStage ? '#34d399' : '#c084fc';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.arc(rPos.x, rPos.y, rPx, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font = '700 10px "JetBrains Mono", monospace';
+        ctx.fillStyle = state.ringCollectedThisStage ? '#6ee7b7' : '#e9d5ff';
+        ctx.textAlign = 'center';
+        ctx.fillText(state.ringCollectedThisStage ? 'APEX +250' : 'APEX RING', rPos.x, rPos.y - rPx - 6);
+        ctx.restore();
+      }
+
+      // 8. Persistent Dotted Past Trajectory Trails with Hmax & Range Markers
+      state.pastTrails.forEach((tr, idx) => {
+        const isLatest = idx === state.pastTrails.length - 1;
+        ctx.save();
+        ctx.strokeStyle = tr.hit
+          ? 'rgba(52, 211, 153, 0.7)'
+          : isLatest
+          ? 'rgba(245, 158, 11, 0.55)'
+          : 'rgba(148, 163, 184, 0.25)';
+        ctx.lineWidth = isLatest ? 2 : 1.4;
+        ctx.setLineDash([4, 5]);
+        ctx.beginPath();
+        tr.points.forEach((pt, pIdx) => {
+          const s = worldToScreen(pt.x, pt.y);
+          if (pIdx === 0) ctx.moveTo(s.x, s.y);
+          else ctx.lineTo(s.x, s.y);
+        });
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        if (isLatest && tr.maxHPoint) {
+          const apexS = worldToScreen(tr.maxHPoint.x, tr.maxHPoint.y);
+          ctx.fillStyle = '#fbbf24';
+          ctx.beginPath();
+          ctx.arc(apexS.x, apexS.y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '700 10px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(`Hmax: ${tr.maxH.toFixed(1)}m`, apexS.x, apexS.y - 8);
+        }
+        ctx.restore();
+      });
+
+      // 9. Target Sensor Pad
+      const tPos = worldToScreen(st.targetX, st.targetY);
+      const tRadiusPx = Math.max(14, st.targetR * m.scaleX);
+      ctx.save();
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(16, 185, 129, 0.7)';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(tPos.x, tPos.y, tRadiusPx, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.fillStyle = '#34d399';
+      ctx.beginPath();
+      ctx.arc(tPos.x, tPos.y, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.font = '700 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = '#a7f3d0';
+      ctx.textAlign = 'center';
+      ctx.fillText(`TARGET (${st.targetX}m)`, tPos.x, tPos.y - tRadiusPx - 8);
+      ctx.restore();
+
+      // 10. Electromagnetic Launcher & Live Vector Decomposition Preview
+      drawLauncherAndVectors();
+
+      // 11. Active In-Flight Plasma Projectile
+      if (state.projectile) {
+        const p = state.projectile;
+        ctx.save();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        p.trail.forEach((pt, idx) => {
+          const s = worldToScreen(pt.x, pt.y);
+          if (idx === 0) ctx.moveTo(s.x, s.y);
+          else ctx.lineTo(s.x, s.y);
+        });
+        ctx.stroke();
+
+        const head = worldToScreen(p.x, p.y);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 16;
+        ctx.beginPath();
+        ctx.arc(head.x, head.y, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 12. Particles & Floating Telemetry Labels
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const fl of state.floatingLabels) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, fl.alpha);
+        ctx.font = '800 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = fl.color;
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(fl.text, fl.x, fl.y);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function drawLauncherAndVectors() {
+      const st = state.stage;
+      const origin = worldToScreen(0, st.launcherY);
+      const rad = (state.angleDeg * Math.PI) / 180;
+      const vecLen = 36 + state.velocity * 1.15;
+
+      const tipX = origin.x + Math.cos(rad) * vecLen;
+      const tipY = origin.y - Math.sin(rad) * vecLen;
+
+      ctx.save();
+
+      // Component Vector Guides: vx (horizontal cyan) & vy (vertical amber)
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(origin.x, origin.y);
+      ctx.lineTo(tipX, origin.y);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(245, 158, 11, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(tipX, origin.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Resultant Velocity Vector Arrow (v0)
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(origin.x, origin.y);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+
+      // Aiming Reticle Ring at Vector Tip
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(tipX, tipY, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Angle Arc
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, 26, -rad, 0);
+      ctx.stroke();
+
+      // Railgun Barrel
+      ctx.save();
+      ctx.translate(origin.x, origin.y);
+      ctx.rotate(-rad);
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-6, -7, 34, 14, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Base Turret Dome
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(origin.x, origin.y, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    // =========================================================================
+    // 8. MAIN 60FPS ANIMATION LOOP
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function mainLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+
+      if (state.screen === 'playing') {
+        if (state.projectile) {
+          stepProjectilePhysics(dt);
+        }
+        updateVisuals(dt);
+      }
+
+      drawRange();
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = function () {
+      resizeCanvas();
+      initWindStreaks();
+      setLaunchParams(45, 45, false);
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
