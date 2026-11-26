@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chrono-Train Express — History &amp; World Eras Railway Dispatch</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-yard: #070b14;
+      --brass-gold: #fbbf24;
+      --emerald-era: #34d399;
+      --cyan-era: #22d3ee;
+      --rose-era: #fb7185;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-yard);
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+    }
+
+    .font-display {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .font-mono-rail {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .brass-panel {
+      background: linear-gradient(165deg, rgba(17, 24, 39, 0.95) 0%, rgba(9, 13, 24, 0.98) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(251, 191, 36, 0.38);
+      box-shadow: 0 0 42px rgba(245, 158, 11, 0.16), inset 0 0 24px rgba(251, 191, 36, 0.06);
+    }
+
+    .brass-glow {
+      text-shadow: 0 0 14px rgba(251, 191, 36, 0.7), 0 0 28px rgba(245, 158, 11, 0.35);
+    }
+
+    .btn-brass {
+      transition: all 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 0 rgba(3, 7, 18, 0.88), 0 0 18px rgba(251, 191, 36, 0.24);
+    }
+
+    .btn-brass:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .btn-brass:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(3, 7, 18, 0.88);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-earned {
+      animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes rankToast {
+      0% { transform: translate(-50%, -18px) scale(0.88); opacity: 0; }
+      15% { transform: translate(-50%, 0) scale(1.03); opacity: 1; }
+      82% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -16px) scale(0.95); opacity: 0; }
+    }
+
+    .rank-banner {
+      animation: rankToast 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#070b14]">
+
+  <!-- TOP RAILWAY DISPATCH HUD -->
+  <header class="relative z-20 flex items-center justify-between px-2.5 sm:px-6 py-2 bg-slate-950/95 border-b border-amber-500/30 backdrop-blur-md shrink-0 gap-2">
+    <!-- Left: Signal Integrity Lives & Dispatcher Rank -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-900 border border-rose-500/35 px-2 sm:px-2.5 py-1.5 rounded-xl" title="Signal Integrity (Lives)">
+        <span class="text-[10px] sm:text-xs font-display font-bold uppercase tracking-wider text-rose-300 hidden lg:inline mr-1">Signals</span>
+        <div id="livesContainer" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- Dispatcher Grade Progress -->
+      <div class="flex flex-col justify-center bg-slate-900 border border-amber-400/40 px-2.5 sm:px-3.5 py-1 rounded-xl min-w-[92px] sm:min-w-[128px]">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-display font-bold">
+          <span id="hudGradeText" class="text-amber-300">GRADE 1</span>
+          <span id="hudGradeCount" class="text-cyan-300 font-mono-rail text-[10px]">0/4</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+          <div id="hudGradeBar" class="h-full bg-gradient-to-r from-amber-400 via-emerald-400 to-cyan-300 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Streak Multiplier Badge -->
+      <div id="streakBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 font-display text-xs font-bold">
+        <span>STREAK</span>
+        <span id="streakValue" class="text-amber-300 font-mono-rail text-sm">x1</span>
+      </div>
+    </div>
+
+    <!-- Center: Shift Countdown Timer -->
+    <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-900 border border-amber-400/40 px-3 sm:px-5 py-1 rounded-xl">
+      <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="timerDisplay" class="font-mono-rail font-extrabold text-sm sm:text-xl tracking-wider text-amber-200">01:30</span>
+    </div>
+
+    <!-- Right: Score, Sound Toggle, Pause -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-slate-900 border border-emerald-400/35 px-2.5 sm:px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] sm:text-xs font-display font-bold uppercase tracking-wider text-emerald-300/80 hidden lg:inline">Score</span>
+        <span id="scoreDisplay" class="font-mono-rail font-extrabold text-sm sm:text-lg text-emerald-300">0</span>
+      </div>
+
+      <button id="soundToggleBtn" type="button" aria-label="Toggle Sound" title="Toggle Sound (M)"
+        class="p-2 sm:p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-400/35 text-amber-300 transition active:scale-95">
+        <svg id="soundOnIcon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundOffIcon" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+      </button>
+
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause Game (Esc / P)"
+        class="p-2 sm:p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-rose-400/35 text-rose-300 transition active:scale-95">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- DISPATCH QUICK CONTROLS & ERA LEGEND BAR -->
+  <div class="relative z-10 bg-slate-900/95 border-b border-amber-500/25 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+    <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] font-semibold">
+      <span class="px-2 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/45 text-amber-200">
+        1. Ancient (&le;500 CE)
+      </span>
+      <span class="px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-400/45 text-emerald-200">
+        2. Medieval &amp; Ren. (500–1700)
+      </span>
+      <span class="px-2 py-0.5 rounded-lg bg-cyan-500/20 border border-cyan-400/45 text-cyan-200">
+        3. Industrial (1700–1900)
+      </span>
+      <span class="px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-400/45 text-rose-200">
+        4. Modern (1900–Now)
+      </span>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0">
+      <button id="holdSignalBtn" type="button" title="Toggle Red Hold Semaphore on Main Tunnel (H)"
+        class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-400/35 text-amber-200 font-display font-bold text-[11px] transition active:scale-95">
+        Hold Tunnel [H]
+      </button>
+      <button id="expressBoostBtn" type="button" title="Express Whistle Boost for Lead Train (Space)"
+        class="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-display font-extrabold text-[11px] shadow-[0_0_12px_rgba(251,191,36,0.4)] transition active:scale-95">
+        Express Boost [Space]
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN RAILWAY DISPATCH CANVAS ARENA -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="block w-full h-full cursor-pointer"></canvas>
+
+    <!-- Grade Up Floating Banner -->
+    <div id="gradeUpBanner" class="hidden pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-slate-950/95 via-amber-950/95 to-emerald-950/95 border-2 border-amber-300 shadow-[0_0_28px_rgba(251,191,36,0.65)] text-center">
+      <div id="gradeBannerTitle" class="font-display font-bold text-base sm:text-xl tracking-wider text-amber-300 brass-glow">
+        DISPATCH GRADE 2 PROMOTION!
+      </div>
+      <div id="gradeBannerSub" class="text-[11px] sm:text-xs font-semibold text-emerald-200 mt-0.5">
+        EXPRESS SCHEDULE ACCELERATED
+      </div>
+    </div>
+
+    <!-- ==================== 1. START SCREEN OVERLAY ==================== -->
+    <section id="startScreen" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#070b14]/85 backdrop-blur-md">
+      <div class="brass-panel w-full max-w-xl rounded-3xl p-5 sm:p-8 text-center relative">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-display font-bold tracking-widest uppercase mb-3">
+          <span>History &amp; World Eras Dispatch Sim</span>
+        </div>
+
+        <h1 class="font-display font-bold text-3xl sm:text-5xl tracking-tight text-white brass-glow mb-2">
+          CHRONO-TRAIN EXPRESS
+        </h1>
+        <p class="text-slate-300 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5 leading-relaxed">
+          Click or tap the <strong class="text-amber-300">Y-Junction Track Switches</strong> (or press keys <strong class="text-cyan-300">1, 2, 3</strong>) to route steam locomotives carrying historical inventions, leaders, and milestones into their matching <strong class="text-emerald-300">Century Era Depot</strong>!
+        </p>
+
+        <!-- Historical Theme Filter -->
+        <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 mb-6 text-left">
+          <div class="flex items-center justify-between mb-2.5">
+            <label class="font-display font-bold text-xs uppercase tracking-wider text-amber-300">Select Historical Manifest</label>
+            <span class="text-[11px] font-display font-bold text-cyan-300 bg-cyan-500/15 border border-cyan-400/30 px-2.5 py-0.5 rounded-full">
+              4 Era Depots
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="topicSelector">
+            <button type="button" data-topic="all" class="topic-btn active px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/25 border border-amber-300 text-white transition">
+              All Eras
+            </button>
+            <button type="button" data-topic="inventions" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-amber-400/50 transition">
+              Inventions &amp; Science
+            </button>
+            <button type="button" data-topic="empires" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-amber-400/50 transition">
+              Empires &amp; Politics
+            </button>
+            <button type="button" data-topic="milestones" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-800/80 border border-slate-700 text-slate-300 hover:border-amber-400/50 transition">
+              Global Milestones
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button id="startGameBtn" type="button"
+            class="btn-brass w-full sm:w-auto px-8 py-3.5 rounded-2xl font-display font-bold text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 border border-amber-200/80">
+            Open Dispatch Yard
+          </button>
+
+          <button id="openInstructionsBtn" type="button"
+            class="btn-brass w-full sm:w-auto px-6 py-3.5 rounded-2xl font-display font-bold text-xs sm:text-sm tracking-wider uppercase bg-slate-800/95 text-amber-200 border border-amber-400/40 hover:bg-slate-700">
+            Dispatch Manual
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <a href="./index.html" class="text-xs text-amber-300/80 hover:text-cyan-300 underline transition">
+            &larr; Return to Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. INSTRUCTIONS MODAL OVERLAY ==================== -->
+    <section id="instructionsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-[#070b14]/90 backdrop-blur-md">
+      <div class="brass-panel w-full max-w-2xl max-h-[90%] overflow-y-auto rounded-3xl p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-amber-500/30 pb-3 mb-4">
+          <h2 class="font-display font-bold text-lg sm:text-2xl text-amber-300 brass-glow">
+            RAILWAY DISPATCH MANUAL
+          </h2>
+          <button id="closeInstructionsBtn" type="button" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-slate-200">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-slate-900/90 border border-amber-500/25 rounded-2xl p-3.5">
+              <div class="font-display text-amber-300 font-bold text-xs uppercase mb-1.5">1. Toggle Y-Junction Switches</div>
+              <p class="text-slate-300 leading-relaxed mb-2">
+                Trains emerge from the left tunnel carrying a historical placard. <strong class="text-white">Click/Tap any glowing switch circle</strong> (or press <strong class="text-cyan-300">1, 2, 3</strong>) to flip the active amber rail path.
+              </p>
+              <div class="p-2 rounded-xl bg-black/40 font-mono-rail text-xs text-amber-200 border border-slate-800">
+                "Printing Press" &rarr; <span class="text-emerald-300 font-bold">Medieval &amp; Ren. (1440)</span><br>
+                "Apollo 11" &rarr; <span class="text-rose-300 font-bold">Modern Era (1969)</span>
+              </div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-cyan-500/25 rounded-2xl p-3.5">
+              <div class="font-display text-cyan-300 font-bold text-xs uppercase mb-1.5">2. Traffic Control &amp; Express Boost</div>
+              <ul class="space-y-1.5 text-xs text-slate-300">
+                <li>&bull; <strong class="text-amber-300">Express Boost [Space]:</strong> Click any train or press Spacebar once its path is set to speed it into its depot for bonus points!</li>
+                <li>&bull; <strong class="text-rose-300">Hold Tunnel [H]:</strong> Click the red/green semaphore at the tunnel mouth to pause incoming trains if two trains get too close.</li>
+                <li>&bull; <strong class="text-emerald-300">Auto-Spacing:</strong> Trains automatically brake behind a slower train ahead to prevent rear-end crashes!</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/90 border border-emerald-500/25 rounded-2xl p-3.5">
+            <div class="font-display text-emerald-300 font-bold text-xs uppercase mb-2">3. The Four Era Depots</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-400/30"><strong class="text-amber-300">Ancient World (3000 BCE–500 CE):</strong> Pyramids, Hammurabi, Silk Road, Roman Republic</div>
+              <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-400/30"><strong class="text-emerald-300">Medieval &amp; Renaissance (500–1700):</strong> Magna Carta, Printing Press, Compass, Gutenberg</div>
+              <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-400/30"><strong class="text-cyan-300">Industrial Revolution (1700–1900):</strong> Steam Engine, Telegraph, Light Bulb, French Revolution</div>
+              <div class="p-2 rounded-xl bg-rose-500/10 border border-rose-400/30"><strong class="text-rose-300">Modern Era (1900–Present):</strong> First Airplane, DNA Helix, Apollo 11, World Wide Web</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end">
+          <button id="gotItBtn" type="button"
+            class="btn-brass px-6 py-2.5 rounded-xl font-display font-bold text-xs sm:text-sm uppercase bg-amber-400 text-slate-950">
+            All Aboard!
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PAUSE OVERLAY ==================== -->
+    <section id="pauseOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-[#070b14]/85 backdrop-blur-md">
+      <div class="brass-panel w-full max-w-sm rounded-3xl p-6 text-center">
+        <h2 class="font-display font-bold text-2xl text-white mb-1">SIGNALS ON HOLD</h2>
+        <p id="pauseLevelInfo" class="text-amber-300 font-display font-bold text-xs mb-6">Grade 1 &bull; 0 Trains Dispatched</p>
+
+        <div class="flex flex-col gap-2.5">
+          <button id="resumeBtn" type="button"
+            class="btn-brass w-full py-3 rounded-xl font-display font-bold text-sm uppercase bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950">
+            Resume Shift
+          </button>
+          <button id="restartFromPauseBtn" type="button"
+            class="btn-brass w-full py-3 rounded-xl font-display font-bold text-xs uppercase bg-slate-800 text-amber-300 border border-amber-400/35">
+            Restart Shift
+          </button>
+          <button id="quitToMenuBtn" type="button"
+            class="btn-brass w-full py-3 rounded-xl font-display font-bold text-xs uppercase bg-slate-900 text-slate-200 border border-slate-700">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. END GAME OVERLAY ==================== -->
+    <section id="endGameOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#070b14]/90 backdrop-blur-md">
+      <div class="brass-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+        <div id="endStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-display font-bold uppercase tracking-widest mb-2 bg-amber-500/20 border border-amber-400/40 text-amber-300">
+          Shift Complete
+        </div>
+
+        <h2 id="endTitle" class="font-display font-bold text-2xl sm:text-3xl text-white brass-glow mb-3">
+          MASTER STATIONMASTER!
+        </h2>
+
+        <!-- 3 Stars Rating -->
+        <div id="starsContainer" class="flex items-center justify-center gap-3 my-3"></div>
+        <p id="starCaption" class="text-xs text-slate-300 mb-5 font-medium">Punctual chronological routing!</p>
+
+        <!-- Total Score & Breakdown -->
+        <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-4 mb-6">
+          <div class="text-xs font-display font-bold uppercase tracking-wider text-amber-300/80 mb-1">Total Dispatch Score</div>
+          <div id="finalScoreDisplay" class="font-mono-rail font-black text-3xl sm:text-4xl text-emerald-300 mb-3">
+            0
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800 text-center">
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-display font-bold">Routed</div>
+              <div id="statSolved" class="font-mono-rail font-bold text-base text-amber-200">0</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-display font-bold">Best Streak</div>
+              <div id="statStreak" class="font-mono-rail font-bold text-base text-cyan-300">x1</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-display font-bold">Accuracy</div>
+              <div id="statAccuracy" class="font-mono-rail font-bold text-base text-emerald-300">100%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="tryAgainBtn" type="button"
+            class="btn-brass flex-1 py-3.5 px-5 rounded-2xl font-display font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 border border-amber-200/80">
+            Play Again
+          </button>
+          <a href="./index.html"
+            class="btn-brass py-3.5 px-5 rounded-2xl font-display font-bold text-xs uppercase tracking-wider bg-slate-800 text-slate-100 border border-slate-600 flex items-center justify-center">
+            Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * CHRONO-TRAIN EXPRESS — HISTORY & WORLD ERAS RAILWAY DISPATCH SIM
+     * Click Y-junction track switches (or press 1, 2, 3) to route historical trains
+     * into their matching Century Era Depots!
+     */
+
+    // =========================================================================
+    // 1. STEAM WHISTLE, SWITCH CLICK & ARRIVAL CHIME WEB AUDIO ENGINE
+    // =========================================================================
+    class RailwayAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playSwitchClack(branch = 0) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(branch === 0 ? 320 : 440, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.055);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+      }
+
+      playSteamWhistle() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        [587.33, 739.99].forEach(freq => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq * 0.96, now);
+          osc.frequency.linearRampToValueAtTime(freq, now + 0.08);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        });
+      }
+
+      playStationArrival(streak = 1) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const base = 440 + Math.min(5, streak) * 45;
+        [base, base * 1.25, base * 1.5].forEach((freq, idx) => {
+          const now = this.ctx.currentTime + idx * 0.065;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        });
+      }
+
+      playWrongDepot() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(165, now);
+        osc.frequency.exponentialRampToValueAtTime(58, now + 0.36);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.39);
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.09;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        });
+      }
+    }
+
+    const sound = new RailwayAudioEngine();
+
+    // =========================================================================
+    // 2. HISTORICAL ERAS & CARGO MANIFEST DATABASE
+    // =========================================================================
+    const ERA_DEPOTS = [
+      {
+        id: 0,
+        shortName: 'ANCIENT WORLD',
+        span: '3000 BCE – 500 CE',
+        color: '#fbbf24',
+        bgFill: 'rgba(245, 158, 11, 0.16)',
+        border: '#fbbf24',
+        text: '#fef3c7'
+      },
+      {
+        id: 1,
+        shortName: 'MEDIEVAL & REN.',
+        span: '500 – 1700 CE',
+        color: '#34d399',
+        bgFill: 'rgba(16, 185, 129, 0.16)',
+        border: '#34d399',
+        text: '#d1fae5'
+      },
+      {
+        id: 2,
+        shortName: 'INDUSTRIAL AGE',
+        span: '1700 – 1900 CE',
+        color: '#22d3ee',
+        bgFill: 'rgba(6, 182, 212, 0.16)',
+        border: '#22d3ee',
+        text: '#cffafe'
+      },
+      {
+        id: 3,
+        shortName: 'MODERN ERA',
+        span: '1900 – PRESENT',
+        color: '#fb7185',
+        bgFill: 'rgba(244, 63, 94, 0.16)',
+        border: '#fb7185',
+        text: '#ffe4e6'
+      }
+    ];
+
+    const HISTORICAL_CARGO = [
+      // ERA 0: ANCIENT WORLD (3000 BCE – 500 CE)
+      { era: 0, topic: 'milestones', label: 'Great Pyramid of Giza', year: 'c. 2560 BCE' },
+      { era: 0, topic: 'empires', label: "Hammurabi's Code", year: 'c. 1750 BCE' },
+      { era: 0, topic: 'empires', label: 'Athenian Democracy', year: '508 BCE' },
+      { era: 0, topic: 'milestones', label: 'The Silk Road Opens', year: '130 BCE' },
+      { era: 0, topic: 'empires', label: 'Roman Republic & Pax Romana', year: '27 BCE' },
+      { era: 0, topic: 'inventions', label: 'Papermaking (Cai Lun)', year: '105 CE' },
+      { era: 0, topic: 'inventions', label: 'Archimedes Screw & Lever', year: 'c. 250 BCE' },
+
+      // ERA 1: MEDIEVAL & RENAISSANCE (500 – 1700 CE)
+      { era: 1, topic: 'empires', label: 'Magna Carta Signed', year: '1215 CE' },
+      { era: 1, topic: 'inventions', label: 'Gutenberg Printing Press', year: '1440 CE' },
+      { era: 1, topic: 'inventions', label: 'Magnetic Compass & Astrolabe', year: 'c. 1100 CE' },
+      { era: 1, topic: 'milestones', label: 'Mansa Musa Pilgrimage', year: '1324 CE' },
+      { era: 1, topic: 'inventions', label: "Galileo's Telescope", year: '1609 CE' },
+      { era: 1, topic: 'inventions', label: "Newton's Laws of Motion", year: '1687 CE' },
+      { era: 1, topic: 'milestones', label: 'Renaissance in Florence', year: 'c. 1400 CE' },
+
+      // ERA 2: INDUSTRIAL REVOLUTION (1700 – 1900 CE)
+      { era: 2, topic: 'inventions', label: 'Watt Steam Engine', year: '1776 CE' },
+      { era: 2, topic: 'empires', label: 'French Revolution', year: '1789 CE' },
+      { era: 2, topic: 'inventions', label: 'Morse Electric Telegraph', year: '1844 CE' },
+      { era: 2, topic: 'inventions', label: 'First Steam Locomotive', year: '1804 CE' },
+      { era: 2, topic: 'inventions', label: 'Electric Light Bulb', year: '1879 CE' },
+      { era: 2, topic: 'milestones', label: 'Suez Canal Completed', year: '1869 CE' },
+      { era: 2, topic: 'inventions', label: 'Periodic Table (Mendeleev)', year: '1869 CE' },
+
+      // ERA 3: MODERN ERA (1900 – PRESENT)
+      { era: 3, topic: 'inventions', label: 'Wright Brothers Airplane', year: '1903 CE' },
+      { era: 3, topic: 'inventions', label: 'DNA Double Helix Discovered', year: '1953 CE' },
+      { era: 3, topic: 'milestones', label: 'Apollo 11 Moon Landing', year: '1969 CE' },
+      { era: 3, topic: 'inventions', label: 'World Wide Web (HTTP)', year: '1989 CE' },
+      { era: 3, topic: 'empires', label: 'United Nations Founded', year: '1945 CE' },
+      { era: 3, topic: 'inventions', label: 'Penicillin Antibiotic', year: '1928 CE' },
+      { era: 3, topic: 'milestones', label: 'Fall of the Berlin Wall', year: '1989 CE' }
+    ];
+
+    // =========================================================================
+    // 3. RAILWAY NETWORK TOPOLOGY & GAME STATE
+    // =========================================================================
+    /**
+     * Branching Railway Tree Topology (Normalized coordinates 0..1 mapped to canvas):
+     *
+     * Tunnel (0.04, 0.50) ---> Switch 0 [Key 1] (0.28, 0.50)
+     *                            |-- state 0 (UP) ---> Switch 1 [Key 2] (0.54, 0.27)
+     *                            |                       |-- state 0 (UP) ---> Depot 0: Ancient World (0.84, 0.14)
+     *                            |                       |-- state 1 (DN) ---> Depot 1: Medieval & Ren (0.84, 0.38)
+     *                            |
+     *                            |-- state 1 (DN) ---> Switch 2 [Key 3] (0.54, 0.73)
+     *                                                    |-- state 0 (UP) ---> Depot 2: Industrial Age (0.84, 0.62)
+     *                                                    |-- state 1 (DN) ---> Depot 3: Modern Era (0.84, 0.86)
+     */
+    const GAME_DURATION = 90;
+    const MAX_LIVES = 3;
+    const TRAINS_PER_GRADE = 4;
+
+    const state = {
+      mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+      topic: 'all',
+      grade: 1,
+      gradeProgress: 0,
+      timeLeft: GAME_DURATION,
+      score: 0,
+      lives: MAX_LIVES,
+      streak: 1,
+      bestStreak: 1,
+      routedCount: 0,
+      wrongCount: 0,
+      switches: [0, 0, 0], // 0 = upper branch, 1 = lower branch
+      tunnelHold: false,
+      trains: [],
+      smokePuffs: [],
+      particles: [],
+      floatingTexts: [],
+      spawnTimer: 0,
+      screenShake: 0,
+      flashColor: null,
+      flashAlpha: 0,
+      nextTrainId: 1,
+      lastCargoLabel: ''
+    };
+
+    // =========================================================================
+    // 4. DOM REFERENCES & CONTROLS
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    const livesContainerEl = document.getElementById('livesContainer');
+    const hudGradeTextEl = document.getElementById('hudGradeText');
+    const hudGradeCountEl = document.getElementById('hudGradeCount');
+    const hudGradeBarEl = document.getElementById('hudGradeBar');
+    const streakBadgeEl = document.getElementById('streakBadge');
+    const streakValueEl = document.getElementById('streakValue');
+    const timerDisplayEl = document.getElementById('timerDisplay');
+    const scoreDisplayEl = document.getElementById('scoreDisplay');
+
+    const startScreenEl = document.getElementById('startScreen');
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const pauseOverlayEl = document.getElementById('pauseOverlay');
+    const endGameOverlayEl = document.getElementById('endGameOverlay');
+    const holdSignalBtnEl = document.getElementById('holdSignalBtn');
+
+    // Topic filter buttons
+    document.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playSwitchClack(0);
+        document.querySelectorAll('.topic-btn').forEach(b => {
+          b.classList.remove('active', 'bg-amber-500/25', 'border-amber-300', 'text-white');
+          b.classList.add('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        });
+        btn.classList.add('active', 'bg-amber-500/25', 'border-amber-300', 'text-white');
+        btn.classList.remove('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        state.topic = btn.dataset.topic;
+      });
+    });
+
+    document.getElementById('startGameBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('tryAgainBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('restartFromPauseBtn').addEventListener('click', () => startNewGame());
+
+    document.getElementById('openInstructionsBtn').addEventListener('click', () => {
+      sound.playSwitchClack(1);
+      instructionsModalEl.classList.remove('hidden');
+    });
+
+    document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+      sound.playSwitchClack(0);
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('gotItBtn').addEventListener('click', () => {
+      sound.playSwitchClack(1);
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => togglePause());
+    document.getElementById('resumeBtn').addEventListener('click', () => togglePause(false));
+    document.getElementById('quitToMenuBtn').addEventListener('click', () => returnToMenu());
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('soundOnIcon').classList.toggle('hidden', muted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !muted);
+      if (!muted) sound.playSwitchClack(1);
+    });
+
+    holdSignalBtnEl.addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      toggleTunnelHold();
+    });
+
+    document.getElementById('expressBoostBtn').addEventListener('click', (e) => {
+      e.currentTarget.blur();
+      triggerExpressBoost();
+    });
+
+    function toggleSwitch(index) {
+      if (state.mode !== 'PLAYING') return;
+      state.switches[index] = state.switches[index] === 0 ? 1 : 0;
+      sound.playSwitchClack(state.switches[index]);
+      const pts = getSwitchNodes();
+      const sw = pts[index];
+      spawnBurst(sw.x, sw.y, '#fbbf24', 10);
+    }
+
+    function toggleTunnelHold() {
+      if (state.mode !== 'PLAYING') return;
+      state.tunnelHold = !state.tunnelHold;
+      sound.playSwitchClack(state.tunnelHold ? 1 : 0);
+      if (state.tunnelHold) {
+        holdSignalBtnEl.classList.add('bg-rose-500/30', 'border-rose-400', 'text-rose-200');
+        holdSignalBtnEl.classList.remove('bg-slate-800', 'border-amber-400/35', 'text-amber-200');
+        holdSignalBtnEl.textContent = 'Tunnel HELD [H]';
+      } else {
+        holdSignalBtnEl.classList.remove('bg-rose-500/30', 'border-rose-400', 'text-rose-200');
+        holdSignalBtnEl.classList.add('bg-slate-800', 'border-amber-400/35', 'text-amber-200');
+        holdSignalBtnEl.textContent = 'Hold Tunnel [H]';
+      }
+    }
+
+    function triggerExpressBoost(specificTrain = null) {
+      if (state.mode !== 'PLAYING' || state.trains.length === 0) return;
+      // Boost the train furthest along the track (closest to depot) unless clicked directly
+      const target = specificTrain || [...state.trains].sort((a, b) => b.progress - a.progress)[0];
+      if (target && !target.boosted) {
+        target.boosted = true;
+        sound.playSteamWhistle();
+        spawnBurst(target.x, target.y, '#38bdf8', 14);
+        spawnFloatingText(target.x, target.y - 34, 'EXPRESS BOOST!', '#38bdf8');
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if (state.mode === 'PLAYING' || state.mode === 'PAUSED') {
+          e.preventDefault();
+          togglePause();
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+      if (state.mode !== 'PLAYING') return;
+
+      if (e.key === '1') toggleSwitch(0);
+      else if (e.key === '2') toggleSwitch(1);
+      else if (e.key === '3') toggleSwitch(2);
+      else if (e.key.toLowerCase() === 'h') toggleTunnelHold();
+      else if (e.code === 'Space') {
+        e.preventDefault();
+        triggerExpressBoost();
+      }
+    });
+
+    // Canvas click/tap interaction for switches, tunnel semaphore, and trains
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.mode !== 'PLAYING') return;
+      sound.init();
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+
+      // 1. Check Switch Nodes (generous touch radius)
+      const switches = getSwitchNodes();
+      for (let i = 0; i < switches.length; i++) {
+        if (Math.hypot(px - switches[i].x, py - switches[i].y) <= 34) {
+          toggleSwitch(i);
+          return;
+        }
+      }
+
+      // 2. Check Main Tunnel Semaphore
+      const tunnel = getTunnelPoint();
+      if (Math.hypot(px - tunnel.x, py - tunnel.y) <= 36) {
+        toggleTunnelHold();
+        return;
+      }
+
+      // 3. Check Clicking a Locomotive for Express Boost
+      for (const tr of state.trains) {
+        if (Math.abs(px - tr.x) <= 72 && Math.abs(py - tr.y) <= 34) {
+          triggerExpressBoost(tr);
+          return;
+        }
+      }
+    });
+
+    // =========================================================================
+    // 5. RESPONSIVE CANVAS & RAILWAY GEOMETRY HELPERS
+    // =========================================================================
+    let canvasWidth = 860;
+    let canvasHeight = 520;
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasWidth = Math.max(320, rect.width);
+      canvasHeight = Math.max(260, rect.height);
+
+      canvas.width = Math.floor(canvasWidth * dpr);
+      canvas.height = Math.floor(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function getTunnelPoint() {
+      return { x: canvasWidth * 0.06, y: canvasHeight * 0.5 };
+    }
+
+    function getSwitchNodes() {
+      return [
+        { id: 0, key: '1', x: canvasWidth * 0.27, y: canvasHeight * 0.5 },
+        { id: 1, key: '2', x: canvasWidth * 0.53, y: canvasHeight * 0.27 },
+        { id: 2, key: '3', x: canvasWidth * 0.53, y: canvasHeight * 0.73 }
+      ];
+    }
+
+    function getDepotPoints() {
+      const depotX = canvasWidth * 0.81;
+      const ys = [0.14, 0.38, 0.62, 0.86];
+      return ERA_DEPOTS.map((era, idx) => ({
+        ...era,
+        x: depotX,
+        y: canvasHeight * ys[idx]
+      }));
+    }
+
+    /**
+     * Evaluates the position (x, y) and current active destination depot along
+     * the 3-segment branching track from progress = 0 (tunnel) to progress = 1 (depot).
+     */
+    function evaluateTrainPosition(progress) {
+      const tunnel = getTunnelPoint();
+      const sw = getSwitchNodes();
+      const depots = getDepotPoints();
+
+      // Segment 1: Tunnel (0.0) -> Switch 0 (0.33)
+      if (progress <= 0.33) {
+        const t = progress / 0.33;
+        return {
+          x: tunnel.x + (sw[0].x - tunnel.x) * t,
+          y: tunnel.y + (sw[0].y - tunnel.y) * t,
+          targetDepot: null
+        };
+      }
+
+      // Branch choice at Switch 0
+      const branch0 = state.switches[0]; // 0 = upper (Switch 1), 1 = lower (Switch 2)
+      const midSwitch = branch0 === 0 ? sw[1] : sw[2];
+
+      // Segment 2: Switch 0 (0.33) -> Mid Switch (0.66)
+      if (progress <= 0.66) {
+        const t = (progress - 0.33) / 0.33;
+        const smoothT = t * t * (3 - 2 * t);
+        return {
+          x: sw[0].x + (midSwitch.x - sw[0].x) * t,
+          y: sw[0].y + (midSwitch.y - sw[0].y) * smoothT,
+          targetDepot: null
+        };
+      }
+
+      // Branch choice at Switch 1 or Switch 2
+      const branchMid = branch0 === 0 ? state.switches[1] : state.switches[2];
+      const depotIdx = branch0 === 0 ? (branchMid === 0 ? 0 : 1) : (branchMid === 0 ? 2 : 3);
+      const depot = depots[depotIdx];
+
+      // Segment 3: Mid Switch (0.66) -> Depot (1.0)
+      const t = Math.min(1, (progress - 0.66) / 0.34);
+      const smoothT = t * t * (3 - 2 * t);
+      return {
+        x: midSwitch.x + (depot.x - midSwitch.x) * t,
+        y: midSwitch.y + (depot.y - midSwitch.y) * smoothT,
+        targetDepot: depot
+      };
+    }
+
+    // =========================================================================
+    // 6. TRAIN SPAWNER & STATION EVALUATION
+    // =========================================================================
+    function spawnChronoTrain() {
+      // Prevent spawning if tunnel hold is active or another train is still near the tunnel mouth
+      if (state.tunnelHold) return;
+      if (state.trains.some(t => t.progress < 0.24)) return;
+
+      const pool = HISTORICAL_CARGO.filter(c => state.topic === 'all' || c.topic === state.topic);
+      const filtered = pool.filter(c => c.label !== state.lastCargoLabel);
+      const candidates = filtered.length > 0 ? filtered : pool;
+      const cargo = candidates[Math.floor(Math.random() * candidates.length)];
+      state.lastCargoLabel = cargo.label;
+
+      const tunnel = getTunnelPoint();
+      const baseSpeed = Math.min(0.145, 0.082 + (state.grade - 1) * 0.011);
+
+      state.trains.push({
+        id: state.nextTrainId++,
+        cargo,
+        progress: 0,
+        speed: baseSpeed,
+        x: tunnel.x,
+        y: tunnel.y,
+        boosted: false,
+        smokeTimer: 0
+      });
+    }
+
+    function handleTrainArrival(train, depot) {
+      if (train.cargo.era === depot.id) {
+        // Routed to the correct Era Depot!
+        sound.playStationArrival(state.streak);
+        const boostBonus = train.boosted ? 50 : 0;
+        const pts = (120 + state.grade * 25 + boostBonus) * state.streak;
+        state.score += pts;
+        state.routedCount++;
+        state.streak = Math.min(5, state.streak + 1);
+        state.bestStreak = Math.max(state.bestStreak, state.streak);
+
+        spawnBurst(depot.x, depot.y, depot.color, 22);
+        spawnFloatingText(
+          depot.x - 40,
+          depot.y - 26,
+          `+${pts} • ${train.cargo.year}!`,
+          depot.color
+        );
+
+        state.gradeProgress++;
+        if (state.gradeProgress >= TRAINS_PER_GRADE) {
+          state.grade++;
+          state.gradeProgress = 0;
+          const banner = document.getElementById('gradeUpBanner');
+          document.getElementById('gradeBannerTitle').textContent = `DISPATCH GRADE ${state.grade}!`;
+          document.getElementById('gradeBannerSub').textContent = `TIMETABLE SPEED INCREASED`;
+          banner.classList.remove('hidden', 'rank-banner');
+          void banner.offsetWidth;
+          banner.classList.add('rank-banner');
+        }
+      } else {
+        // Wrong Era Depot!
+        sound.playWrongDepot();
+        state.lives--;
+        state.wrongCount++;
+        state.streak = 1;
+        state.screenShake = 14;
+        state.flashColor = '#fb7185';
+        state.flashAlpha = 0.65;
+
+        const rightEra = ERA_DEPOTS[train.cargo.era];
+        spawnBurst(depot.x, depot.y, '#fb7185', 22);
+        spawnFloatingText(
+          depot.x - 65,
+          depot.y - 26,
+          `WRONG ERA! ${train.cargo.year} (${rightEra.shortName})`,
+          '#fda4af'
+        );
+
+        renderLives();
+        if (state.lives <= 0) {
+          updateHUD();
+          endGame(false);
+          return;
+        }
+      }
+
+      updateHUD();
+    }
+
+    // =========================================================================
+    // 7. HUD, LIFECYCLE & PARTICLE HELPERS
+    // =========================================================================
+    function renderLives() {
+      livesContainerEl.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const alive = i < state.lives;
+        const heart = document.createElement('span');
+        heart.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${alive ? 'text-rose-500 scale-100 drop-shadow-[0_0_6px_rgba(244,63,94,0.85)]' : 'text-slate-800 scale-90'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        `;
+        livesContainerEl.appendChild(heart);
+      }
+    }
+
+    function updateHUD() {
+      scoreDisplayEl.textContent = state.score.toLocaleString();
+      streakValueEl.textContent = `x${state.streak}`;
+      streakBadgeEl.classList.toggle('opacity-45', state.streak <= 1);
+
+      hudGradeTextEl.textContent = `GRADE ${state.grade}`;
+      hudGradeCountEl.textContent = `${state.gradeProgress}/${TRAINS_PER_GRADE}`;
+      hudGradeBarEl.style.width = `${(state.gradeProgress / TRAINS_PER_GRADE) * 100}%`;
+
+      const secs = Math.max(0, Math.ceil(state.timeLeft));
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      timerDisplayEl.textContent = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      if (secs <= 15 && state.mode === 'PLAYING') {
+        timerDisplayEl.classList.remove('text-amber-200');
+        timerDisplayEl.classList.add('text-rose-400', 'animate-pulse');
+      } else {
+        timerDisplayEl.classList.add('text-amber-200');
+        timerDisplayEl.classList.remove('text-rose-400', 'animate-pulse');
+      }
+    }
+
+    function startNewGame() {
+      sound.init();
+      sound.playSteamWhistle();
+
+      state.mode = 'PLAYING';
+      state.grade = 1;
+      state.gradeProgress = 0;
+      state.timeLeft = GAME_DURATION;
+      state.score = 0;
+      state.lives = MAX_LIVES;
+      state.streak = 1;
+      state.bestStreak = 1;
+      state.routedCount = 0;
+      state.wrongCount = 0;
+      state.switches = [0, 0, 0];
+      state.tunnelHold = false;
+      state.trains = [];
+      state.smokePuffs = [];
+      state.particles = [];
+      state.floatingTexts = [];
+      state.spawnTimer = 0.2;
+      state.screenShake = 0;
+      state.flashAlpha = 0;
+
+      holdSignalBtnEl.classList.remove('bg-rose-500/30', 'border-rose-400', 'text-rose-200');
+      holdSignalBtnEl.classList.add('bg-slate-800', 'border-amber-400/35', 'text-amber-200');
+      holdSignalBtnEl.textContent = 'Hold Tunnel [H]';
+
+      startScreenEl.classList.add('hidden');
+      instructionsModalEl.classList.add('hidden');
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      document.getElementById('gradeUpBanner').classList.add('hidden');
+
+      resizeCanvas();
+      renderLives();
+      updateHUD();
+    }
+
+    function togglePause(forceState) {
+      if (state.mode !== 'PLAYING' && state.mode !== 'PAUSED') return;
+      const shouldPause = typeof forceState === 'boolean' ? forceState : state.mode === 'PLAYING';
+      if (shouldPause) {
+        state.mode = 'PAUSED';
+        document.getElementById('pauseLevelInfo').textContent = `Grade ${state.grade} • ${state.routedCount} Trains Routed`;
+        pauseOverlayEl.classList.remove('hidden');
+      } else {
+        state.mode = 'PLAYING';
+        pauseOverlayEl.classList.add('hidden');
+      }
+      sound.playSwitchClack(0);
+    }
+
+    function returnToMenu() {
+      state.mode = 'MENU';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      startScreenEl.classList.remove('hidden');
+      sound.playSwitchClack(0);
+    }
+
+    function endGame(victory) {
+      state.mode = 'GAMEOVER';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.remove('hidden');
+
+      const badge = document.getElementById('endStatusBadge');
+      const title = document.getElementById('endTitle');
+
+      if (victory) {
+        sound.playVictory();
+        badge.textContent = `Shift Complete • ${state.routedCount} Trains Routed`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-display font-bold uppercase tracking-widest mb-2 bg-amber-500/20 border border-amber-400/40 text-amber-300';
+        title.textContent = 'MASTER STATIONMASTER!';
+      } else {
+        badge.textContent = `Signal Breakdown • Grade ${state.grade}`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-display font-bold uppercase tracking-widest mb-2 bg-rose-500/20 border border-rose-400/40 text-rose-300';
+        title.textContent = 'TIMETABLE DERAILED!';
+      }
+
+      let starsEarned = 1;
+      if (state.routedCount >= 14 || state.score >= 2800) {
+        starsEarned = 3;
+      } else if (state.routedCount >= 7 || state.score >= 1200) {
+        starsEarned = 2;
+      } else if (state.routedCount === 0 && !victory) {
+        starsEarned = 0;
+      }
+
+      const starsContainer = document.getElementById('starsContainer');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= starsEarned;
+        const starWrapper = document.createElement('div');
+        starWrapper.style.animationDelay = `${(i - 1) * 180}ms`;
+        starWrapper.className = earned ? 'star-earned' : 'opacity-30 scale-90';
+        starWrapper.innerHTML = `
+          <svg class="w-12 h-12 sm:w-14 sm:h-14 ${earned ? 'text-amber-300 drop-shadow-[0_0_14px_rgba(251,191,36,0.9)]' : 'text-slate-700'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsContainer.appendChild(starWrapper);
+      }
+
+      const captions = [
+        'Check the Era dates on the top bar before flipping switches 1, 2, and 3!',
+        'Good dispatching! Route 7+ historical trains for 2 Conductor Stars.',
+        'Great historical command! Route 14+ trains for 3 Master Stars!',
+        'Grandmaster Stationmaster! Flawless command across all world eras!'
+      ];
+      document.getElementById('starCaption').textContent = captions[starsEarned];
+
+      const totalAttempts = state.routedCount + state.wrongCount;
+      const accuracy = totalAttempts > 0 ? Math.round((state.routedCount / totalAttempts) * 100) : 100;
+
+      document.getElementById('finalScoreDisplay').textContent = state.score.toLocaleString();
+      document.getElementById('statSolved').textContent = state.routedCount;
+      document.getElementById('statStreak').textContent = `x${state.bestStreak}`;
+      document.getElementById('statAccuracy').textContent = `${accuracy}%`;
+    }
+
+    function spawnBurst(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 155 + 35;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: Math.random() * 4 + 1.5,
+          color,
+          alpha: 1,
+          decay: 1.5 + Math.random()
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color = '#34d399') {
+      state.floatingTexts.push({
+        x,
+        y,
+        vy: -46,
+        text,
+        color,
+        alpha: 1,
+        decay: 0.95
+      });
+    }
+
+    // =========================================================================
+    // 8. UPDATE & RAILWAY RENDERING LOOP
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function update(dt) {
+      for (let i = state.smokePuffs.length - 1; i >= 0; i--) {
+        const s = state.smokePuffs[i];
+        s.x += s.vx * dt;
+        s.y += s.vy * dt;
+        s.r += 14 * dt;
+        s.alpha -= 1.2 * dt;
+        if (s.alpha <= 0) state.smokePuffs.splice(i, 1);
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHUD();
+        endGame(true);
+        return;
+      }
+
+      state.screenShake = Math.max(0, state.screenShake - dt * 28);
+      state.flashAlpha = Math.max(0, state.flashAlpha - dt * 2.2);
+
+      // Spawn new historical trains at safe intervals
+      const spawnInterval = Math.max(2.6, 4.4 - (state.grade - 1) * 0.32);
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        spawnChronoTrain();
+        state.spawnTimer = spawnInterval;
+      }
+
+      // Update trains along tracks (sorted front-to-back so trailing trains keep safe distance)
+      state.trains.sort((a, b) => b.progress - a.progress);
+
+      for (let i = 0; i < state.trains.length; i++) {
+        const tr = state.trains[i];
+        let effectiveSpeed = tr.boosted ? tr.speed * 2.15 : tr.speed;
+
+        // Safe block-signaling distance check against train immediately ahead
+        if (i > 0) {
+          const lead = state.trains[i - 1];
+          if (lead.progress - tr.progress < 0.21) {
+            effectiveSpeed = Math.min(effectiveSpeed, lead.speed * 0.75);
+          }
+        }
+
+        tr.progress += effectiveSpeed * dt;
+        const pos = evaluateTrainPosition(tr.progress);
+        tr.x = pos.x;
+        tr.y = pos.y;
+
+        // Emit locomotive steam puffs
+        tr.smokeTimer -= dt;
+        if (tr.smokeTimer <= 0) {
+          tr.smokeTimer = tr.boosted ? 0.08 : 0.16;
+          state.smokePuffs.push({
+            x: tr.x - 16,
+            y: tr.y - 16,
+            vx: -25 - Math.random() * 15,
+            vy: -24 - Math.random() * 14,
+            r: 4 + Math.random() * 3,
+            alpha: 0.45
+          });
+        }
+
+        if (tr.progress >= 1.0 && pos.targetDepot) {
+          state.trains.splice(i, 1);
+          i--;
+          handleTrainArrival(tr, pos.targetDepot);
+          if (state.mode !== 'PLAYING') return;
+        }
+      }
+
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
+
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= ft.decay * dt;
+        if (ft.alpha <= 0) state.floatingTexts.splice(i, 1);
+      }
+
+      updateHUD();
+    }
+
+    function draw() {
+      ctx.save();
+
+      if (state.screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+      }
+
+      // Midnight Railway Yard Background
+      const bgGrad = ctx.createRadialGradient(canvasWidth * 0.45, canvasHeight * 0.5, 40, canvasWidth * 0.5, canvasHeight * 0.5, Math.max(canvasWidth, canvasHeight));
+      bgGrad.addColorStop(0, '#0f172a');
+      bgGrad.addColorStop(1, '#060913');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Subtle Topographic / Blueprint Grid
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.04)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvasWidth; x += 48) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvasHeight; y += 48) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasWidth, y);
+        ctx.stroke();
+      }
+
+      drawRailwayTracks();
+      drawEraDepots();
+      drawTunnelEntrance();
+      drawSwitchNodes();
+
+      // Steam Puffs
+      for (const s of state.smokePuffs) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, s.alpha);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Locomotives & Upright Historical Placards
+      for (const tr of state.trains) {
+        drawLocomotive(tr);
+      }
+
+      // Particles & Floating Year Reveals
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const ft of state.floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '800 14px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      if (state.flashAlpha > 0.01 && state.flashColor) {
+        ctx.fillStyle = `rgba(251, 113, 133, ${state.flashAlpha * 0.35})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    function drawTrackSegment(p1, p2, isActive, activeColor = '#fbbf24') {
+      ctx.save();
+      // Wooden Cross-Ties (Sleepers)
+      const steps = 16;
+      ctx.strokeStyle = isActive ? 'rgba(251, 191, 36, 0.38)' : 'rgba(71, 85, 105, 0.28)';
+      ctx.lineWidth = 3;
+      for (let i = 1; i < steps; i++) {
+        const t = i / steps;
+        const smoothT = t * t * (3 - 2 * t);
+        const x = p1.x + (p2.x - p1.x) * t;
+        const y = p1.y + (p2.y - p1.y) * smoothT;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 9);
+        ctx.lineTo(x, y + 9);
+        ctx.stroke();
+      }
+
+      // Twin Steel / Glowing Active Rails
+      [-4, 4].forEach(offset => {
+        ctx.beginPath();
+        for (let i = 0; i <= 24; i++) {
+          const t = i / 24;
+          const smoothT = t * t * (3 - 2 * t);
+          const x = p1.x + (p2.x - p1.x) * t;
+          const y = p1.y + (p2.y - p1.y) * smoothT + offset;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = isActive ? activeColor : '#334155';
+        ctx.lineWidth = isActive ? 3 : 2;
+        if (isActive) {
+          ctx.shadowColor = activeColor;
+          ctx.shadowBlur = 10;
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+      ctx.restore();
+    }
+
+    function drawRailwayTracks() {
+      const tunnel = getTunnelPoint();
+      const sw = getSwitchNodes();
+      const depots = getDepotPoints();
+
+      // Trunk line: Tunnel -> Switch 0 (always active)
+      drawTrackSegment(tunnel, sw[0], true, '#fbbf24');
+
+      // Switch 0 -> Switch 1 (Upper) & Switch 2 (Lower)
+      drawTrackSegment(sw[0], sw[1], state.switches[0] === 0, '#fbbf24');
+      drawTrackSegment(sw[0], sw[2], state.switches[0] === 1, '#fbbf24');
+
+      // Switch 1 -> Depot 0 & Depot 1
+      drawTrackSegment(sw[1], depots[0], state.switches[0] === 0 && state.switches[1] === 0, depots[0].color);
+      drawTrackSegment(sw[1], depots[1], state.switches[0] === 0 && state.switches[1] === 1, depots[1].color);
+
+      // Switch 2 -> Depot 2 & Depot 3
+      drawTrackSegment(sw[2], depots[2], state.switches[0] === 1 && state.switches[2] === 0, depots[2].color);
+      drawTrackSegment(sw[2], depots[3], state.switches[0] === 1 && state.switches[2] === 1, depots[3].color);
+    }
+
+    function drawSwitchNodes() {
+      const switches = getSwitchNodes();
+      switches.forEach((sw, idx) => {
+        const isUp = state.switches[idx] === 0;
+        ctx.save();
+        ctx.translate(sw.x, sw.y);
+
+        // Outer Brass Switch Ring
+        ctx.fillStyle = '#0f172a';
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
+        ctx.shadowBlur = 14;
+        ctx.beginPath();
+        ctx.arc(0, 0, 21, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Directional Arrow Indicator showing current switch routing
+        ctx.save();
+        ctx.rotate(isUp ? -0.45 : 0.45);
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-8, 0);
+        ctx.lineTo(8, 0);
+        ctx.lineTo(3, -5);
+        ctx.moveTo(8, 0);
+        ctx.lineTo(3, 5);
+        ctx.stroke();
+        ctx.restore();
+
+        // Keycap Badge [1], [2], [3] underneath
+        ctx.fillStyle = '#1e293b';
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(-11, 25, 22, 18, 5);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = '800 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#fde047';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(sw.key, 0, 34);
+
+        ctx.restore();
+      });
+    }
+
+    function drawTunnelEntrance() {
+      const t = getTunnelPoint();
+      ctx.save();
+      ctx.translate(t.x, t.y);
+
+      // Stone Tunnel Arch
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.roundRect(-24, -34, 44, 68, [0, 18, 18, 0]);
+      ctx.fill();
+      ctx.stroke();
+
+      // Dark Tunnel Mouth
+      ctx.fillStyle = '#020617';
+      ctx.beginPath();
+      ctx.roundRect(-24, -22, 32, 44, [0, 14, 14, 0]);
+      ctx.fill();
+
+      // Semaphore Signal Light (Green = Open, Red = Held)
+      const sigColor = state.tunnelHold ? '#f43f5e' : '#34d399';
+      ctx.fillStyle = sigColor;
+      ctx.shadowColor = sigColor;
+      ctx.shadowBlur = 12;
+      ctx.beginPath();
+      ctx.arc(8, -26, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.restore();
+    }
+
+    function drawEraDepots() {
+      const depots = getDepotPoints();
+      const boxW = Math.min(182, canvasWidth * 0.21);
+      const boxH = 54;
+
+      depots.forEach(d => {
+        ctx.save();
+        ctx.translate(d.x, d.y);
+
+        // Station Platform Card
+        ctx.fillStyle = d.bgFill;
+        ctx.strokeStyle = d.border;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.roundRect(-10, -boxH / 2, boxW, boxH, 14);
+        ctx.fill();
+        ctx.stroke();
+
+        // Station Entry Bumper
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        ctx.roundRect(-12, -14, 6, 28, 3);
+        ctx.fill();
+
+        // Era Title & Century Span
+        ctx.font = '800 11.5px "Space Grotesk", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(d.shortName, 4, -8);
+
+        ctx.font = '700 10.5px "JetBrains Mono", monospace';
+        ctx.fillStyle = d.text;
+        ctx.fillText(d.span, 4, 10);
+
+        ctx.restore();
+      });
+    }
+
+    function drawLocomotive(tr) {
+      ctx.save();
+      ctx.translate(tr.x, tr.y);
+
+      // Locomotive Chassis
+      ctx.fillStyle = tr.boosted ? '#0284c7' : '#b45309';
+      ctx.strokeStyle = tr.boosted ? '#38bdf8' : '#fde047';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-24, -12, 48, 22, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Smokestack & Cabin
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(-20, -20, 16, 9);
+      ctx.fillRect(10, -19, 7, 8);
+
+      // Brass Wheels
+      ctx.fillStyle = '#fbbf24';
+      [-14, 0, 14].forEach(wx => {
+        ctx.beginPath();
+        ctx.arc(wx, 11, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Strictly Upright High-Contrast Historical Cargo Placard Above Locomotive
+      ctx.font = '800 12.5px "Inter", sans-serif';
+      const labelW = Math.max(122, ctx.measureText(tr.cargo.label).width + 22);
+      const labelH = 26;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.96)';
+      ctx.strokeStyle = tr.boosted ? '#38bdf8' : '#fbbf24';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.roundRect(-labelW / 2, -52, labelW, labelH, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tr.cargo.label, 0, -39);
+
+      ctx.restore();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = function () {
+      resizeCanvas();
+      renderLives();
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
