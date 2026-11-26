@@ -3,26 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arcade Hub — Interactive Educational Mini-Games</title>
+  <title>Arcade Hub — Educational Browser Mini-Games</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-void: #050814;
+      --neon-cyan: #00f3ff;
+      --neon-purple: #a855f7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background-color: #050814;
+      background-color: var(--bg-void);
       color: #f8fafc;
       font-family: 'Inter', sans-serif;
       background-image:
-        radial-gradient(circle at 20% 20%, rgba(0, 243, 255, 0.08) 0%, transparent 45%),
-        radial-gradient(circle at 80% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 45%),
-        linear-gradient(rgba(0, 243, 255, 0.035) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 243, 255, 0.035) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+        radial-gradient(circle at 18% 15%, rgba(0, 243, 255, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 82% 80%, rgba(168, 85, 247, 0.09) 0%, transparent 45%),
+        linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+      overflow-x: hidden;
     }
 
     .font-orbitron {
       font-family: 'Orbitron', sans-serif;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
     }
 
     .neon-glow-cyan {
@@ -30,120 +45,139 @@
     }
 
     .game-card {
-      background: rgba(12, 18, 42, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(11, 17, 38, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, border-color 0.22s ease;
     }
 
     .game-card:hover {
       transform: translateY(-6px);
-      box-shadow: 0 14px 36px -8px rgba(0, 243, 255, 0.25);
+      box-shadow: 0 16px 38px -10px rgba(0, 243, 255, 0.28);
     }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
   <!-- TOP NAVIGATION BAR -->
-  <header class="w-full border-b border-cyan-500/20 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-purple-500 to-rose-500 flex items-center justify-center text-slate-950 font-orbitron font-black text-lg shadow-[0_0_16px_rgba(0,243,255,0.5)]">
+  <header class="w-full border-b border-cyan-500/20 bg-slate-950/85 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <a href="./index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-purple-500 to-rose-500 flex items-center justify-center text-slate-950 font-orbitron font-black text-lg shadow-[0_0_16px_rgba(0,243,255,0.5)] group-hover:scale-105 transition">
           &Lambda;
         </div>
         <div>
           <span class="font-orbitron font-extrabold text-base sm:text-lg tracking-wider text-white block leading-none">
             ARCADE HUB
           </span>
-          <span class="text-[11px] text-cyan-300/80 font-medium">Math &bull; Biology &bull; Chemistry &bull; English &bull; History &bull; CS</span>
+          <span class="text-[11px] text-cyan-300/80 font-medium">
+            Math &bull; Biology &bull; Chemistry &bull; English &bull; History &bull; CS
+          </span>
         </div>
-      </div>
+      </a>
 
-      <div class="flex items-center gap-2 text-xs font-orbitron text-slate-300 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-full">
+      <div class="flex items-center gap-2 text-xs font-orbitron text-slate-200 bg-slate-900/90 border border-slate-700/80 px-3.5 py-1.5 rounded-full">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
         <span id="gameCountBadge">7 Playable Games</span>
       </div>
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-14">
-    <!-- Hero Header -->
+  <!-- MAIN PORTAL CONTENT -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+    <!-- Hero Title & Intro -->
     <section class="text-center max-w-2xl mx-auto mb-8">
-      <div class="inline-block px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/35 text-cyan-300 text-xs font-orbitron uppercase tracking-widest mb-4">
-        Select Your Mission
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/35 text-cyan-300 text-xs font-orbitron uppercase tracking-widest mb-3">
+        <span>Interactive Subject Cabinets</span>
       </div>
-      <h1 class="font-orbitron font-black text-3xl sm:text-5xl text-white neon-glow-cyan tracking-tight mb-4">
+      <h1 class="font-orbitron font-black text-3xl sm:text-5xl text-white neon-glow-cyan tracking-tight mb-3">
         ARCADE HUB
       </h1>
       <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-        Master secondary Mathematics, Biology, Chemistry, English, History, and Computer Science through seven distinct browser arcade games. Filter by subject below and launch any cabinet!
+        Select a curriculum cabinet below to launch full-screen browser mini-games across Mathematics, Science, Humanities, and Computer Science.
       </p>
     </section>
 
-    <!-- Subject Filter Tabs -->
-    <nav aria-label="Subject Filter" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-10" id="subjectFilters">
-      <button type="button" data-subject="All"
-        class="filter-tab active px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-cyan-500/20 border border-cyan-400 text-cyan-200 shadow-[0_0_16px_rgba(0,243,255,0.25)] transition">
-        All (7)
-      </button>
-      <button type="button" data-subject="Math"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-cyan-400/50 transition">
-        Math (2)
-      </button>
-      <button type="button" data-subject="Biology"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-emerald-400/50 transition">
-        Biology (1)
-      </button>
-      <button type="button" data-subject="Chemistry"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-purple-400/50 transition">
-        Chemistry (1)
-      </button>
-      <button type="button" data-subject="English"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-rose-400/50 transition">
-        English (1)
-      </button>
-      <button type="button" data-subject="History"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-amber-400/50 transition">
-        History (1)
-      </button>
-      <button type="button" data-subject="Computer Science"
-        class="filter-tab px-4 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-cyan-400/50 transition">
-        CS (1)
-      </button>
-    </nav>
+    <!-- Search Bar & Subject Filter Tabs -->
+    <section class="mb-8 space-y-4">
+      <!-- Quick Search Input -->
+      <div class="max-w-md mx-auto relative">
+        <div class="pointer-events-none absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M16.65 10.5a6.15 6.15 0 11-12.3 0 6.15 6.15 0 0112.3 0z" />
+          </svg>
+        </div>
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Search games, genres, or topics (e.g., Logic, Angles, Eras)..."
+          class="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-slate-900/95 border border-slate-700/90 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/25 text-xs sm:text-sm text-white placeholder-slate-400 transition"
+        />
+      </div>
 
-    <!-- Games Grid (Populated dynamically from the GAMES array below) -->
-    <section id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Cards injected via JavaScript -->
+      <!-- Dynamic Subject Filter Tabs -->
+      <nav id="subjectFilters" aria-label="Subject Filters" class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+        <!-- Injected dynamically with live counts -->
+      </nav>
     </section>
+
+    <!-- Games Grid -->
+    <section id="gamesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Cards injected dynamically on DOMContentLoaded -->
+    </section>
+
+    <!-- Empty Search State -->
+    <div id="emptyState" class="hidden text-center py-16 px-4 rounded-3xl bg-slate-900/60 border border-slate-800 max-w-lg mx-auto">
+      <p class="font-orbitron font-bold text-base text-slate-200 mb-2">No Matching Arcade Cabinets</p>
+      <p class="text-xs text-slate-400 mb-4">Try clearing your search filter or selecting "All" subjects.</p>
+      <button id="resetFiltersBtn" type="button"
+        class="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-200 font-orbitron font-bold text-xs uppercase tracking-wider transition">
+        Reset Filters
+      </button>
+    </div>
+
   </main>
 
   <!-- FOOTER -->
   <footer class="border-t border-slate-800/80 bg-slate-950/90 py-6 px-4 text-center text-xs text-slate-400 space-y-1.5">
     <p class="text-slate-300 font-medium">
-      GitHub Pages Setup Tip: Ensure all 7 HTML game files (<code class="text-cyan-300">algebra_blaster.html</code>, <code class="text-amber-300">dragons_angle.html</code>, <code class="text-emerald-300">cell_defender.html</code>, <code class="text-purple-300">chem_lab_alchemist.html</code>, <code class="text-rose-300">syntax_slicer.html</code>, <code class="text-amber-200">chrono_train_express.html</code>, and <code class="text-cyan-200">cipher_breaker.html</code>) sit in the same root folder as <code class="text-white">index.html</code>.
+      All 7 single-file HTML games are linked via relative paths (<code class="text-cyan-300">./filename.html</code>) in the root repository folder.
     </p>
-    <p>Built with HTML, Tailwind CSS &amp; Vanilla JavaScript &bull; Hosted on GitHub Pages</p>
+    <p>Arcade Hub &bull; Built with HTML5 Canvas, Tailwind CSS &amp; Vanilla JavaScript</p>
   </footer>
 
   <script>
     /**
-     * GAME CATALOG CONFIGURATION
-     * All 5 single-file HTML games linked via relative paths for GitHub Pages.
+     * ARCADE HUB CATALOG & INTERACTIVE FILTER ENGINE
+     * Uses inline custom SVG artwork so zero external images can ever break.
      */
     const GAMES = [
       {
         title: "Algebra Blaster",
         file: "./algebra_blaster.html",
         subject: "Math",
-        status: "PLAYABLE",
-        genre: "Space Shooter",
-        topics: ["Linear & Quadratics", "Indices & Surds", "Angles & Ratio"],
-        description: "Space shooter solving linear & quadratic equations—type the missing value and blast incoming equation pods before they breach your shields.",
+        genre: "Space Rail-Shooter",
+        badge: "Linear & Quadratic Equations",
         accent: "cyan",
-        iconSvg: `
-          <svg class="w-8 h-8 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        description: "Pilot a starfighter through asteroid fields—solve incoming linear and quadratic equations to lock onto targets and blast equation pods.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-alg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#083344"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-alg)"/>
+            <circle cx="48" cy="28" r="1.5" fill="#67e8f9" opacity="0.8"/>
+            <circle cx="135" cy="18" r="2" fill="#22d3ee" opacity="0.6"/>
+            <circle cx="305" cy="26" r="1.8" fill="#a5f3fc" opacity="0.8"/>
+            <circle cx="265" cy="95" r="1.5" fill="#38bdf8" opacity="0.7"/>
+            <line x1="92" y1="60" x2="225" y2="60" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="8 6"/>
+            <polygon points="52,60 88,44 80,60 88,76" fill="#22d3ee" stroke="#cffafe" stroke-width="1.5"/>
+            <rect x="228" y="36" width="84" height="48" rx="12" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+            <text x="270" y="65" text-anchor="middle" fill="#67e8f9" font-family="JetBrains Mono, monospace" font-weight="800" font-size="14">2x + 5 = 13</text>
           </svg>
         `
       },
@@ -151,14 +185,25 @@
         title: "Dragon's Angle",
         file: "./dragons_angle.html",
         subject: "Math",
-        status: "PLAYABLE",
-        genre: "Fantasy Archer",
-        topics: ["Straight & Right Angles", "Parallel Lines", "Triangles"],
-        description: "Fantasy archer applying geometry theorems & angles—calculate the missing angle inside incoming fireballs to deflect them back at the dragon.",
+        genre: "Trajectory & Geometry Siege",
+        badge: "Angles, Triangles & Trigonometry",
         accent: "amber",
-        iconSvg: `
-          <svg class="w-8 h-8 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+        description: "Defend the citadel battlements—calculate complementary, supplementary, parallel-line, and triangle angles to deflect incoming dragon fireballs.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-drg" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#451a03"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-drg)"/>
+            <line x1="55" y1="92" x2="305" y2="92" stroke="#f59e0b" stroke-width="2"/>
+            <line x1="55" y1="92" x2="245" y2="26" stroke="#fbbf24" stroke-width="2.5"/>
+            <path d="M 115 92 A 60 60 0 0 0 105 74" fill="none" stroke="#fde68a" stroke-width="2.5"/>
+            <text x="148" y="80" fill="#fef3c7" font-family="JetBrains Mono, monospace" font-weight="800" font-size="14">&theta; = 35&deg;</text>
+            <circle cx="268" cy="36" r="16" fill="#f97316" opacity="0.28"/>
+            <circle cx="268" cy="36" r="9" fill="#fbbf24" stroke="#fffbeb" stroke-width="1.5"/>
           </svg>
         `
       },
@@ -166,14 +211,25 @@
         title: "Cell Defender",
         file: "./cell_defender.html",
         subject: "Biology",
-        status: "PLAYABLE",
-        genre: "Pathway Puzzle",
-        topics: ["Cell Organelles", "DNA & Proteins", "Plant & Energy"],
-        description: "Microscopic cellular pathway & organelle bio-circuit puzzle—rotate microtubule conduits to route ATP and mRNA signals while avoiding toxins.",
+        genre: "Cellular Tower Defense",
+        badge: "Organelles & Immune Response",
         accent: "emerald",
-        iconSvg: `
-          <svg class="w-8 h-8 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        description: "Command a living eukaryotic cell—route ATP energy and mRNA signals across organelle pathways while neutralizing invading viral pathogens.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-cel" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#064e3b"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-cel)"/>
+            <ellipse cx="180" cy="60" rx="142" ry="46" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="6 4"/>
+            <circle cx="115" cy="60" r="24" fill="#065f46" stroke="#34d399" stroke-width="2"/>
+            <circle cx="115" cy="60" r="9" fill="#6ee7b7"/>
+            <path d="M 145 60 C 175 30, 205 90, 238 60" fill="none" stroke="#34d399" stroke-width="2.5"/>
+            <rect x="242" y="42" width="54" height="36" rx="18" fill="#065f46" stroke="#6ee7b7" stroke-width="2"/>
+            <text x="269" y="64" text-anchor="middle" fill="#d1fae5" font-family="JetBrains Mono, monospace" font-weight="800" font-size="11">ATP</text>
           </svg>
         `
       },
@@ -181,14 +237,25 @@
         title: "Chem-Lab Alchemist",
         file: "./chem_lab_alchemist.html",
         subject: "Chemistry",
-        status: "PLAYABLE",
-        genre: "Physics Catcher",
-        topics: ["Ionic Salts", "Acids & Bases", "Gases & Oxides"],
-        description: "Physics reagent catcher & stoichiometry reaction synthesizer—slide your magnetic flask to catch exact ions and synthesize target compounds.",
+        genre: "Reagent Catcher & Stoichiometry",
+        badge: "Compounds, Ions & Balancing",
         accent: "purple",
-        iconSvg: `
-          <svg class="w-8 h-8 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+        description: "Synthesize target molecules in the molecular lab—catch exact cations, anions, and atoms in balanced stoichiometric ratios while dodging unstable isotopes.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-chm" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#3b0764"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-chm)"/>
+            <polygon points="105,28 135,28 152,88 88,88" fill="#581c87" stroke="#c084fc" stroke-width="2"/>
+            <line x1="94" y1="68" x2="146" y2="68" stroke="#e879f9" stroke-width="2"/>
+            <circle cx="215" cy="45" r="14" fill="#6b21a8" stroke="#d8b4fe" stroke-width="2"/>
+            <text x="215" y="49" text-anchor="middle" fill="#f3e8ff" font-family="JetBrains Mono, monospace" font-weight="800" font-size="11">Na+</text>
+            <circle cx="268" cy="72" r="16" fill="#6b21a8" stroke="#d8b4fe" stroke-width="2"/>
+            <text x="268" y="76" text-anchor="middle" fill="#f3e8ff" font-family="JetBrains Mono, monospace" font-weight="800" font-size="11">Cl-</text>
           </svg>
         `
       },
@@ -196,14 +263,24 @@
         title: "Syntax Slicer",
         file: "./syntax_slicer.html",
         subject: "English",
-        status: "PLAYABLE",
-        genre: "Arc Slicer",
-        topics: ["Parts of Speech", "Literary Devices", "Tone & Clauses"],
-        description: "High-speed katana arc-slicing game for grammar & literary devices—swipe flying calligraphy scrolls matching the target rule and dodge Ink Bombs.",
+        genre: "Arcade Blade Slicer",
+        badge: "Grammar, Parts of Speech & Tone",
         accent: "rose",
-        iconSvg: `
-          <svg class="w-8 h-8 text-rose-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+        description: "Swipe your katana across flying calligraphy scrolls that match the active grammar or literary device prompt—keep your combo alive and avoid Ink Bombs.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-syn" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#4c0519"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-syn)"/>
+            <rect x="96" y="38" width="168" height="44" rx="8" fill="#fef3c7" stroke="#fbbf24" stroke-width="2"/>
+            <rect x="88" y="34" width="10" height="52" rx="3" fill="#78350f" stroke="#fbbf24" stroke-width="1.5"/>
+            <rect x="262" y="34" width="10" height="52" rx="3" fill="#78350f" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="180" y="65" text-anchor="middle" fill="#111827" font-family="Inter, sans-serif" font-weight="800" font-size="15">METAPHOR</text>
+            <line x1="65" y1="96" x2="295" y2="22" stroke="#fb7185" stroke-width="3" stroke-linecap="round"/>
           </svg>
         `
       },
@@ -211,14 +288,25 @@
         title: "Chrono-Train Express",
         file: "./chrono_train_express.html",
         subject: "History",
-        status: "PLAYABLE",
-        genre: "Rail Dispatch Sim",
-        topics: ["Inventions & Science", "Empires & Politics", "Global Milestones"],
-        description: "Real-time railway track-switching dispatch sim—flip Y-junction switches to route steam locomotives carrying historical events into their matching Era Depot.",
+        genre: "Railway Track-Switching Dispatch",
+        badge: "World Eras, Inventions & Milestones",
         accent: "amber",
-        iconSvg: `
-          <svg class="w-8 h-8 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-6 4h4M6 3h12a2 2 0 012 2v11a3 3 0 01-3 3l1.5 2m-11-2L6 21m1-2a3 3 0 01-3-3V5a2 2 0 012-2z" />
+        description: "Control Y-junction rail switches in real time to route steam locomotives carrying historical inventions and milestones into their matching Century Era Depot.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-chr" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#422006"/>
+                <stop offset="100%" stop-color="#0f172a"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-chr)"/>
+            <path d="M 40 60 L 155 60 C 200 60, 215 32, 275 32" fill="none" stroke="#fbbf24" stroke-width="3"/>
+            <path d="M 155 60 C 200 60, 215 88, 275 88" fill="none" stroke="#475569" stroke-width="2.5" stroke-dasharray="5 4"/>
+            <circle cx="155" cy="60" r="9" fill="#0f172a" stroke="#fbbf24" stroke-width="2.5"/>
+            <rect x="66" y="45" width="44" height="22" rx="5" fill="#b45309" stroke="#fde047" stroke-width="1.5"/>
+            <rect x="276" y="20" width="56" height="24" rx="6" fill="#065f46" stroke="#34d399" stroke-width="1.5"/>
+            <text x="304" y="36" text-anchor="middle" fill="#d1fae5" font-family="JetBrains Mono, monospace" font-weight="800" font-size="10">1440 CE</text>
           </svg>
         `
       },
@@ -226,16 +314,220 @@
         title: "Cipher Breaker: Enigma",
         file: "./cipher_breaker.html",
         subject: "Computer Science",
-        status: "PLAYABLE",
-        genre: "Logic-Gate Circuit",
-        topics: ["AND / OR / NOT", "XOR / NAND / NOR", "Binary & Hex Nibbles"],
-        description: "Cyber-mainframe Boolean logic puzzle—route 4-bit binary signals through interactive logic gates to match the Target Decryption Key before the firewall trace locks.",
+        genre: "Boolean Logic-Gate Circuit Puzzle",
+        badge: "Binary, Logic Gates & Hexadecimal",
         accent: "cyan",
-        iconSvg: `
-          <svg class="w-8 h-8 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        description: "Route 4-bit binary signals across interactive AND, OR, XOR, NAND, NOR, and NOT gates to match the Target Decryption Key before the firewall trace locks.",
+        bannerSvg: `
+          <svg viewBox="0 0 360 120" class="w-full h-full" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <defs>
+              <linearGradient id="g-cip" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#082f49"/>
+                <stop offset="100%" stop-color="#090d16"/>
+              </linearGradient>
+            </defs>
+            <rect width="360" height="120" fill="url(#g-cip)"/>
+            <line x1="48" y1="42" x2="140" y2="55" stroke="#22d3ee" stroke-width="2.5"/>
+            <line x1="48" y1="78" x2="140" y2="65" stroke="#475569" stroke-width="2"/>
+            <line x1="220" y1="60" x2="310" y2="60" stroke="#34d399" stroke-width="2.5"/>
+            <rect x="140" y="38" width="80" height="44" rx="10" fill="#0f172a" stroke="#22d3ee" stroke-width="2"/>
+            <text x="180" y="65" text-anchor="middle" fill="#67e8f9" font-family="Orbitron, sans-serif" font-weight="800" font-size="14">XOR</text>
+            <text x="38" y="46" text-anchor="end" fill="#22d3ee" font-family="JetBrains Mono, monospace" font-weight="800" font-size="12">1</text>
+            <text x="38" y="82" text-anchor="end" fill="#94a3b8" font-family="JetBrains Mono, monospace" font-weight="800" font-size="12">0</text>
+            <text x="322" y="64" text-anchor="start" fill="#34d399" font-family="JetBrains Mono, monospace" font-weight="800" font-size="12">1</text>
           </svg>
         `
       }
     ];
-// ... existing code ... -->
+
+    const ACCENT_STYLES = {
+      cyan: {
+        border: "border-cyan-500/35 hover:border-cyan-400",
+        subjectPill: "bg-cyan-500/20 border-cyan-400/45 text-cyan-200",
+        badgeText: "text-cyan-300",
+        btn: "from-cyan-400 to-sky-400 text-slate-950 shadow-[0_0_20px_rgba(0,243,255,0.3)]"
+      },
+      amber: {
+        border: "border-amber-500/35 hover:border-amber-400",
+        subjectPill: "bg-amber-500/20 border-amber-400/45 text-amber-200",
+        badgeText: "text-amber-300",
+        btn: "from-amber-400 to-orange-400 text-slate-950 shadow-[0_0_20px_rgba(251,191,36,0.3)]"
+      },
+      emerald: {
+        border: "border-emerald-500/35 hover:border-emerald-400",
+        subjectPill: "bg-emerald-500/20 border-emerald-400/45 text-emerald-200",
+        badgeText: "text-emerald-300",
+        btn: "from-emerald-400 to-teal-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+      },
+      purple: {
+        border: "border-purple-500/35 hover:border-purple-400",
+        subjectPill: "bg-purple-500/20 border-purple-400/45 text-purple-200",
+        badgeText: "text-purple-300",
+        btn: "from-purple-400 to-fuchsia-400 text-slate-950 shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+      },
+      rose: {
+        border: "border-rose-500/35 hover:border-rose-400",
+        subjectPill: "bg-rose-500/20 border-rose-400/45 text-rose-200",
+        badgeText: "text-rose-300",
+        btn: "from-rose-400 to-pink-400 text-slate-950 shadow-[0_0_20px_rgba(244,63,94,0.3)]"
+      }
+    };
+
+    const SUBJECT_LIST = [
+      "All",
+      "Math",
+      "Biology",
+      "Chemistry",
+      "English",
+      "History",
+      "Computer Science"
+    ];
+
+    let activeSubject = "All";
+    let searchQuery = "";
+
+    function renderFilterTabs() {
+      const nav = document.getElementById("subjectFilters");
+      if (!nav) return;
+
+      nav.innerHTML = SUBJECT_LIST.map(subj => {
+        const count = subj === "All"
+          ? GAMES.length
+          : GAMES.filter(g => g.subject === subj).length;
+        const isActive = activeSubject === subj;
+        const label = subj === "Computer Science" ? "Computer Science" : subj;
+
+        return `
+          <button
+            type="button"
+            data-subject="${subj}"
+            class="filter-tab px-3.5 py-2 rounded-xl font-orbitron font-bold text-xs uppercase tracking-wider transition active:scale-95 ${
+              isActive
+                ? "bg-cyan-500/20 border border-cyan-400 text-cyan-200 shadow-[0_0_16px_rgba(0,243,255,0.25)]"
+                : "bg-slate-900/90 border border-slate-700/80 text-slate-300 hover:border-cyan-400/50 hover:text-white"
+            }"
+          >
+            ${label} <span class="font-mono-tech opacity-85">(${count})</span>
+          </button>
+        `;
+      }).join("");
+
+      nav.querySelectorAll(".filter-tab").forEach(btn => {
+        btn.addEventListener("click", () => {
+          activeSubject = btn.dataset.subject;
+          renderFilterTabs();
+          renderGamesGrid();
+        });
+      });
+    }
+
+    function renderGamesGrid() {
+      const grid = document.getElementById("gamesGrid");
+      const emptyState = document.getElementById("emptyState");
+      const countBadge = document.getElementById("gameCountBadge");
+      if (!grid) return;
+
+      const q = searchQuery.trim().toLowerCase();
+      const filtered = GAMES.filter(game => {
+        const matchesSubject = activeSubject === "All" || game.subject === activeSubject;
+        const matchesQuery =
+          !q ||
+          game.title.toLowerCase().includes(q) ||
+          game.subject.toLowerCase().includes(q) ||
+          game.genre.toLowerCase().includes(q) ||
+          game.badge.toLowerCase().includes(q) ||
+          game.description.toLowerCase().includes(q);
+        return matchesSubject && matchesQuery;
+      });
+
+      if (countBadge) {
+        countBadge.textContent = `${filtered.length} Playable ${filtered.length === 1 ? "Game" : "Games"}`;
+      }
+
+      if (filtered.length === 0) {
+        grid.innerHTML = "";
+        grid.classList.add("hidden");
+        if (emptyState) emptyState.classList.remove("hidden");
+        return;
+      }
+
+      grid.classList.remove("hidden");
+      if (emptyState) emptyState.classList.add("hidden");
+
+      grid.innerHTML = filtered.map(game => {
+        const style = ACCENT_STYLES[game.accent] || ACCENT_STYLES.cyan;
+        return `
+          <article class="game-card rounded-3xl border ${style.border} overflow-hidden flex flex-col justify-between">
+            <div>
+              <!-- Custom Inline SVG Artwork Banner -->
+              <div class="relative h-32 w-full overflow-hidden border-b border-slate-800/90 bg-slate-950">
+                ${game.bannerSvg}
+                <div class="absolute top-3 left-3 flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg border backdrop-blur-md font-orbitron font-bold text-[10px] uppercase tracking-wider ${style.subjectPill}">
+                    ${game.subject}
+                  </span>
+                </div>
+                <div class="absolute top-3 right-3">
+                  <span class="px-2.5 py-1 rounded-lg bg-slate-950/85 border border-slate-700/80 font-mono-tech text-[10px] font-bold text-slate-300">
+                    ${game.genre}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Card Details -->
+              <div class="p-5 sm:p-6">
+                <h2 class="font-orbitron font-extrabold text-lg sm:text-xl text-white mb-1.5">
+                  ${game.title}
+                </h2>
+                <div class="inline-flex items-center gap-1.5 text-xs font-mono-tech font-bold ${style.badgeText} mb-3">
+                  <span>&#9670;</span>
+                  <span>${game.badge}</span>
+                </div>
+                <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                  ${game.description}
+                </p>
+              </div>
+            </div>
+
+            <!-- Launch Button -->
+            <div class="px-5 sm:px-6 pb-5 sm:pb-6 pt-1">
+              <a
+                href="${game.file}"
+                class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r ${style.btn} font-orbitron font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:brightness-110 transition active:scale-95"
+              >
+                <span>Play ${game.title}</span>
+                <span>&rarr;</span>
+              </a>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchInput = document.getElementById("searchInput");
+      const resetFiltersBtn = document.getElementById("resetFiltersBtn");
+
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          searchQuery = e.target.value;
+          renderGamesGrid();
+        });
+      }
+
+      if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener("click", () => {
+          activeSubject = "All";
+          searchQuery = "";
+          if (searchInput) searchInput.value = "";
+          renderFilterTabs();
+          renderGamesGrid();
+        });
+      }
+
+      renderFilterTabs();
+      renderGamesGrid();
+    });
+  </script>
+</body>
+</html>
