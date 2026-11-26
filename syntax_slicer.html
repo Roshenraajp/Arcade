@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Syntax Slicer — English Grammar &amp; Literary Dojo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Shippori+Mincho:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dojo: #0d0914;
+      --crimson-ink: #f43f5e;
+      --gold-leaf: #fbbf24;
+      --jade-blade: #34d399;
+      --indigo-paper: #1e1633;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dojo);
+      font-family: 'Inter', sans-serif;
+      color: #fdf2f8;
+    }
+
+    .font-dojo {
+      font-family: 'Shippori Mincho', serif;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .dojo-panel {
+      background: linear-gradient(165deg, rgba(24, 15, 38, 0.95) 0%, rgba(12, 8, 22, 0.98) 100%);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(251, 191, 36, 0.4);
+      box-shadow: 0 0 42px rgba(244, 63, 94, 0.2), inset 0 0 24px rgba(251, 191, 36, 0.08);
+    }
+
+    .crimson-glow {
+      text-shadow: 0 0 12px rgba(244, 63, 94, 0.8), 0 0 28px rgba(251, 191, 36, 0.45);
+    }
+
+    .btn-dojo {
+      transition: all 0.14s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 4px 0 rgba(9, 5, 16, 0.9), 0 0 18px rgba(244, 63, 94, 0.3);
+    }
+
+    .btn-dojo:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-dojo:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(9, 5, 16, 0.9);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-35deg); opacity: 0; }
+      70% { transform: scale(1.22) rotate(8deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-earned {
+      animation: starPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes scrollShift {
+      0% { transform: translate(-50%, -18px) scale(0.88); opacity: 0; }
+      15% { transform: translate(-50%, 0) scale(1.03); opacity: 1; }
+      82% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+      100% { transform: translate(-50%, -16px) scale(0.95); opacity: 0; }
+    }
+
+    .rule-banner {
+      animation: scrollShift 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen w-screen overflow-hidden bg-[#0d0914]">
+
+  <!-- TOP DOJO HUD BAR -->
+  <header class="relative z-20 flex items-center justify-between px-2.5 sm:px-6 py-2 bg-[#110b1c]/95 border-b border-amber-500/30 backdrop-blur-md shrink-0 gap-2">
+    <!-- Left: Honor Lives & Rank -->
+    <div class="flex items-center gap-2 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-[#191128] border border-rose-500/35 px-2 sm:px-2.5 py-1.5 rounded-xl" title="Dojo Honor (Lives)">
+        <span class="text-[10px] sm:text-xs font-dojo font-bold uppercase tracking-wider text-rose-300 hidden lg:inline mr-1">Honor</span>
+        <div id="livesContainer" class="flex items-center gap-1"></div>
+      </div>
+
+      <!-- Rank / Belt Progress -->
+      <div class="flex flex-col justify-center bg-[#191128] border border-amber-400/40 px-2.5 sm:px-3.5 py-1 rounded-xl min-w-[92px] sm:min-w-[125px]">
+        <div class="flex items-center justify-between gap-2 text-[10px] sm:text-xs font-dojo font-extrabold">
+          <span id="hudRankText" class="text-amber-300">DAN 1</span>
+          <span id="hudRankCount" class="text-rose-300 font-mono-code text-[10px]">0/5</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden mt-1">
+          <div id="hudRankBar" class="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-300 transition-all duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Slash Combo Badge -->
+      <div id="comboBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/15 border border-rose-400/40 text-rose-200 font-dojo text-xs font-extrabold">
+        <span>COMBO</span>
+        <span id="comboValue" class="text-amber-300 font-mono-code text-sm">x1</span>
+      </div>
+    </div>
+
+    <!-- Center: Countdown Timer -->
+    <div class="flex items-center gap-1.5 sm:gap-2 bg-[#191128] border border-amber-400/40 px-3 sm:px-5 py-1 rounded-xl">
+      <svg class="w-4 h-4 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span id="timerDisplay" class="font-mono-code font-extrabold text-sm sm:text-xl tracking-wider text-amber-200">01:30</span>
+    </div>
+
+    <!-- Right: Points, Sound Toggle, Pause -->
+    <div class="flex items-center gap-1.5 sm:gap-3">
+      <div class="flex items-center gap-1.5 bg-[#191128] border border-emerald-400/35 px-2.5 sm:px-3 py-1.5 rounded-xl">
+        <span class="text-[10px] sm:text-xs font-dojo font-bold uppercase tracking-wider text-emerald-300/80 hidden lg:inline">Score</span>
+        <span id="scoreDisplay" class="font-mono-code font-extrabold text-sm sm:text-lg text-emerald-300">0</span>
+      </div>
+
+      <button id="soundToggleBtn" type="button" aria-label="Toggle Sound" title="Toggle Sound (M)"
+        class="p-2 sm:p-2.5 rounded-xl bg-[#191128] hover:bg-[#231838] border border-amber-400/35 text-amber-300 transition active:scale-95">
+        <svg id="soundOnIcon" class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <svg id="soundOffIcon" class="w-4 h-4 sm:w-5 sm:h-5 hidden text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+      </button>
+
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause Game (Esc / P)"
+        class="p-2 sm:p-2.5 rounded-xl bg-[#191128] hover:bg-[#231838] border border-rose-400/35 text-rose-300 transition active:scale-95">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ACTIVE GRAMMAR SCROLL BANNER -->
+  <div class="relative z-10 bg-gradient-to-r from-[#191128] via-[#271636] to-[#191128] border-b border-amber-500/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
+    <div class="flex items-center gap-2.5 text-center sm:text-left">
+      <span id="ruleCategoryBadge" class="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/45 text-rose-200 font-dojo font-extrabold text-xs uppercase shrink-0">
+        TARGET SCROLL
+      </span>
+      <div>
+        <div id="activeRuleTitle" class="text-sm sm:text-base font-dojo font-extrabold text-amber-300 tracking-wide">
+          SLICE ONLY: ADVERBS
+        </div>
+        <div id="activeRuleHint" class="text-[11px] text-pink-100/80">
+          Words that modify verbs, adjectives, or other adverbs (e.g., swiftly, silently)
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 shrink-0 text-[11px] text-amber-200/85 font-mono-code bg-black/35 px-3 py-1 rounded-xl border border-amber-500/25">
+      <span>Drag / Swipe Blade to Slice &bull; Dodge Ink Bombs!</span>
+    </div>
+  </div>
+
+  <!-- MAIN DOJO SLICING ARENA -->
+  <main id="canvasContainer" class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="block w-full h-full cursor-crosshair"></canvas>
+
+    <!-- Scroll Shift / Rank Up Floating Banner -->
+    <div id="ruleShiftBanner" class="hidden pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-20 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-rose-950/95 via-purple-950/95 to-amber-950/95 border-2 border-amber-300 shadow-[0_0_28px_rgba(251,191,36,0.65)] text-center">
+      <div id="ruleBannerTitle" class="font-dojo font-extrabold text-base sm:text-xl tracking-wider text-amber-300 crimson-glow">
+        NEW SCROLL UNFURLED!
+      </div>
+      <div id="ruleBannerSub" class="text-[11px] sm:text-xs font-semibold text-rose-200 mt-0.5">
+        SLICE ONLY: METAPHORS
+      </div>
+    </div>
+
+    <!-- ==================== 1. START SCREEN OVERLAY ==================== -->
+    <section id="startScreen" class="absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#0d0914]/85 backdrop-blur-md">
+      <div class="dojo-panel w-full max-w-xl rounded-3xl p-5 sm:p-8 text-center relative">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-500/15 border border-amber-400/40 text-amber-300 text-xs font-dojo font-bold tracking-widest uppercase mb-3">
+          <span>English Grammar &amp; Literary Dojo</span>
+        </div>
+
+        <h1 class="font-dojo font-extrabold text-3xl sm:text-5xl tracking-tight text-white crimson-glow mb-2">
+          SYNTAX SLICER
+        </h1>
+        <p class="text-pink-100/85 text-xs sm:text-sm md:text-base max-w-lg mx-auto mb-5 leading-relaxed">
+          Swipe your katana blade across flying calligraphy scrolls that match the <strong class="text-amber-300">Active Grammar Rule</strong>! Chain multi-slices for massive combos while avoiding <strong class="text-rose-400">Ink Bombs</strong> and wrong parts of speech.
+        </p>
+
+        <!-- English Discipline Filter -->
+        <div class="bg-[#160f24]/90 border border-amber-500/30 rounded-2xl p-4 mb-6 text-left">
+          <div class="flex items-center justify-between mb-2.5">
+            <label class="font-dojo font-bold text-xs uppercase tracking-wider text-amber-300">Choose Training Discipline</label>
+            <span class="text-[11px] font-dojo font-bold text-emerald-300 bg-emerald-500/15 border border-emerald-400/30 px-2.5 py-0.5 rounded-full">
+              Arc-Slicing Action
+            </span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="topicSelector">
+            <button type="button" data-topic="all" class="topic-btn active px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-rose-500/25 border border-amber-300 text-white transition">
+              All Scrolls
+            </button>
+            <button type="button" data-topic="pos" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-[#1f1633] border border-purple-900 text-pink-200/80 hover:border-amber-400/50 transition">
+              Parts of Speech
+            </button>
+            <button type="button" data-topic="literary" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-[#1f1633] border border-purple-900 text-pink-200/80 hover:border-amber-400/50 transition">
+              Literary Devices
+            </button>
+            <button type="button" data-topic="vocab" class="topic-btn px-2.5 py-2.5 rounded-xl text-xs font-semibold bg-[#1f1633] border border-purple-900 text-pink-200/80 hover:border-amber-400/50 transition">
+              Clauses &amp; Tone
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button id="startGameBtn" type="button"
+            class="btn-dojo w-full sm:w-auto px-8 py-3.5 rounded-2xl font-dojo font-extrabold text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950 border border-amber-200/80">
+            Unsheathe Blade
+          </button>
+
+          <button id="openInstructionsBtn" type="button"
+            class="btn-dojo w-full sm:w-auto px-6 py-3.5 rounded-2xl font-dojo font-bold text-xs sm:text-sm tracking-wider uppercase bg-[#1f1633] text-amber-200 border border-amber-400/40 hover:bg-[#2a1e45]">
+            Dojo Scrolls
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <a href="index.html" class="text-xs text-amber-300/75 hover:text-emerald-300 underline transition">
+            &larr; Return to Arcade Hub
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 2. INSTRUCTIONS MODAL OVERLAY ==================== -->
+    <section id="instructionsModal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-[#0d0914]/90 backdrop-blur-md">
+      <div class="dojo-panel w-full max-w-2xl max-h-[90%] overflow-y-auto rounded-3xl p-5 sm:p-7">
+        <div class="flex items-center justify-between border-b border-amber-500/30 pb-3 mb-4">
+          <h2 class="font-dojo font-extrabold text-lg sm:text-2xl text-amber-300 crimson-glow">
+            WAY OF THE SYNTAX BLADE
+          </h2>
+          <button id="closeInstructionsBtn" type="button" class="p-2 rounded-xl bg-[#1f1633] hover:bg-[#2a1e45] text-amber-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-pink-100">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="bg-[#160f24]/90 border border-amber-500/25 rounded-2xl p-3.5">
+              <div class="font-dojo text-amber-300 font-bold text-xs uppercase mb-1.5">1. Swipe to Slice Matching Scrolls</div>
+              <p class="text-pink-100/80 leading-relaxed mb-2">
+                Hold and drag your <strong class="text-white">Mouse or Finger</strong> across the screen to slash flying calligraphy scrolls that satisfy the top banner rule.
+              </p>
+              <div class="p-2 rounded-xl bg-black/40 font-mono-code text-xs text-amber-200 border border-purple-900">
+                Banner: <span class="text-emerald-300 font-bold">SLICE ONLY: ADVERBS</span><br>
+                Slash <span class="text-white font-bold">"swiftly"</span> &bull; Ignore <span class="text-rose-400 font-bold">"lantern"</span>
+              </div>
+            </div>
+
+            <div class="bg-[#160f24]/90 border border-rose-500/25 rounded-2xl p-3.5">
+              <div class="font-dojo text-rose-300 font-bold text-xs uppercase mb-1.5">2. Beware Decoys &amp; Ink Bombs</div>
+              <ul class="space-y-1.5 text-xs text-pink-100/85">
+                <li>&bull; <strong class="text-rose-400">Black Ink Bombs:</strong> Slicing a bomb detonates ink across the dojo and costs 1 Honor!</li>
+                <li>&bull; <strong class="text-amber-300">Wrong Words:</strong> Slicing a word that breaks the rule resets your combo and costs 1 Honor.</li>
+                <li>&bull; <strong class="text-emerald-300">Let Decoys Fall:</strong> Unmatching words fall harmlessly if left unsliced!</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="bg-[#160f24]/90 border border-emerald-500/25 rounded-2xl p-3.5">
+            <div class="font-dojo text-emerald-300 font-bold text-xs uppercase mb-2">3. Multi-Slice Combos &amp; Scroll Shifts</div>
+            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-pink-100/85">
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span><strong>Rapid Slash Combo:</strong> Slice multiple matching scrolls in one sweep for x2–x5 multipliers!</span>
+              </li>
+              <li class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span><strong>Dynamic Scroll Shifts:</strong> Every 5 correct slices advances your Dan Rank and shifts the target rule!</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-5 flex justify-end">
+          <button id="gotItBtn" type="button"
+            class="btn-dojo px-6 py-2.5 rounded-xl font-dojo font-extrabold text-xs sm:text-sm uppercase bg-amber-400 text-slate-950">
+            Enter the Dojo!
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. PAUSE OVERLAY ==================== -->
+    <section id="pauseOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-4 bg-[#0d0914]/85 backdrop-blur-md">
+      <div class="dojo-panel w-full max-w-sm rounded-3xl p-6 text-center">
+        <h2 class="font-dojo font-extrabold text-2xl text-white mb-1">MEDITATION PAUSE</h2>
+        <p id="pauseLevelInfo" class="text-amber-300 font-dojo font-bold text-xs mb-6">Dan 1 &bull; 0 Scrolls Sliced</p>
+
+        <div class="flex flex-col gap-2.5">
+          <button id="resumeBtn" type="button"
+            class="btn-dojo w-full py-3 rounded-xl font-dojo font-extrabold text-sm uppercase bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950">
+            Resume Training
+          </button>
+          <button id="restartFromPauseBtn" type="button"
+            class="btn-dojo w-full py-3 rounded-xl font-dojo font-bold text-xs uppercase bg-[#1f1633] text-amber-300 border border-amber-400/35">
+            Restart Dojo Run
+          </button>
+          <button id="quitToMenuBtn" type="button"
+            class="btn-dojo w-full py-3 rounded-xl font-dojo font-bold text-xs uppercase bg-[#160f24] text-pink-200 border border-purple-900">
+            Main Menu
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 4. END GAME OVERLAY ==================== -->
+    <section id="endGameOverlay" class="hidden absolute inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-[#0d0914]/90 backdrop-blur-md">
+      <div class="dojo-panel w-full max-w-md rounded-3xl p-6 sm:p-8 text-center relative">
+        <div id="endStatusBadge" class="inline-block px-3 py-1 rounded-full text-xs font-dojo font-bold uppercase tracking-widest mb-2 bg-amber-500/20 border border-amber-400/40 text-amber-300">
+          Training Complete
+        </div>
+
+        <h2 id="endTitle" class="font-dojo font-extrabold text-2xl sm:text-3xl text-white crimson-glow mb-3">
+          MASTER OF SYNTAX!
+        </h2>
+
+        <!-- 3 Stars Rating -->
+        <div id="starsContainer" class="flex items-center justify-center gap-3 my-3"></div>
+        <p id="starCaption" class="text-xs text-pink-100/80 mb-5 font-medium">Razor-sharp literary instincts!</p>
+
+        <!-- Total Score & Breakdown -->
+        <div class="bg-[#160f24]/90 border border-amber-500/30 rounded-2xl p-4 mb-6">
+          <div class="text-xs font-dojo font-bold uppercase tracking-wider text-amber-300/80 mb-1">Total Dojo Score</div>
+          <div id="finalScoreDisplay" class="font-mono-code font-black text-3xl sm:text-4xl text-emerald-300 mb-3">
+            0
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 pt-3 border-t border-purple-900/80 text-center">
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-dojo font-bold">Sliced</div>
+              <div id="statSolved" class="font-mono-code font-bold text-base text-amber-200">0</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-dojo font-bold">Best Combo</div>
+              <div id="statStreak" class="font-mono-code font-bold text-base text-rose-300">x1</div>
+            </div>
+            <div>
+              <div class="text-[10px] uppercase text-amber-300/70 font-dojo font-bold">Max Dan</div>
+              <div id="statRank" class="font-mono-code font-bold text-base text-emerald-300">1</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button id="tryAgainBtn" type="button"
+            class="btn-dojo flex-1 py-3.5 px-5 rounded-2xl font-dojo font-extrabold text-sm uppercase tracking-wider bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950 border border-amber-200/80">
+            Try Again
+          </button>
+          <button id="endMenuBtn" type="button"
+            class="btn-dojo py-3.5 px-5 rounded-2xl font-dojo font-bold text-xs uppercase tracking-wider bg-[#1f1633] text-pink-100 border border-purple-700">
+            Menu
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * SYNTAX SLICER — ENGLISH GRAMMAR & LITERARY DEVICES ARC SLICER
+     * Swipe across flying calligraphy scrolls matching the active linguistic rule!
+     */
+
+    // =========================================================================
+    // 1. DOJO KATANA & BAMBOO WEB AUDIO SYNTHESIZER
+    // =========================================================================
+    class DojoAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playSwipeWhoosh() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(140, now + 0.09);
+        gain.gain.setValueAtTime(0.07, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.095);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      }
+
+      playCleanSlice(combo = 1) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        const base = Math.min(1150, 480 + combo * 90);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(base, now);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.4, now + 0.11);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.14);
+      }
+
+      playWrongSlice() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(175, now);
+        osc.frequency.exponentialRampToValueAtTime(52, now + 0.34);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.37);
+      }
+
+      playRuleShift() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.065;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.26);
+        });
+      }
+
+      playVictory() {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const notes = [440, 554.37, 659.25, 880, 1108.73];
+        notes.forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.09;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.36);
+        });
+      }
+    }
+
+    const sound = new DojoAudioEngine();
+
+    // =========================================================================
+    // 2. GRAMMAR & LITERARY DEVICES SCROLL DECKS
+    // =========================================================================
+    const SYNTAX_RULES = [
+      // PARTS OF SPEECH
+      {
+        topic: 'pos',
+        title: 'SLICE ONLY: ADVERBS',
+        hint: 'Words that modify verbs or adjectives (often ending in -ly, or manner/frequency)',
+        matches: ['swiftly', 'silently', 'seldom', 'fiercely', 'gracefully', 'abruptly', 'anxiously', 'vividly'],
+        decoys: ['lantern', 'crimson', 'whispered', 'ancient', 'fortress', 'thunder', 'fragile', 'galvanize']
+      },
+      {
+        topic: 'pos',
+        title: 'SLICE ONLY: ABSTRACT NOUNS',
+        hint: 'Ideas, qualities, or states that cannot be physically touched',
+        matches: ['courage', 'solitude', 'justice', 'ambition', 'empathy', 'serenity', 'triumph', 'wisdom'],
+        decoys: ['katana', 'bamboo', 'shimmering', 'sprinted', 'pagoda', 'beneath', 'swiftly', 'granite']
+      },
+      {
+        topic: 'pos',
+        title: 'SLICE ONLY: VIVID ADJECTIVES',
+        hint: 'Descriptive words that modify nouns and pronouns',
+        matches: ['luminous', 'relentless', 'ethereal', 'turbulent', 'serene', 'ominous', 'intricate', 'resilient'],
+        decoys: ['perseverance', 'illuminated', 'steadily', 'horizon', 'although', 'momentum', 'whisper', 'cascade']
+      },
+      {
+        topic: 'pos',
+        title: 'SLICE ONLY: SUBORDINATING CONJUNCTIONS',
+        hint: 'Words that introduce dependent clauses (e.g., although, whereas, unless)',
+        matches: ['although', 'whereas', 'unless', 'because', 'whenever', 'provided', 'since', 'while'],
+        decoys: ['however', 'therefore', 'moreover', 'quickly', 'courage', 'shattered', 'between', 'ancient']
+      },
+      {
+        topic: 'pos',
+        title: 'SLICE ONLY: PREPOSITIONAL PHRASES',
+        hint: 'Phrases beginning with a preposition and ending with a noun object',
+        matches: [
+          'beneath the cherry tree',
+          'across the misty bridge',
+          'within the ancient temple',
+          'beside the glowing lantern',
+          'through the silent valley',
+          'beyond the crimson gate'
+        ],
+        decoys: [
+          'she drew her blade',
+          'running swiftly forward',
+          'although night fell',
+          'brightly shining stars',
+          'to master the art',
+          'ancient wisdom prevails'
+        ]
+      },
+
+      // LITERARY DEVICES
+      {
+        topic: 'literary',
+        title: 'SLICE ONLY: SIMILES',
+        hint: 'Comparisons using "like" or "as"',
+        matches: [
+          'sharp as a razor',
+          'moved like a shadow',
+          'cold as winter ice',
+          'fierce like a storm',
+          'light as a feather',
+          'roared like thunder'
+        ],
+        decoys: [
+          'time is a thief',
+          'the wind whispered',
+          'bittersweet sorrow',
+          'deafening silence',
+          'stars danced above',
+          'a sea of troubles'
+        ]
+      },
+      {
+        topic: 'literary',
+        title: 'SLICE ONLY: METAPHORS',
+        hint: 'Direct comparisons stating one thing IS another (without "like" or "as")',
+        matches: [
+          'time is a thief',
+          'heart of stone',
+          'blanket of snow',
+          'classroom was a zoo',
+          'curtain of night',
+          'ocean of emotion'
+        ],
+        decoys: [
+          'fast as lightning',
+          'sly like a fox',
+          'the trees waved',
+          'jumbo shrimp',
+          'buzzing bees',
+          'sun smiled down'
+        ]
+      },
+      {
+        topic: 'literary',
+        title: 'SLICE ONLY: PERSONIFICATION',
+        hint: 'Giving human actions or emotions to non-human things',
+        matches: [
+          'the wind whispered',
+          'shadows crept closer',
+          'the sun smiled down',
+          'leaves danced wildly',
+          'thunder grumbled angrily',
+          'the alarm screamed'
+        ],
+        decoys: [
+          'busy as a bee',
+          'iceberg of debt',
+          'crash! bang! boom!',
+          'living dead',
+          'brave as a lion',
+          'silver-tongued'
+        ]
+      },
+      {
+        topic: 'literary',
+        title: 'SLICE ONLY: OXYMORONS',
+        hint: 'Two contradictory terms placed side by side',
+        matches: [
+          'deafening silence',
+          'bittersweet',
+          'open secret',
+          'living dead',
+          'original copy',
+          'freezer burn'
+        ],
+        decoys: [
+          'as blind as a bat',
+          'the moon watched us',
+          'a rollercoaster of life',
+          'peter piper picked',
+          'sizzle and pop',
+          'heart of gold'
+        ]
+      },
+
+      // CLAUSES & VOCABULARY TONE
+      {
+        topic: 'vocab',
+        title: 'SLICE ONLY: MELANCHOLIC / SOMBER TONE',
+        hint: 'Words evoking sadness, gloom, or mournful reflection',
+        matches: ['forlorn', 'bleak', 'desolate', 'wistful', 'somber', 'lament', 'dreary', 'poignant'],
+        decoys: ['jubilant', 'exuberant', 'elated', 'vivacious', 'euphoric', 'radiant', 'buoyant', 'triumphant']
+      },
+      {
+        topic: 'vocab',
+        title: 'SLICE ONLY: PASSIVE VOICE CLAUSES',
+        hint: 'Clauses where the subject receives the action (was/were + past participle)',
+        matches: [
+          'the scroll was sealed',
+          'gates were guarded',
+          'the riddle was solved',
+          'bells were rung',
+          'a path was forged',
+          'peace was restored'
+        ],
+        decoys: [
+          'she sealed the scroll',
+          'guards watched the gate',
+          'he solved the riddle',
+          'monks rang the bells',
+          'they forged a path',
+          'we restored peace'
+        ]
+      }
+    ];
+
+    // =========================================================================
+    // 3. GAME STATE & CONFIGURATION
+    // =========================================================================
+    const GAME_DURATION = 90;
+    const MAX_LIVES = 3;
+    const SLICES_PER_DAN = 5;
+
+    const state = {
+      mode: 'MENU', // 'MENU' | 'PLAYING' | 'PAUSED' | 'GAMEOVER'
+      topic: 'all',
+      danRank: 1,
+      rankProgress: 0,
+      timeLeft: GAME_DURATION,
+      score: 0,
+      lives: MAX_LIVES,
+      combo: 1,
+      bestCombo: 1,
+      comboDecayTimer: 0,
+      slicedCount: 0,
+      activeRule: null,
+      lastRuleTitle: '',
+      scrolls: [],
+      halves: [],
+      particles: [],
+      floatingTexts: [],
+      bgPetals: [],
+      bladeTrail: [],
+      isSwiping: false,
+      lastPointer: null,
+      spawnTimer: 0,
+      screenShake: 0,
+      inkFlash: 0,
+      nextId: 1
+    };
+
+    // =========================================================================
+    // 4. DOM REFERENCES & CONTROLS
+    // =========================================================================
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    const livesContainerEl = document.getElementById('livesContainer');
+    const hudRankTextEl = document.getElementById('hudRankText');
+    const hudRankCountEl = document.getElementById('hudRankCount');
+    const hudRankBarEl = document.getElementById('hudRankBar');
+    const comboBadgeEl = document.getElementById('comboBadge');
+    const comboValueEl = document.getElementById('comboValue');
+    const timerDisplayEl = document.getElementById('timerDisplay');
+    const scoreDisplayEl = document.getElementById('scoreDisplay');
+
+    const ruleCategoryBadgeEl = document.getElementById('ruleCategoryBadge');
+    const activeRuleTitleEl = document.getElementById('activeRuleTitle');
+    const activeRuleHintEl = document.getElementById('activeRuleHint');
+
+    const startScreenEl = document.getElementById('startScreen');
+    const instructionsModalEl = document.getElementById('instructionsModal');
+    const pauseOverlayEl = document.getElementById('pauseOverlay');
+    const endGameOverlayEl = document.getElementById('endGameOverlay');
+
+    // Discipline filter buttons
+    document.querySelectorAll('.topic-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sound.playSwipeWhoosh();
+        document.querySelectorAll('.topic-btn').forEach(b => {
+          b.classList.remove('active', 'bg-rose-500/25', 'border-amber-300', 'text-white');
+          b.classList.add('bg-[#1f1633]', 'border-purple-900', 'text-pink-200/80');
+        });
+        btn.classList.add('active', 'bg-rose-500/25', 'border-amber-300', 'text-white');
+        btn.classList.remove('bg-[#1f1633]', 'border-purple-900', 'text-pink-200/80');
+        state.topic = btn.dataset.topic;
+      });
+    });
+
+    document.getElementById('startGameBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('tryAgainBtn').addEventListener('click', () => startNewGame());
+    document.getElementById('restartFromPauseBtn').addEventListener('click', () => startNewGame());
+
+    document.getElementById('openInstructionsBtn').addEventListener('click', () => {
+      sound.playSwipeWhoosh();
+      instructionsModalEl.classList.remove('hidden');
+    });
+
+    document.getElementById('closeInstructionsBtn').addEventListener('click', () => {
+      sound.playSwipeWhoosh();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('gotItBtn').addEventListener('click', () => {
+      sound.playSwipeWhoosh();
+      instructionsModalEl.classList.add('hidden');
+    });
+
+    document.getElementById('pauseBtn').addEventListener('click', () => togglePause());
+    document.getElementById('resumeBtn').addEventListener('click', () => togglePause(false));
+    document.getElementById('quitToMenuBtn').addEventListener('click', () => returnToMenu());
+    document.getElementById('endMenuBtn').addEventListener('click', () => returnToMenu());
+
+    document.getElementById('soundToggleBtn').addEventListener('click', () => {
+      const muted = sound.toggleMute();
+      document.getElementById('soundOnIcon').classList.toggle('hidden', muted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !muted);
+      if (!muted) sound.playCleanSlice(1);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if (state.mode === 'PLAYING' || state.mode === 'PAUSED') {
+          e.preventDefault();
+          togglePause();
+        }
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+      }
+    });
+
+    // =========================================================================
+    // 5. RESPONSIVE CANVAS & SWIPE BLADE INPUTS
+    // =========================================================================
+    let canvasWidth = 860;
+    let canvasHeight = 520;
+
+    function resizeCanvas() {
+      const rect = canvasContainer.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvasWidth = Math.max(300, rect.width);
+      canvasHeight = Math.max(240, rect.height);
+
+      canvas.width = Math.floor(canvasWidth * dpr);
+      canvas.height = Math.floor(canvasHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function initSakuraPetals() {
+      state.bgPetals = [];
+      for (let i = 0; i < 22; i++) {
+        state.bgPetals.push({
+          x: Math.random() * canvasWidth,
+          y: Math.random() * canvasHeight,
+          vx: 14 + Math.random() * 18,
+          vy: 18 + Math.random() * 24,
+          size: 4 + Math.random() * 5,
+          sway: Math.random() * Math.PI * 2,
+          alpha: 0.14 + Math.random() * 0.2
+        });
+      }
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function getCanvasPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.mode !== 'PLAYING') return;
+      sound.init();
+      const pt = getCanvasPoint(e);
+      state.isSwiping = true;
+      state.lastPointer = pt;
+      state.bladeTrail.push({ x: pt.x, y: pt.y, life: 1 });
+      sound.playSwipeWhoosh();
+      checkPointSlice(pt.x, pt.y, 0);
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (state.mode !== 'PLAYING' || !state.isSwiping) return;
+      const pt = getCanvasPoint(e);
+      state.bladeTrail.push({ x: pt.x, y: pt.y, life: 1 });
+
+      if (state.lastPointer) {
+        const dx = pt.x - state.lastPointer.x;
+        const dy = pt.y - state.lastPointer.y;
+        const angle = Math.atan2(dy, dx);
+        checkSegmentSlice(state.lastPointer.x, state.lastPointer.y, pt.x, pt.y, angle);
+      }
+      state.lastPointer = pt;
+    });
+
+    window.addEventListener('pointerup', () => {
+      state.isSwiping = false;
+      state.lastPointer = null;
+    });
+
+    window.addEventListener('pointercancel', () => {
+      state.isSwiping = false;
+      state.lastPointer = null;
+    });
+
+    // =========================================================================
+    // 6. RULE SELECTION & SCROLL WAVE LAUNCHER
+    // =========================================================================
+    function pickNextRule(announce = false) {
+      const pool = SYNTAX_RULES.filter(r => state.topic === 'all' || r.topic === state.topic);
+      const filtered = pool.filter(r => r.title !== state.lastRuleTitle);
+      const candidates = filtered.length > 0 ? filtered : pool;
+      const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+      state.activeRule = chosen;
+      state.lastRuleTitle = chosen.title;
+
+      const categoryMap = {
+        pos: 'PARTS OF SPEECH',
+        literary: 'LITERARY DEVICE',
+        vocab: 'CLAUSES & TONE'
+      };
+      ruleCategoryBadgeEl.textContent = categoryMap[chosen.topic] || 'TARGET SCROLL';
+      activeRuleTitleEl.textContent = chosen.title;
+      activeRuleHintEl.textContent = chosen.hint;
+
+      if (announce) {
+        sound.playRuleShift();
+        const banner = document.getElementById('ruleShiftBanner');
+        document.getElementById('ruleBannerTitle').textContent = `DAN ${state.danRank} • NEW SCROLL UNFURLED!`;
+        document.getElementById('ruleBannerSub').textContent = chosen.title;
+        banner.classList.remove('hidden', 'rule-banner');
+        void banner.offsetWidth;
+        banner.classList.add('rule-banner');
+      }
+    }
+
+    function launchScrollWave() {
+      if (!state.activeRule) return;
+
+      const count = Math.min(4, 2 + Math.floor((state.danRank - 1) / 2) + (Math.random() < 0.45 ? 1 : 0));
+      const gravity = 310 + Math.min(120, (state.danRank - 1) * 22);
+
+      // Guarantee at least 1 matching scroll per wave
+      const types = ['MATCH'];
+      for (let i = 1; i < count; i++) {
+        const roll = Math.random();
+        if (roll < 0.45) {
+          types.push('MATCH');
+        } else if (roll < 0.8) {
+          types.push('DECOY');
+        } else {
+          types.push('BOMB');
+        }
+      }
+      types.sort(() => Math.random() - 0.5);
+
+      types.forEach((kind, idx) => {
+        let text = '';
+        if (kind === 'MATCH') {
+          const arr = state.activeRule.matches;
+          text = arr[Math.floor(Math.random() * arr.length)];
+        } else if (kind === 'DECOY') {
+          const arr = state.activeRule.decoys;
+          text = arr[Math.floor(Math.random() * arr.length)];
+        } else {
+          text = 'INK BOMB';
+        }
+
+        ctx.font = '800 16px "Inter", sans-serif';
+        const textW = ctx.measureText(text).width;
+        const width = kind === 'BOMB' ? 88 : Math.max(134, textW + 48);
+        const height = kind === 'BOMB' ? 72 : 52;
+
+        const sliceZoneW = canvasWidth / count;
+        const spawnX = Math.max(
+          width / 2 + 16,
+          Math.min(canvasWidth - width / 2 - 16, sliceZoneW * (idx + 0.5) + (Math.random() - 0.5) * 60)
+        );
+
+        // Peak arc reaches upper-middle of screen so player has comfortable reaction time
+        const peakHeight = canvasHeight * (0.58 + Math.random() * 0.18);
+        const vy = -Math.sqrt(2 * gravity * peakHeight);
+        const centerPull = (canvasWidth * 0.5 - spawnX) * (0.28 + Math.random() * 0.18);
+
+        state.scrolls.push({
+          id: state.nextId++,
+          kind,
+          text,
+          x: spawnX,
+          y: canvasHeight + 35,
+          vx: centerPull,
+          vy,
+          gravity,
+          width,
+          height,
+          tiltPhase: Math.random() * Math.PI * 2,
+          tiltSpeed: 2.2 + Math.random() * 1.4,
+          rotation: 0,
+          sliced: false
+        });
+      });
+    }
+
+    // =========================================================================
+    // 7. BLADE HITBOX & SLICING EVALUATION
+    // =========================================================================
+    function checkPointSlice(px, py, slashAngle) {
+      for (let i = state.scrolls.length - 1; i >= 0; i--) {
+        const sc = state.scrolls[i];
+        if (sc.sliced) continue;
+        const pad = 10;
+        if (
+          Math.abs(px - sc.x) <= sc.width / 2 + pad &&
+          Math.abs(py - sc.y) <= sc.height / 2 + pad
+        ) {
+          sliceScroll(sc, i, slashAngle);
+        }
+      }
+    }
+
+    function checkSegmentSlice(x1, y1, x2, y2, slashAngle) {
+      const steps = Math.max(1, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 14));
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        checkPointSlice(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, slashAngle);
+      }
+    }
+
+    function sliceScroll(sc, index, slashAngle) {
+      sc.sliced = true;
+      state.scrolls.splice(index, 1);
+
+      if (sc.kind === 'BOMB') {
+        sound.playWrongSlice();
+        state.lives--;
+        state.combo = 1;
+        state.screenShake = 16;
+        state.inkFlash = 0.78;
+        spawnBurst(sc.x, sc.y, '#1e1b4b', 28);
+        spawnBurst(sc.x, sc.y, '#f43f5e', 18);
+        spawnFloatingText(sc.x, sc.y - 20, 'INK BOMB! -1 HONOR', '#fb7185');
+        renderLives();
+        updateHUD();
+        if (state.lives <= 0) endGame(false);
+        return;
+      }
+
+      if (sc.kind === 'MATCH') {
+        sound.playCleanSlice(state.combo);
+        const pts = (100 + state.danRank * 25) * state.combo;
+        state.score += pts;
+        state.slicedCount++;
+        state.combo = Math.min(5, state.combo + 1);
+        state.bestCombo = Math.max(state.bestCombo, state.combo);
+        state.comboDecayTimer = 2.6;
+
+        spawnSlicedHalves(sc, slashAngle);
+        spawnBurst(sc.x, sc.y, '#fbbf24', 18);
+        spawnFloatingText(sc.x, sc.y - 22, `+${pts} (x${state.combo - 1})`, '#34d399');
+
+        state.rankProgress++;
+        if (state.rankProgress >= SLICES_PER_DAN) {
+          state.danRank++;
+          state.rankProgress = 0;
+          pickNextRule(true);
+        }
+        updateHUD();
+      } else {
+        // Sliced a decoy word that does not match the target grammar rule
+        sound.playWrongSlice();
+        state.lives--;
+        state.combo = 1;
+        state.screenShake = 12;
+        state.inkFlash = 0.55;
+
+        spawnSlicedHalves(sc, slashAngle);
+        spawnBurst(sc.x, sc.y, '#fb7185', 20);
+        spawnFloatingText(sc.x, sc.y - 22, `WRONG SYNTAX! -1 HONOR`, '#fda4af');
+        renderLives();
+        updateHUD();
+        if (state.lives <= 0) endGame(false);
+      }
+    }
+
+    function spawnSlicedHalves(sc, slashAngle) {
+      const perpX = -Math.sin(slashAngle) * 75;
+      const perpY = Math.cos(slashAngle) * 75;
+      const mid = Math.ceil(sc.text.length / 2);
+      const leftText = sc.text.slice(0, mid);
+      const rightText = sc.text.slice(mid);
+
+      [-1, 1].forEach(side => {
+        state.halves.push({
+          x: sc.x + side * (sc.width * 0.24),
+          y: sc.y + perpY * 0.12 * side,
+          vx: sc.vx + side * 85 + perpX * 0.35 * side,
+          vy: sc.vy * 0.45 - 45,
+          gravity: sc.gravity,
+          width: sc.width * 0.5,
+          height: sc.height * 0.9,
+          side,
+          textHalf: side === -1 ? leftText : rightText,
+          isMatch: sc.kind === 'MATCH',
+          alpha: 1
+        });
+      });
+    }
+
+    // =========================================================================
+    // 8. HUD, LIFECYCLE & PARTICLE HELPERS
+    // =========================================================================
+    function renderLives() {
+      livesContainerEl.innerHTML = '';
+      for (let i = 0; i < MAX_LIVES; i++) {
+        const alive = i < state.lives;
+        const heart = document.createElement('span');
+        heart.innerHTML = `
+          <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${alive ? 'text-rose-500 scale-100 drop-shadow-[0_0_6px_rgba(244,63,94,0.85)]' : 'text-slate-800 scale-90'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+        `;
+        livesContainerEl.appendChild(heart);
+      }
+    }
+
+    function updateHUD() {
+      scoreDisplayEl.textContent = state.score.toLocaleString();
+      comboValueEl.textContent = `x${state.combo}`;
+      comboBadgeEl.classList.toggle('opacity-45', state.combo <= 1);
+
+      hudRankTextEl.textContent = `DAN ${state.danRank}`;
+      hudRankCountEl.textContent = `${state.rankProgress}/${SLICES_PER_DAN}`;
+      hudRankBarEl.style.width = `${(state.rankProgress / SLICES_PER_DAN) * 100}%`;
+
+      const secs = Math.max(0, Math.ceil(state.timeLeft));
+      const mins = Math.floor(secs / 60);
+      const remSecs = secs % 60;
+      timerDisplayEl.textContent = `${String(mins).padStart(2, '0')}:${String(remSecs).padStart(2, '0')}`;
+
+      if (secs <= 15 && state.mode === 'PLAYING') {
+        timerDisplayEl.classList.remove('text-amber-200');
+        timerDisplayEl.classList.add('text-rose-400', 'animate-pulse');
+      } else {
+        timerDisplayEl.classList.add('text-amber-200');
+        timerDisplayEl.classList.remove('text-rose-400', 'animate-pulse');
+      }
+    }
+
+    function startNewGame() {
+      sound.init();
+      sound.playRuleShift();
+
+      state.mode = 'PLAYING';
+      state.danRank = 1;
+      state.rankProgress = 0;
+      state.timeLeft = GAME_DURATION;
+      state.score = 0;
+      state.lives = MAX_LIVES;
+      state.combo = 1;
+      state.bestCombo = 1;
+      state.comboDecayTimer = 0;
+      state.slicedCount = 0;
+      state.scrolls = [];
+      state.halves = [];
+      state.particles = [];
+      state.floatingTexts = [];
+      state.bladeTrail = [];
+      state.spawnTimer = 0.45;
+      state.screenShake = 0;
+      state.inkFlash = 0;
+
+      startScreenEl.classList.add('hidden');
+      instructionsModalEl.classList.add('hidden');
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      document.getElementById('ruleShiftBanner').classList.add('hidden');
+
+      resizeCanvas();
+      pickNextRule(false);
+      renderLives();
+      updateHUD();
+    }
+
+    function togglePause(forceState) {
+      if (state.mode !== 'PLAYING' && state.mode !== 'PAUSED') return;
+      const shouldPause = typeof forceState === 'boolean' ? forceState : state.mode === 'PLAYING';
+      if (shouldPause) {
+        state.mode = 'PAUSED';
+        document.getElementById('pauseLevelInfo').textContent = `Dan ${state.danRank} • ${state.slicedCount} Scrolls Sliced`;
+        pauseOverlayEl.classList.remove('hidden');
+      } else {
+        state.mode = 'PLAYING';
+        pauseOverlayEl.classList.add('hidden');
+      }
+      sound.playSwipeWhoosh();
+    }
+
+    function returnToMenu() {
+      state.mode = 'MENU';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.add('hidden');
+      startScreenEl.classList.remove('hidden');
+      sound.playSwipeWhoosh();
+    }
+
+    function endGame(victory) {
+      state.mode = 'GAMEOVER';
+      pauseOverlayEl.classList.add('hidden');
+      endGameOverlayEl.classList.remove('hidden');
+
+      const badge = document.getElementById('endStatusBadge');
+      const title = document.getElementById('endTitle');
+
+      if (victory) {
+        sound.playVictory();
+        badge.textContent = `Training Complete • ${state.slicedCount} Scrolls Sliced`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-dojo font-bold uppercase tracking-widest mb-2 bg-amber-500/20 border border-amber-400/40 text-amber-300';
+        title.textContent = 'MASTER OF SYNTAX!';
+      } else {
+        badge.textContent = `Dojo Honor Lost • Dan ${state.danRank}`;
+        badge.className = 'inline-block px-3 py-1 rounded-full text-xs font-dojo font-bold uppercase tracking-widest mb-2 bg-rose-500/20 border border-rose-400/40 text-rose-300';
+        title.textContent = 'BLADE SHATTERED!';
+      }
+
+      let starsEarned = 1;
+      if (state.slicedCount >= 18 || state.score >= 3500) {
+        starsEarned = 3;
+      } else if (state.slicedCount >= 9 || state.score >= 1400) {
+        starsEarned = 2;
+      } else if (state.slicedCount === 0 && !victory) {
+        starsEarned = 0;
+      }
+
+      const starsContainer = document.getElementById('starsContainer');
+      starsContainer.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= starsEarned;
+        const starWrapper = document.createElement('div');
+        starWrapper.style.animationDelay = `${(i - 1) * 180}ms`;
+        starWrapper.className = earned ? 'star-earned' : 'opacity-30 scale-90';
+        starWrapper.innerHTML = `
+          <svg class="w-12 h-12 sm:w-14 sm:h-14 ${earned ? 'text-amber-300 drop-shadow-[0_0_14px_rgba(251,191,36,0.9)]' : 'text-slate-700'}"
+               fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsContainer.appendChild(starWrapper);
+      }
+
+      const captions = [
+        'Avoid black Ink Bombs and only slice words matching the banner rule!',
+        'Solid technique! Slice 9+ matching scrolls for 2 Dojo Stars.',
+        'Sharp instincts! Slice 18+ scrolls for 3 Grandmaster Stars!',
+        'Grandmaster Slicer! Flawless command of English grammar & rhetoric!'
+      ];
+      document.getElementById('starCaption').textContent = captions[starsEarned];
+
+      document.getElementById('finalScoreDisplay').textContent = state.score.toLocaleString();
+      document.getElementById('statSolved').textContent = state.slicedCount;
+      document.getElementById('statStreak').textContent = `x${state.bestCombo}`;
+      document.getElementById('statRank').textContent = state.danRank;
+    }
+
+    function spawnBurst(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 175 + 40;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: Math.random() * 4 + 1.5,
+          color,
+          alpha: 1,
+          decay: 1.55 + Math.random()
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color = '#34d399') {
+      state.floatingTexts.push({
+        x,
+        y,
+        vy: -54,
+        text,
+        color,
+        alpha: 1,
+        decay: 1.1
+      });
+    }
+
+    // =========================================================================
+    // 9. UPDATE & RENDERING LOOP
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function update(dt) {
+      // Drifting sakura petals
+      for (const p of state.bgPetals) {
+        p.sway += dt * 1.8;
+        p.x += (p.vx + Math.sin(p.sway) * 14) * dt;
+        p.y += p.vy * dt;
+        if (p.y > canvasHeight + 16) {
+          p.y = -16;
+          p.x = Math.random() * canvasWidth;
+        }
+        if (p.x > canvasWidth + 16) p.x = -16;
+      }
+
+      // Fade katana blade trail
+      for (let i = state.bladeTrail.length - 1; i >= 0; i--) {
+        state.bladeTrail[i].life -= dt * 6.5;
+        if (state.bladeTrail[i].life <= 0) state.bladeTrail.splice(i, 1);
+      }
+
+      if (state.mode !== 'PLAYING') return;
+
+      state.timeLeft -= dt;
+      if (state.timeLeft <= 0) {
+        state.timeLeft = 0;
+        updateHUD();
+        endGame(true);
+        return;
+      }
+
+      if (state.combo > 1) {
+        state.comboDecayTimer -= dt;
+        if (state.comboDecayTimer <= 0) {
+          state.combo = 1;
+        }
+      }
+
+      state.screenShake = Math.max(0, state.screenShake - dt * 28);
+      state.inkFlash = Math.max(0, state.inkFlash - dt * 2.2);
+
+      // Launch scroll waves
+      const waveInterval = Math.max(1.35, 2.35 - (state.danRank - 1) * 0.16);
+      state.spawnTimer -= dt;
+      if (state.spawnTimer <= 0) {
+        launchScrollWave();
+        state.spawnTimer = waveInterval;
+      }
+
+      // Update flying scrolls along parabolic arcs (gentle bobbing tilt on rollers, upright text)
+      for (let i = state.scrolls.length - 1; i >= 0; i--) {
+        const sc = state.scrolls[i];
+        sc.x += sc.vx * dt;
+        sc.y += sc.vy * dt;
+        sc.vy += sc.gravity * dt;
+        sc.tiltPhase += sc.tiltSpeed * dt;
+        sc.rotation = Math.sin(sc.tiltPhase) * 0.11;
+
+        // Remove once fallen off bottom
+        if (sc.vy > 0 && sc.y - sc.height > canvasHeight + 30) {
+          state.scrolls.splice(i, 1);
+        }
+      }
+
+      // Update sliced scroll halves (kept upright with readable split text)
+      for (let i = state.halves.length - 1; i >= 0; i--) {
+        const h = state.halves[i];
+        h.x += h.vx * dt;
+        h.y += h.vy * dt;
+        h.vy += h.gravity * dt;
+        h.alpha -= dt * 1.35;
+        if (h.alpha <= 0) state.halves.splice(i, 1);
+      }
+
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+      }
+
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= ft.decay * dt;
+        if (ft.alpha <= 0) state.floatingTexts.splice(i, 1);
+      }
+
+      updateHUD();
+    }
+
+    function draw() {
+      ctx.save();
+
+      if (state.screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+      }
+
+      // Twilight Dojo Ink-Wash Background
+      const bgGrad = ctx.createRadialGradient(canvasWidth * 0.5, canvasHeight * 0.45, 50, canvasWidth * 0.5, canvasHeight * 0.5, Math.max(canvasWidth, canvasHeight));
+      bgGrad.addColorStop(0, '#1e1230');
+      bgGrad.addColorStop(0.65, '#120b1f');
+      bgGrad.addColorStop(1, '#090611');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      // Subtle Shoji Lattice Lines
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.045)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvasWidth; x += 90) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvasHeight; y += 90) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasWidth, y);
+        ctx.stroke();
+      }
+
+      // Drifting Cherry Blossom Petals
+      for (const p of state.bgPetals) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.sway);
+        ctx.fillStyle = `rgba(244, 114, 182, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size, p.size * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Sliced Halves (strictly upright with split text halves)
+      for (const h of state.halves) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, h.alpha);
+        ctx.translate(h.x, h.y);
+
+        const hw = h.width / 2;
+        const hh = h.height / 2;
+
+        ctx.fillStyle = h.isMatch ? '#fef3c7' : '#312e81';
+        ctx.strokeStyle = h.isMatch ? '#fbbf24' : '#818cf8';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(-hw, -hh, h.width, h.height, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // Outer wooden roller endcap on left or right half
+        ctx.fillStyle = '#78350f';
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1.5;
+        const capX = h.side === -1 ? -hw - 3 : hw - 6;
+        ctx.beginPath();
+        ctx.roundRect(capX, -hh - 2, 9, h.height + 4, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        // Crisp upright split text
+        if (h.textHalf) {
+          ctx.font = '800 14px "Inter", sans-serif';
+          ctx.fillStyle = h.isMatch ? '#1e1b4b' : '#e0e7ff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(h.textHalf, 0, 1);
+        }
+        ctx.restore();
+      }
+
+      // Active Flying Scrolls & Ink Bombs
+      for (const sc of state.scrolls) {
+        drawScrollTarget(sc);
+      }
+
+      // Particles & Floating Texts
+      for (const pt of state.particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const ft of state.floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '800 14px "Shippori Mincho", serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      // Glowing Katana Slash Trail
+      drawBladeTrail();
+
+      if (state.inkFlash > 0.01) {
+        ctx.fillStyle = `rgba(244, 63, 94, ${state.inkFlash * 0.35})`;
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+      }
+
+      ctx.restore();
+    }
+
+    function drawScrollTarget(sc) {
+      ctx.save();
+      ctx.translate(sc.x, sc.y);
+
+      if (sc.kind === 'BOMB') {
+        // Spiked Black Ink Bomb
+        ctx.shadowColor = '#f43f5e';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#090d16';
+        ctx.strokeStyle = '#f43f5e';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 32, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Burning Fuse Spark
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -32);
+        ctx.quadraticCurveTo(10, -42, 16, -38);
+        ctx.stroke();
+
+        ctx.font = '800 11px "JetBrains Mono", monospace';
+        ctx.fillStyle = '#fda4af';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('INK', 0, -6);
+        ctx.fillText('BOMB', 0, 7);
+        ctx.restore();
+        return;
+      }
+
+      const hw = sc.width / 2;
+      const hh = sc.height / 2;
+
+      // 1. Gently tilted parchment & wooden scroll rollers
+      ctx.save();
+      ctx.rotate(sc.rotation);
+      ctx.shadowColor = 'rgba(251, 191, 36, 0.35)';
+      ctx.shadowBlur = 14;
+
+      // Parchment Body
+      ctx.fillStyle = '#fef3c7';
+      ctx.strokeStyle = '#d97706';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-hw + 8, -hh, sc.width - 16, sc.height, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Left & Right Wooden Scroll Rollers
+      ctx.fillStyle = '#78350f';
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh - 3, 10, sc.height + 6, 4);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.roundRect(hw - 10, -hh - 3, 10, sc.height + 6, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // 2. Strictly upright (0° rotation) high-contrast backing plate & text label
+      const plateW = sc.width - 28;
+      const plateH = sc.height - 14;
+      ctx.fillStyle = 'rgba(255, 251, 235, 0.96)';
+      ctx.strokeStyle = 'rgba(180, 83, 9, 0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.roundRect(-plateW / 2, -plateH / 2, plateW, plateH, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '800 16px "Inter", sans-serif';
+      ctx.fillStyle = '#111827';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(sc.text, 0, 1);
+
+      ctx.restore();
+    }
+
+    function drawBladeTrail() {
+      if (state.bladeTrail.length < 2) return;
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 1; i < state.bladeTrail.length; i++) {
+        const p0 = state.bladeTrail[i - 1];
+        const p1 = state.bladeTrail[i];
+        const alpha = Math.max(0, p1.life);
+
+        ctx.strokeStyle = `rgba(251, 191, 36, ${alpha * 0.45})`;
+        ctx.lineWidth = 14 * alpha;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+        ctx.lineWidth = 5 * alpha;
+        ctx.beginPath();
+        ctx.moveTo(p0.x, p0.y);
+        ctx.lineTo(p1.x, p1.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      draw();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = function () {
+      resizeCanvas();
+      initSakuraPetals();
+      renderLives();
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
