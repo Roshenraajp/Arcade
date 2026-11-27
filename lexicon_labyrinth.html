@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Lexicon Labyrinth — World Languages &amp; Etymology Dungeon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-vault: #060913;
+      --stone-panel: rgba(13, 19, 36, 0.92);
+      --amber-torch: #f59e0b;
+      --gold-rune: #fbbf24;
+      --cyan-ethereal: #38bdf8;
+      --emerald-portal: #34d399;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      background-color: var(--bg-vault);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      background-image:
+        radial-gradient(circle at 20% 18%, rgba(245, 158, 11, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 82% 82%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+        linear-gradient(rgba(251, 191, 36, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(251, 191, 36, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 42px 42px, 42px 42px;
+      overflow-x: hidden;
+    }
+
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+
+    .font-mono-rune {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .archive-panel {
+      background: var(--stone-panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(245, 158, 11, 0.32);
+      box-shadow: 0 14px 38px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .torch-glow {
+      text-shadow: 0 0 14px rgba(251, 191, 36, 0.68), 0 0 30px rgba(245, 158, 11, 0.3);
+    }
+
+    .rune-chip {
+      transition: transform 0.14s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .rune-chip:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+
+    .rune-chip:active:not(:disabled) {
+      transform: scale(0.96);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+      75% { transform: scale(1.2) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-pop {
+      animation: starPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- TOP ARCHIVE NAVIGATION & TELEMETRY HUD -->
+  <header class="w-full border-b border-amber-500/25 bg-slate-950/92 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- Left: Arcade Hub Link & Game Title -->
+      <div class="flex items-center gap-2.5 sm:gap-4">
+        <a href="./index.html"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/35 text-amber-300 text-xs font-cinzel font-bold tracking-wider transition active:scale-95">
+          <span>&larr;</span>
+          <span>Arcade Hub</span>
+        </a>
+        <div class="hidden md:block">
+          <h1 class="font-cinzel font-black text-base lg:text-lg tracking-wider text-white leading-none">
+            LEXICON <span class="text-amber-400">LABYRINTH</span>
+          </h1>
+          <span id="hudTrackSubtitle" class="text-[11px] font-mono-rune text-slate-400">Etymology &amp; Morpheme Forge</span>
+        </div>
+      </div>
+
+      <!-- Center: Chamber, Torch Steps, Phase Walls & Score -->
+      <div id="hudTelemetry" class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-700/80 text-center">
+          <div class="text-[9px] font-cinzel uppercase text-slate-400">Chamber</div>
+          <div id="hudChamber" class="font-mono-rune font-extrabold text-xs sm:text-sm text-amber-300">01/06</div>
+        </div>
+
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/35 text-center" title="Remaining Torch Steps">
+          <div class="text-[9px] font-cinzel uppercase text-amber-300/80">Torch Steps</div>
+          <div id="hudSteps" class="font-mono-rune font-extrabold text-xs sm:text-sm text-amber-300">24</div>
+        </div>
+
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-purple-500/35 text-center" title="Phase Walls toggle every 3 steps">
+          <div class="text-[9px] font-cinzel uppercase text-purple-300/80">Phase Walls</div>
+          <div id="hudPhase" class="font-mono-rune font-extrabold text-xs sm:text-sm text-purple-300">OPEN (3)</div>
+        </div>
+
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-emerald-500/35 text-center">
+          <div class="text-[9px] font-cinzel uppercase text-emerald-300/80">Score</div>
+          <div id="hudScore" class="font-mono-rune font-extrabold text-xs sm:text-sm text-emerald-300">0</div>
+        </div>
+      </div>
+
+      <!-- Right: Codex, Hint, Restart, Sound & Tracks -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btnCodex" type="button" title="Searchable Root & Affix Codex (C)"
+          class="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/45 text-amber-200 text-xs font-cinzel font-bold transition active:scale-95">
+          Codex <span class="hidden sm:inline">[C]</span>
+        </button>
+
+        <button id="btnHintTop" type="button" title="Etymology Hint (-75 pts) [H]"
+          class="px-2.5 py-1.5 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-400/45 text-purple-200 text-xs font-cinzel font-bold transition active:scale-95">
+          Hint <span class="hidden sm:inline">[H]</span>
+        </button>
+
+        <button id="btnResetChamber" type="button" title="Restart Current Chamber (R)"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono-rune font-bold transition active:scale-95">
+          Reset <span class="hidden md:inline">[R]</span>
+        </button>
+
+        <button id="soundToggleBtn" type="button" title="Toggle Synth Audio (M)"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-rune text-xs transition active:scale-95">
+          SFX: ON
+        </button>
+
+        <button id="btnTracksMenu" type="button" title="Switch Curriculum Track"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-cinzel font-bold transition active:scale-95">
+          Tracks
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN ARCHIVE EXPEDITION WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 flex flex-col justify-center">
+
+    <!-- ==================== 1. TITLE & CURRICULUM TRACK SELECTOR ==================== -->
+    <section id="titleScreen" class="archive-panel rounded-3xl p-6 sm:p-9 max-w-4xl mx-auto w-full text-center">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-xs font-cinzel uppercase tracking-widest mb-4">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span>World Languages &amp; Etymology Dungeon</span>
+      </div>
+
+      <h2 class="font-cinzel font-black text-3xl sm:text-5xl text-white torch-glow tracking-tight mb-3">
+        LEXICON LABYRINTH
+      </h2>
+      <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-7">
+        Descend into torch-lit linguistic vaults. Collect floating <strong class="text-sky-300">Morpheme Runes</strong> into your satchel, navigate shifting <strong class="text-purple-300">Phase Walls</strong>, decipher <strong class="text-amber-300">Cognate Scrolls</strong>, and forge classical roots on the anvil to shatter <strong class="text-emerald-300">Sealed Rune Gates</strong>.
+      </p>
+
+      <!-- 3 Curriculum Track Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left mb-7">
+        <button type="button" data-track="greek"
+          class="track-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border-2 border-amber-400/65 shadow-[0_0_24px_rgba(245,158,11,0.18)] transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-cinzel text-[10px] font-bold uppercase">Track 01</span>
+              <span class="font-mono-rune text-xs text-amber-300">6 Chambers</span>
+            </div>
+            <h3 class="font-cinzel font-extrabold text-base text-white group-hover:text-amber-300 mb-1.5">Greek Roots &amp; Science</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Combine foundational Hellenic morphemes (<span class="font-mono-rune text-sky-300">TELE + SCOPE</span>, <span class="font-mono-rune text-sky-300">BIO + LOGY</span>, <span class="font-mono-rune text-sky-300">CHRONO + METER</span>) that power modern scientific vocabulary.
+            </p>
+          </div>
+          <div class="mt-4 font-cinzel text-xs font-bold text-amber-300 flex items-center justify-between">
+            <span>Enter Hellenic Vault</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+
+        <button type="button" data-track="latin"
+          class="track-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-sky-500/45 hover:border-sky-400 transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 font-cinzel text-[10px] font-bold uppercase">Track 02</span>
+              <span class="font-mono-rune text-xs text-sky-300">6 Chambers</span>
+            </div>
+            <h3 class="font-cinzel font-extrabold text-base text-white group-hover:text-sky-300 mb-1.5">Latin Roots &amp; Academic</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Unlock Roman imperial archives by forging high-frequency prefixes, roots, and suffixes (<span class="font-mono-rune text-sky-300">BENE + DICT</span>, <span class="font-mono-rune text-sky-300">SPECT + ATOR</span>, <span class="font-mono-rune text-sky-300">AQUA + DUCT</span>).
+            </p>
+          </div>
+          <div class="mt-4 font-cinzel text-xs font-bold text-sky-300 flex items-center justify-between">
+            <span>Enter Roman Vault</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+
+        <button type="button" data-track="romance"
+          class="track-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-emerald-500/45 hover:border-emerald-400 transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-cinzel text-[10px] font-bold uppercase">Track 03</span>
+              <span class="font-mono-rune text-xs text-emerald-300">EN &bull; ES &bull; FR</span>
+            </div>
+            <h3 class="font-cinzel font-extrabold text-base text-white group-hover:text-emerald-300 mb-1.5">Romance Cognates</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Bridge English, Spanish, and French by pairing shared ancestral cognates (<span class="font-mono-rune text-sky-300">AGUA + EAU</span>, <span class="font-mono-rune text-sky-300">SOL + SOLEIL</span>, <span class="font-mono-rune text-sky-300">TERRA + TIERRA</span>).
+            </p>
+          </div>
+          <div class="mt-4 font-cinzel text-xs font-bold text-emerald-300 flex items-center justify-between">
+            <span>Enter Polyglot Vault</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Controls Legend -->
+      <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-400 border-t border-slate-800 pt-5">
+        <span><strong class="text-amber-300">WASD / Arrows / Tap Tiles</strong> Move</span>
+        <span>&bull;</span>
+        <span><strong class="text-sky-300">Click Satchel Runes</strong> Load Forge Anvil</span>
+        <span>&bull;</span>
+        <span><strong class="text-emerald-300">Enter / Space</strong> Forge Word</span>
+        <span>&bull;</span>
+        <span><strong class="text-purple-300">C</strong> Root Codex</span>
+      </div>
+    </section>
+
+    <!-- ==================== 2. ACTIVE LABYRINTH EXPEDITION SCREEN ==================== -->
+    <section id="gameScreen" class="hidden w-full flex flex-col gap-3">
+
+      <!-- Contextual Expedition Banner -->
+      <div class="archive-panel rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span id="chamberBadge" class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/45 font-cinzel font-bold text-[11px] uppercase text-amber-300">
+            Chamber 1
+          </span>
+          <span id="statusBanner" class="text-xs sm:text-sm font-medium text-slate-200">
+            Collect glowing morpheme pedestals, then stand next to a Sealed Gate to forge!
+          </span>
+        </div>
+        <div class="text-[11px] font-mono-rune text-slate-400">
+          Gates Unsealed: <span id="gatesProgressText" class="text-emerald-300 font-bold">0 / 1</span>
+        </div>
+      </div>
+
+      <!-- Main Split Layout: Canvas Grid on Left, Satchel + Forge Anvil + D-Pad on Right -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+        <!-- Left: Interactive Dungeon Canvas -->
+        <div id="canvasWrapper" class="lg:col-span-7 archive-panel rounded-3xl relative min-h-[360px] sm:min-h-[450px] overflow-hidden flex items-center justify-center">
+          <canvas id="labyrinthCanvas" class="block w-full h-full cursor-pointer"></canvas>
+
+          <!-- Tile Legend Pill -->
+          <div class="pointer-events-none absolute bottom-2.5 left-3 right-3 flex flex-wrap items-center justify-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-950/85 border border-slate-800/90 text-[10px] font-mono-rune text-slate-300">
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-sky-400 inline-block"></span> Morpheme Rune</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block"></span> Sealed Gate</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-purple-400 inline-block"></span> Phase Wall</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-fuchsia-400 inline-block"></span> Cognate Scroll</span>
+            <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-400 inline-block"></span> Exit Sanctum</span>
+          </div>
+        </div>
+
+        <!-- Right: Morpheme Satchel, Sealed Gate Forge Anvil & Touch D-Pad -->
+        <div class="lg:col-span-5 flex flex-col gap-3">
+
+          <!-- 1. Morpheme Satchel (3 Slots) -->
+          <div class="archive-panel rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2.5">
+              <div>
+                <h3 class="font-cinzel font-extrabold text-xs sm:text-sm uppercase tracking-wider text-sky-300">
+                  Morpheme Satchel
+                </h3>
+                <p class="text-[11px] text-slate-400">Click a collected rune to load it onto the Forge Anvil</p>
+              </div>
+              <span id="satchelCount" class="px-2.5 py-0.5 rounded-full bg-sky-500/15 border border-sky-400/40 font-mono-rune text-[11px] font-bold text-sky-300">
+                0 / 3 Runes
+              </span>
+            </div>
+
+            <div id="satchelSlots" class="grid grid-cols-3 gap-2"></div>
+
+            <div class="mt-2.5 flex items-center justify-end">
+              <button id="btnDropLastRune" type="button"
+                class="text-[11px] font-mono-rune text-slate-400 hover:text-rose-300 underline transition">
+                Drop Last Rune onto Floor
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Sealed Gate Forge Anvil -->
+          <div class="archive-panel rounded-2xl p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span id="forgeStatusPill" class="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/40 font-mono-rune text-[10px] font-bold uppercase text-amber-300">
+                  NEXT SEALED GATE
+                </span>
+                <button id="btnGateHint" type="button"
+                  class="text-[11px] font-mono-rune text-purple-300 hover:text-purple-200 underline">
+                  Pulse Needed Rune (-75)
+                </button>
+              </div>
+
+              <div class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 mb-3">
+                <div class="text-[10px] font-cinzel uppercase text-slate-400 mb-0.5">Gate Inscription Clue</div>
+                <p id="forgeClueText" class="text-xs sm:text-sm font-semibold text-amber-100 leading-snug">
+                  "Instrument for viewing distant objects" (2 morphemes)
+                </p>
+              </div>
+
+              <!-- Anvil Assembly Slots -->
+              <div class="mb-3">
+                <div class="flex items-center justify-between text-[10px] font-cinzel uppercase text-slate-400 mb-1.5">
+                  <span>Forge Anvil Sequence</span>
+                  <button id="btnClearAnvil" type="button" class="text-slate-400 hover:text-amber-300 font-mono-rune">
+                    Clear Anvil
+                  </button>
+                </div>
+                <div id="anvilSlots" class="min-h-[46px] p-2 rounded-xl bg-slate-950/95 border border-amber-500/30 flex flex-wrap items-center justify-center gap-1.5">
+                  <span class="text-[11px] font-mono-rune text-slate-500">Select runes from your satchel above</span>
+                </div>
+              </div>
+            </div>
+
+            <button id="btnForgeWord" type="button" disabled
+              class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-emerald-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 text-slate-950 font-cinzel font-black text-xs sm:text-sm uppercase tracking-wider shadow-[0_0_20px_rgba(245,158,11,0.3)] disabled:shadow-none transition active:scale-95">
+              Step Next to Gate to Forge
+            </button>
+          </div>
+
+          <!-- 3. Tactile On-Screen D-Pad (Ideal for Mobile / Tablet) -->
+          <div class="archive-panel rounded-2xl p-3 flex items-center justify-between gap-3">
+            <div class="text-[11px] text-slate-400 leading-snug">
+              <strong class="text-slate-200 block font-cinzel">Navigation</strong>
+              Use <span class="font-mono-rune text-amber-300">WASD</span>, <span class="font-mono-rune text-amber-300">Arrows</span>, tap tiles, or use the D-Pad.
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 shrink-0">
+              <div></div>
+              <button type="button" data-dir="0,-1" aria-label="Move Up"
+                class="dpad-btn w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold active:scale-90">
+                &uarr;
+              </button>
+              <div></div>
+              <button type="button" data-dir="-1,0" aria-label="Move Left"
+                class="dpad-btn w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold active:scale-90">
+                &larr;
+              </button>
+              <button type="button" data-dir="0,1" aria-label="Move Down"
+                class="dpad-btn w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold active:scale-90">
+                &darr;
+              </button>
+              <button type="button" data-dir="1,0" aria-label="Move Right"
+                class="dpad-btn w-10 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold active:scale-90">
+                &rarr;
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. END OF EXPEDITION SUMMARY SCREEN ==================== -->
+    <section id="endScreen" class="hidden archive-panel rounded-3xl p-6 sm:p-10 max-w-xl mx-auto w-full text-center">
+      <div id="endBadge" class="inline-block px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-cinzel text-xs font-bold uppercase tracking-widest mb-3">
+        Vault Expedition Complete
+      </div>
+
+      <h2 id="endTitle" class="font-cinzel font-black text-2xl sm:text-4xl text-white torch-glow mb-2">
+        GRAND PHILOLOGIST!
+      </h2>
+      <p id="endSubtitle" class="text-slate-300 text-sm mb-5">
+        Every ancient etymological seal has been deciphered.
+      </p>
+
+      <!-- 1-3 Star Archive Rating -->
+      <div id="endStars" class="flex items-center justify-center gap-3 mb-6"></div>
+
+      <!-- Expedition Stats -->
+      <div class="grid grid-cols-3 gap-3 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6">
+        <div>
+          <div class="text-[10px] font-cinzel uppercase text-slate-400">Final Score</div>
+          <div id="endScore" class="font-mono-rune font-extrabold text-lg sm:text-xl text-emerald-300">0</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-cinzel uppercase text-slate-400">Words Forged</div>
+          <div id="endWords" class="font-mono-rune font-extrabold text-lg sm:text-xl text-amber-300">0</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-cinzel uppercase text-slate-400">Scrolls Solved</div>
+          <div id="endScrolls" class="font-mono-rune font-extrabold text-lg sm:text-xl text-purple-300">0</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button id="btnPlayAgain" type="button"
+          class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 to-emerald-400 text-slate-950 font-cinzel font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition active:scale-95">
+          Explore Track Again
+        </button>
+        <a href="./index.html"
+          class="py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-cinzel font-bold text-xs uppercase tracking-wider flex items-center justify-center transition">
+          Arcade Hub
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== COGNATE BONUS SCROLL MODAL ==================== -->
+  <div id="scrollModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="archive-panel rounded-3xl max-w-lg w-full p-6 border-2 border-purple-400/60">
+      <div class="flex items-center justify-between mb-3">
+        <span class="px-2.5 py-1 rounded-full bg-purple-500/20 border border-purple-400/45 font-cinzel font-bold text-[11px] uppercase text-purple-200">
+          Ancient Cognate Scroll (+6 Torch Steps)
+        </span>
+        <span class="font-mono-rune text-xs text-amber-300">+250 PTS</span>
+      </div>
+      <h3 id="scrollQuestion" class="font-bold text-base sm:text-lg text-white mb-4 leading-snug">
+        Which Romance word shares the Latin root "AQUA" (water)?
+      </h3>
+      <div id="scrollOptions" class="space-y-2.5 mb-4"></div>
+      <div id="scrollFeedback" class="text-xs font-mono-rune text-slate-400 min-h-[18px]"></div>
+    </div>
+  </div>
+
+  <!-- ==================== SEARCHABLE ROOT & AFFIX CODEX MODAL ==================== -->
+  <div id="codexModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="archive-panel rounded-3xl max-w-3xl w-full max-h-[88vh] flex flex-col p-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 mb-4 shrink-0">
+        <div>
+          <h3 class="font-cinzel font-black text-lg sm:text-xl text-amber-300">ARCHIVE ETYMOLOGY &amp; ROOT CODEX</h3>
+          <p class="text-xs text-slate-400">Searchable lexicon of Greek, Latin, and Romance morphemes</p>
+        </div>
+        <button id="btnCloseCodex" type="button"
+          class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-rune text-xs font-bold">
+          ESC / Close
+        </button>
+      </div>
+
+      <input id="codexSearchInput" type="search" placeholder="Filter by root, language, or meaning (e.g., TELE, water, BENE, French)..."
+        class="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-400 focus:outline-none text-xs sm:text-sm text-white placeholder-slate-500 mb-4 shrink-0" />
+
+      <div id="codexGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-1 text-xs"></div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * LEXICON LABYRINTH — WORLD LANGUAGES & ETYMOLOGY DUNGEON CRAWLER
+     * Features 3 curriculum tracks (18 handcrafted chambers), a BFS reachability
+     * safeguard ensuring every morpheme rune is reachable before its gate,
+     * dynamic Phase Walls, Cognate Scrolls, and Web Audio synth feedback.
+     */
+
+    // =========================================================================
+    // 1. WEB AUDIO API ARCHIVE SOUND SYNTHESIZER
+    // =========================================================================
+    class ArchiveSynth {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (e) {
+          this.ctx = null;
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playTone(freq, type = 'sine', duration = 0.08, vol = 0.1, delay = 0) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.01);
+        } catch (e) {}
+      }
+
+      playStep() {
+        this.playTone(210, 'triangle', 0.05, 0.06);
+      }
+
+      playPickupRune() {
+        this.playTone(587.33, 'sine', 0.09, 0.11, 0);
+        this.playTone(880, 'sine', 0.12, 0.11, 0.05);
+      }
+
+      playForgeSuccess() {
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((f, i) => this.playTone(f, 'triangle', 0.18, 0.13, i * 0.065));
+      }
+
+      playPortalClear() {
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((f, i) => this.playTone(f, 'sine', 0.22, 0.14, i * 0.08));
+      }
+
+      playError() {
+        this.playTone(165, 'sawtooth', 0.16, 0.11, 0);
+        this.playTone(130, 'sawtooth', 0.18, 0.11, 0.08);
+      }
+    }
+
+    const sfx = new ArchiveSynth();
+
+    // =========================================================================
+    // 2. SEARCHABLE ETYMOLOGY CODEX DATABASE
+    // =========================================================================
+    const CODEX_ENTRIES = [
+      { root: 'TELE-', origin: 'Greek (tēle)', gloss: 'far, distant', examples: 'Telescope, Telephone, Telemetry' },
+      { root: '-SCOPE', origin: 'Greek (skopein)', gloss: 'to look, examine', examples: 'Microscope, Periscope, Kaleidoscope' },
+      { root: 'BIO-', origin: 'Greek (bios)', gloss: 'life, living', examples: 'Biology, Biosphere, Biography' },
+      { root: '-LOGY', origin: 'Greek (logia)', gloss: 'study of, science', examples: 'Geology, Ecology, Chronology' },
+      { root: 'PHOTO-', origin: 'Greek (phōs)', gloss: 'light', examples: 'Photosynthesis, Photon, Photograph' },
+      { root: 'SYNTHESIS', origin: 'Greek (syntithenai)', gloss: 'putting together', examples: 'Photosynthesis, Synthetic' },
+      { root: 'GEO-', origin: 'Greek (gē)', gloss: 'earth, ground', examples: 'Geothermal, Geography, Geometry' },
+      { root: 'THERMAL', origin: 'Greek (thermē)', gloss: 'heat, temperature', examples: 'Thermometer, Hypothermia, Geothermal' },
+      { root: 'CHRONO-', origin: 'Greek (khronos)', gloss: 'time', examples: 'Chronometer, Chronicle, Synchronize' },
+      { root: '-METER', origin: 'Greek (metron)', gloss: 'measure', examples: 'Barometer, Perimeter, Diameter' },
+      { root: 'HYDRO-', origin: 'Greek (hydōr)', gloss: 'water', examples: 'Hydroelectric, Dehydrate, Hydrogen' },
+      { root: 'BENE-', origin: 'Latin (bene)', gloss: 'good, well', examples: 'Benediction, Benefit, Benevolent' },
+      { root: '-DICT', origin: 'Latin (dicere)', gloss: 'to speak, say', examples: 'Predict, Verdict, Dictionary' },
+      { root: 'SPECT-', origin: 'Latin (spectare)', gloss: 'to watch, look', examples: 'Spectator, Inspect, Perspective' },
+      { root: 'PORT-', origin: 'Latin (portare)', gloss: 'to carry', examples: 'Portable, Transport, Export' },
+      { root: 'CRED-', origin: 'Latin (credere)', gloss: 'to believe, trust', examples: 'Credible, Credentials, Credit' },
+      { root: 'STRUCT-', origin: 'Latin (struere)', gloss: 'to build', examples: 'Structure, Construct, Infrastructure' },
+      { root: 'AQUA / AGUA / EAU', origin: 'Latin → ES / FR', gloss: 'water', examples: 'Aqueduct (EN), Agua (ES), Eau (FR)' },
+      { root: 'SOL / SOLEIL', origin: 'Latin → ES / FR', gloss: 'sun', examples: 'Solar (EN), Sol (ES), Soleil (FR)' },
+      { root: 'LUNA / LUNE', origin: 'Latin → ES / FR', gloss: 'moon', examples: 'Lunar (EN), Luna (ES), Lune (FR)' },
+      { root: 'TERRA / TIERRA / TERRE', origin: 'Latin → ES / FR', gloss: 'earth, land', examples: 'Terrain (EN), Tierra (ES), Terre (FR)' },
+      { root: 'MANO / MAIN', origin: 'Latin (manus) → ES / FR', gloss: 'hand', examples: 'Manual (EN), Mano (ES), Main (FR)' },
+      { root: 'NOCHE / NUIT', origin: 'Latin (nox) → ES / FR', gloss: 'night', examples: 'Nocturnal (EN), Noche (ES), Nuit (FR)' }
+    ];
+
+    // =========================================================================
+    // 3. THREE CURRICULUM TRACKS (18 REACHABILITY-VERIFIED CHAMBERS)
+    // Legend: '#' = Stone Wall, '.' = Open Floor, 'P' = Phase Wall, 'S' = Start, 'E' = Exit
+    // =========================================================================
+    const TRACK_DATA = {
+      greek: {
+        name: 'Greek Roots & Science',
+        chambers: [
+          {
+            title: 'The Observatory Vestibule',
+            steps: 24,
+            grid: [
+              '#######',
+              '#S...##',
+              '#.#..##',
+              '#..G1.E',
+              '#######'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'TELE', gloss: 'far / distant' },
+              { x: 4, y: 2, text: 'SCOPE', gloss: 'to look / view' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['TELE', 'SCOPE'],
+                word: 'TELESCOPE',
+                origin: 'Greek',
+                clue: 'Instrument for viewing distant celestial objects',
+                breakdown: 'TELE (far) + SCOPE (to look) = TELESCOPE'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 3,
+                question: 'Which Greek prefix means "far" or "at a distance"?',
+                options: ['TELE-', 'MICRO-', 'SUB-'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Hall of Living Systems',
+            steps: 28,
+            grid: [
+              '########',
+              '#S.....#',
+              '#.####.#',
+              '#..G1..#',
+              '#.####.#',
+              '#.....E#',
+              '########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'BIO', gloss: 'life' },
+              { x: 6, y: 2, text: 'LOGY', gloss: 'study of' },
+              { x: 1, y: 4, text: 'GEO', gloss: 'earth' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['BIO', 'LOGY'],
+                word: 'BIOLOGY',
+                origin: 'Greek',
+                clue: 'The scientific study of living organisms',
+                breakdown: 'BIO (life) + LOGY (study of) = BIOLOGY'
+              }
+            ],
+            scrolls: [
+              {
+                x: 6, y: 4,
+                question: 'In "Geology" and "Ecology", what does the Greek suffix "-LOGY" mean?',
+                options: ['Ancient stone', 'The study or science of', 'Beneath the surface'],
+                answer: 1
+              }
+            ]
+          },
+          {
+            title: 'Solar Atrium',
+            steps: 32,
+            grid: [
+              '#########',
+              '#S..P...#',
+              '#.#.#.#.#',
+              '#...G1..#',
+              '#.#####.#',
+              '#......E#',
+              '#########'
+            ],
+            runes: [
+              { x: 2, y: 1, text: 'PHOTO', gloss: 'light' },
+              { x: 7, y: 2, text: 'SYNTHESIS', gloss: 'putting together' },
+              { x: 1, y: 3, text: 'CHRONO', gloss: 'time' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['PHOTO', 'SYNTHESIS'],
+                word: 'PHOTOSYNTHESIS',
+                origin: 'Greek',
+                clue: 'Process where plants combine light energy to build sugars',
+                breakdown: 'PHOTO (light) + SYNTHESIS (putting together) = PHOTOSYNTHESIS'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 4,
+                question: 'What does the Greek root "PHOTO-" refer to in "photon" and "photosynthesis"?',
+                options: ['Sound', 'Light', 'Gravity'],
+                answer: 1
+              }
+            ]
+          },
+          {
+            title: 'Magma Conduit',
+            steps: 36,
+            grid: [
+              '#########',
+              '#S......#',
+              '#.#####.#',
+              '#..G1...#',
+              '#.#####.#',
+              '#...G2.E#',
+              '#########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'GEO', gloss: 'earth' },
+              { x: 7, y: 1, text: 'THERMAL', gloss: 'heat' },
+              { x: 5, y: 3, text: 'HYDRO', gloss: 'water' },
+              { x: 1, y: 5, text: 'METER', gloss: 'measure' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['GEO', 'THERMAL'],
+                word: 'GEOTHERMAL',
+                origin: 'Greek',
+                clue: 'Relating to internal heat generated within the Earth',
+                breakdown: 'GEO (earth) + THERMAL (heat) = GEOTHERMAL'
+              },
+              {
+                x: 4, y: 5,
+                parts: ['HYDRO', 'METER'],
+                word: 'HYDROMETER',
+                origin: 'Greek',
+                clue: 'Instrument used to measure the density of water or liquids',
+                breakdown: 'HYDRO (water) + METER (measure) = HYDROMETER'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 3,
+                question: 'Which Greek root means "heat"?',
+                options: ['THERM-', 'CHRON-', 'ASTR-'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Chronos Clockwork',
+            steps: 40,
+            grid: [
+              '##########',
+              '#S...P...#',
+              '#.##.#.#.#',
+              '#..G1....#',
+              '#.##.###.#',
+              '#.....G2E#',
+              '##########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'CHRONO', gloss: 'time' },
+              { x: 8, y: 2, text: 'METER', gloss: 'measure' },
+              { x: 6, y: 3, text: 'TELE', gloss: 'distant' },
+              { x: 2, y: 5, text: 'GRAM', gloss: 'written message' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['CHRONO', 'METER'],
+                word: 'CHRONOMETER',
+                origin: 'Greek',
+                clue: 'High-precision timepiece used to measure time at sea',
+                breakdown: 'CHRONO (time) + METER (measure) = CHRONOMETER'
+              },
+              {
+                x: 7, y: 5,
+                parts: ['TELE', 'GRAM'],
+                word: 'TELEGRAM',
+                origin: 'Greek',
+                clue: 'Written message transmitted rapidly across a distance',
+                breakdown: 'TELE (far) + GRAM (written) = TELEGRAM'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 4,
+                question: 'Events arranged in "chronological" order are sorted by:',
+                options: ['Alphabetical spelling', 'Time sequence', 'Geographic size'],
+                answer: 1
+              }
+            ]
+          },
+          {
+            title: 'Sanctum of the Titans',
+            steps: 44,
+            grid: [
+              '##########',
+              '#S.......#',
+              '#.######.#',
+              '#...G1...#',
+              '#.######.#',
+              '#....G2.E#',
+              '##########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'HYDRO', gloss: 'water' },
+              { x: 8, y: 2, text: 'ELECTRIC', gloss: 'amber / power' },
+              { x: 6, y: 3, text: 'BIO', gloss: 'life' },
+              { x: 2, y: 5, text: 'SPHERE', gloss: 'globe / realm' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['HYDRO', 'ELECTRIC'],
+                word: 'HYDROELECTRIC',
+                origin: 'Greek',
+                clue: 'Generating electricity using the energy of flowing water',
+                breakdown: 'HYDRO (water) + ELECTRIC (power) = HYDROELECTRIC'
+              },
+              {
+                x: 6, y: 5,
+                parts: ['BIO', 'SPHERE'],
+                word: 'BIOSPHERE',
+                origin: 'Greek',
+                clue: 'The global ecological zone of Earth inhabited by all life',
+                breakdown: 'BIO (life) + SPHERE (globe/realm) = BIOSPHERE'
+              }
+            ],
+            scrolls: [
+              {
+                x: 8, y: 3,
+                question: 'The Greek word "elektron" originally referred to what substance that holds static charge?',
+                options: ['Fossilized amber', 'Volcanic glass', 'Pure copper'],
+                answer: 0
+              }
+            ]
+          }
+        ]
+      },
+
+      latin: {
+        name: 'Latin Roots & Academic',
+        chambers: [
+          {
+            title: 'Forum of Orators',
+            steps: 24,
+            grid: [
+              '#######',
+              '#S...##',
+              '#.#..##',
+              '#..G1.E',
+              '#######'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'BENE', gloss: 'good / well' },
+              { x: 4, y: 2, text: 'DICT', gloss: 'to speak / say' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['BENE', 'DICT'],
+                word: 'BENEDICT',
+                origin: 'Latin',
+                clue: 'Root meaning "well-spoken" or a blessing',
+                breakdown: 'BENE (good/well) + DICT (to speak) = BENEDICT'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 3,
+                question: 'In "predict" and "verdict", what does the Latin root "DICT" mean?',
+                options: ['To write', 'To speak or declare', 'To carry'],
+                answer: 1
+              }
+            ]
+          },
+          {
+            title: 'Colosseum Gallery',
+            steps: 28,
+            grid: [
+              '########',
+              '#S.....#',
+              '#.####.#',
+              '#..G1..#',
+              '#.####.#',
+              '#.....E#',
+              '########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'SPECT', gloss: 'to watch / look' },
+              { x: 6, y: 2, text: 'ATOR', gloss: 'one who does' },
+              { x: 1, y: 4, text: 'PORT', gloss: 'to carry' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['SPECT', 'ATOR'],
+                word: 'SPECTATOR',
+                origin: 'Latin',
+                clue: 'A person who watches a show, game, or event',
+                breakdown: 'SPECT (to watch) + ATOR (one who) = SPECTATOR'
+              }
+            ],
+            scrolls: [
+              {
+                x: 6, y: 4,
+                question: 'Which Latin root appears in "inspect", "spectacles", and "perspective"?',
+                options: ['SPECT (look)', 'PORT (carry)', 'CRED (believe)'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Merchant Caravan Gate',
+            steps: 32,
+            grid: [
+              '#########',
+              '#S..P...#',
+              '#.#.#.#.#',
+              '#...G1..#',
+              '#.#####.#',
+              '#......E#',
+              '#########'
+            ],
+            runes: [
+              { x: 2, y: 1, text: 'PORT', gloss: 'to carry' },
+              { x: 7, y: 2, text: 'ABLE', gloss: 'capable of being' },
+              { x: 1, y: 3, text: 'CRED', gloss: 'believe' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['PORT', 'ABLE'],
+                word: 'PORTABLE',
+                origin: 'Latin',
+                clue: 'Capable of being easily carried or moved',
+                breakdown: 'PORT (to carry) + ABLE (capable of) = PORTABLE'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 4,
+                question: 'From Latin "portare" (to carry), what does "export" literally mean?',
+                options: ['To carry out', 'To build within', 'To speak against'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Senate Archive',
+            steps: 36,
+            grid: [
+              '#########',
+              '#S......#',
+              '#.#####.#',
+              '#..G1...#',
+              '#.#####.#',
+              '#...G2.E#',
+              '#########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'CRED', gloss: 'believe / trust' },
+              { x: 7, y: 1, text: 'IBLE', gloss: 'worthy of / able' },
+              { x: 5, y: 3, text: 'STRUCT', gloss: 'to build' },
+              { x: 1, y: 5, text: 'URE', gloss: 'result / act of' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['CRED', 'IBLE'],
+                word: 'CREDIBLE',
+                origin: 'Latin',
+                clue: 'Able to be believed; convincing and trustworthy',
+                breakdown: 'CRED (believe) + IBLE (able to be) = CREDIBLE'
+              },
+              {
+                x: 4, y: 5,
+                parts: ['STRUCT', 'URE'],
+                word: 'STRUCTURE',
+                origin: 'Latin',
+                clue: 'Something built or arranged from interconnected parts',
+                breakdown: 'STRUCT (to build) + URE (result of) = STRUCTURE'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 3,
+                question: 'What does the Latin root "STRUCT-" mean in "construct" and "infrastructure"?',
+                options: ['To build', 'To break', 'To flow'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Appian Aqueduct',
+            steps: 40,
+            grid: [
+              '##########',
+              '#S...P...#',
+              '#.##.#.#.#',
+              '#..G1....#',
+              '#.##.###.#',
+              '#.....G2E#',
+              '##########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'AQUA', gloss: 'water' },
+              { x: 8, y: 2, text: 'DUCT', gloss: 'to lead / channel' },
+              { x: 6, y: 3, text: 'TRANS', gloss: 'across' },
+              { x: 2, y: 5, text: 'PORT', gloss: 'to carry' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['AQUA', 'DUCT'],
+                word: 'AQUEDUCT',
+                origin: 'Latin',
+                clue: 'Artificial channel built to lead water across distance',
+                breakdown: 'AQUA (water) + DUCT (to lead) = AQUEDUCT'
+              },
+              {
+                x: 7, y: 5,
+                parts: ['TRANS', 'PORT'],
+                word: 'TRANSPORT',
+                origin: 'Latin',
+                clue: 'To carry goods or people across from one place to another',
+                breakdown: 'TRANS (across) + PORT (to carry) = TRANSPORT'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 4,
+                question: 'In "conduct" and "aqueduct", what does the Latin root "DUCT" mean?',
+                options: ['To lead or guide', 'To hide', 'To measure'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Pantheon Rotunda',
+            steps: 44,
+            grid: [
+              '##########',
+              '#S.......#',
+              '#.######.#',
+              '#...G1...#',
+              '#.######.#',
+              '#....G2.E#',
+              '##########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'PRE', gloss: 'before' },
+              { x: 8, y: 2, text: 'DICT', gloss: 'to speak' },
+              { x: 6, y: 3, text: 'CON', gloss: 'together' },
+              { x: 2, y: 5, text: 'STRUCT', gloss: 'to build' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['PRE', 'DICT'],
+                word: 'PREDICT',
+                origin: 'Latin',
+                clue: 'To declare or state what will happen before it occurs',
+                breakdown: 'PRE (before) + DICT (to speak) = PREDICT'
+              },
+              {
+                x: 6, y: 5,
+                parts: ['CON', 'STRUCT'],
+                word: 'CONSTRUCT',
+                origin: 'Latin',
+                clue: 'To build by putting parts together',
+                breakdown: 'CON (together) + STRUCT (to build) = CONSTRUCT'
+              }
+            ],
+            scrolls: [
+              {
+                x: 8, y: 3,
+                question: 'Which Latin prefix means "before" in time or order?',
+                options: ['PRE-', 'POST-', 'SUB-'],
+                answer: 0
+              }
+            ]
+          }
+        ]
+      },
+
+      romance: {
+        name: 'Romance Cognates (EN / ES / FR)',
+        chambers: [
+          {
+            title: 'Fountain of Cognates',
+            steps: 24,
+            grid: [
+              '#######',
+              '#S...##',
+              '#.#..##',
+              '#..G1.E',
+              '#######'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'AGUA', gloss: 'Spanish: water' },
+              { x: 4, y: 2, text: 'EAU', gloss: 'French: water' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['AGUA', 'EAU'],
+                word: 'AQUA (WATER)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "water" (Latin: aqua)',
+                breakdown: 'AGUA (Spanish) + EAU (French) ← Latin AQUA (water)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 3,
+                question: 'Which English adjective comes from the same Latin root as Spanish "agua" and French "eau"?',
+                options: ['Aquatic', 'Arid', 'Aerial'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Solstice Courtyard',
+            steps: 28,
+            grid: [
+              '########',
+              '#S.....#',
+              '#.####.#',
+              '#..G1..#',
+              '#.####.#',
+              '#.....E#',
+              '########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'SOL', gloss: 'Spanish: sun' },
+              { x: 6, y: 2, text: 'SOLEIL', gloss: 'French: sun' },
+              { x: 1, y: 4, text: 'LUNA', gloss: 'Spanish: moon' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['SOL', 'SOLEIL'],
+                word: 'SOLAR (SUN)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "sun" (English: solar)',
+                breakdown: 'SOL (Spanish) + SOLEIL (French) ← Latin SOL (sun)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 6, y: 4,
+                question: 'French "soleil" and Spanish "sol" both descend from which Latin noun?',
+                options: ['Sol (sun)', 'Stella (star)', 'Caelum (sky)'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Lunar Cloister',
+            steps: 32,
+            grid: [
+              '#########',
+              '#S..P...#',
+              '#.#.#.#.#',
+              '#...G1..#',
+              '#.#####.#',
+              '#......E#',
+              '#########'
+            ],
+            runes: [
+              { x: 2, y: 1, text: 'LUNA', gloss: 'Spanish: moon' },
+              { x: 7, y: 2, text: 'LUNE', gloss: 'French: moon' },
+              { x: 1, y: 3, text: 'TERRA', gloss: 'Latin: earth' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['LUNA', 'LUNE'],
+                word: 'LUNAR (MOON)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "moon" (English: lunar)',
+                breakdown: 'LUNA (Spanish) + LUNE (French) ← Latin LUNA (moon)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 4,
+                question: 'What does the English word "lunar" (from Spanish "luna" / French "lune") relate to?',
+                options: ['The Moon', 'The Ocean', 'The Wind'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Terrace of Continents',
+            steps: 36,
+            grid: [
+              '#########',
+              '#S......#',
+              '#.#####.#',
+              '#..G1...#',
+              '#.#####.#',
+              '#...G2.E#',
+              '#########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'TIERRA', gloss: 'Spanish: earth/land' },
+              { x: 7, y: 1, text: 'TERRE', gloss: 'French: earth/land' },
+              { x: 5, y: 3, text: 'MANO', gloss: 'Spanish: hand' },
+              { x: 1, y: 5, text: 'MAIN', gloss: 'French: hand' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['TIERRA', 'TERRE'],
+                word: 'TERRAIN (EARTH)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "earth/land" (English: terrain)',
+                breakdown: 'TIERRA (Spanish) + TERRE (French) ← Latin TERRA (earth)'
+              },
+              {
+                x: 4, y: 5,
+                parts: ['MANO', 'MAIN'],
+                word: 'MANUAL (HAND)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "hand" (English: manual)',
+                breakdown: 'MANO (Spanish) + MAIN (French) ← Latin MANUS (hand)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 7, y: 3,
+                question: 'Why does "manual" labor mean work done by hand?',
+                options: ['Latin "manus" means hand', 'Greek "mega" means large', 'French "mont" means mountain'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Nocturne Gallery',
+            steps: 40,
+            grid: [
+              '##########',
+              '#S...P...#',
+              '#.##.#.#.#',
+              '#..G1....#',
+              '#.##.###.#',
+              '#.....G2E#',
+              '##########'
+            ],
+            runes: [
+              { x: 3, y: 1, text: 'NOCHE', gloss: 'Spanish: night' },
+              { x: 8, y: 2, text: 'NUIT', gloss: 'French: night' },
+              { x: 6, y: 3, text: 'LIBRO', gloss: 'Spanish: book' },
+              { x: 2, y: 5, text: 'LIVRE', gloss: 'French: book' }
+            ],
+            gates: [
+              {
+                x: 3, y: 3,
+                parts: ['NOCHE', 'NUIT'],
+                word: 'NOCTURNAL (NIGHT)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "night" (English: nocturnal)',
+                breakdown: 'NOCHE (Spanish) + NUIT (French) ← Latin NOX (night)'
+              },
+              {
+                x: 7, y: 5,
+                parts: ['LIBRO', 'LIVRE'],
+                word: 'LIBRARY (BOOK)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "book" (English: library)',
+                breakdown: 'LIBRO (Spanish) + LIVRE (French) ← Latin LIBER (book)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 1, y: 4,
+                question: 'Which English word comes from Latin "liber" (Spanish "libro", French "livre")?',
+                options: ['Library', 'Liberty', 'Liberal'],
+                answer: 0
+              }
+            ]
+          },
+          {
+            title: 'Polyglot Pantheon',
+            steps: 44,
+            grid: [
+              '##########',
+              '#S.......#',
+              '#.######.#',
+              '#...G1...#',
+              '#.######.#',
+              '#....G2.E#',
+              '##########'
+            ],
+            runes: [
+              { x: 4, y: 1, text: 'TIEMPO', gloss: 'Spanish: time' },
+              { x: 8, y: 2, text: 'TEMPS', gloss: 'French: time' },
+              { x: 6, y: 3, text: 'AMIGO', gloss: 'Spanish: friend' },
+              { x: 2, y: 5, text: 'AMI', gloss: 'French: friend' }
+            ],
+            gates: [
+              {
+                x: 4, y: 3,
+                parts: ['TIEMPO', 'TEMPS'],
+                word: 'TEMPORAL (TIME)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "time" (English: temporal)',
+                breakdown: 'TIEMPO (Spanish) + TEMPS (French) ← Latin TEMPUS (time)'
+              },
+              {
+                x: 6, y: 5,
+                parts: ['AMIGO', 'AMI'],
+                word: 'AMICABLE (FRIEND)',
+                origin: 'ES + FR Cognates',
+                clue: 'Pair the Spanish and French cognates for "friend" (English: amicable)',
+                breakdown: 'AMIGO (Spanish) + AMI (French) ← Latin AMICUS (friend)'
+              }
+            ],
+            scrolls: [
+              {
+                x: 8, y: 3,
+                question: 'An "amicable" agreement (from Spanish "amigo" / French "ami") is one that is:',
+                options: ['Friendly and peaceful', 'Written in secret code', 'Legally invalid'],
+                answer: 0
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    // =========================================================================
+    // 4. GAME STATE & INITIALIZATION
+    // =========================================================================
+    const MAX_SATCHEL = 3;
+
+    const state = {
+      screen: 'title', // 'title' | 'playing' | 'end'
+      trackKey: 'greek',
+      chamberIdx: 0,
+      score: 0,
+      wordsForgedTotal: 0,
+      scrollsSolvedTotal: 0,
+
+      grid: [],
+      rows: 0,
+      cols: 0,
+      player: { x: 1, y: 1 },
+      exitPos: { x: 5, y: 3 },
+      stepsLeft: 24,
+      maxSteps: 24,
+      stepCount: 0,
+
+      runes: [],
+      gates: [],
+      scrolls: [],
+      satchel: [],
+      anvil: [],
+      activeGate: null,
+      activeScroll: null,
+
+      particles: [],
+      floatingTexts: [],
+      torchTime: 0
+    };
+
+    const titleScreen = document.getElementById('titleScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const endScreen = document.getElementById('endScreen');
+    const canvas = document.getElementById('labyrinthCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    function isPhaseWallClosed() {
+      return Math.floor(state.stepCount / 3) % 2 === 1;
+    }
+
+    function stepsUntilPhaseToggle() {
+      return 3 - (state.stepCount % 3);
+    }
+
+    // =========================================================================
+    // 5. CHAMBER LOADER & BFS REACHABILITY SAFEGUARD
+    // =========================================================================
+    function startTrack(trackKey) {
+      sfx.init();
+      state.trackKey = TRACK_DATA[trackKey] ? trackKey : 'greek';
+      state.chamberIdx = 0;
+      state.score = 0;
+      state.wordsForgedTotal = 0;
+      state.scrollsSolvedTotal = 0;
+      state.screen = 'playing';
+
+      document.getElementById('hudTrackSubtitle').textContent = TRACK_DATA[state.trackKey].name;
+      titleScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+
+      loadChamber(0);
+    }
+
+    function loadChamber(idx) {
+      const track = TRACK_DATA[state.trackKey];
+      state.chamberIdx = Math.max(0, Math.min(track.chambers.length - 1, idx));
+      const def = track.chambers[state.chamberIdx];
+
+      state.rows = def.grid.length;
+      state.cols = def.grid[0].length;
+      state.grid = def.grid.map(row => row.split(''));
+      state.maxSteps = def.steps;
+      state.stepsLeft = def.steps;
+      state.stepCount = 0;
+      state.satchel = [];
+      state.anvil = [];
+      state.activeGate = null;
+      state.activeScroll = null;
+      state.particles = [];
+      state.floatingTexts = [];
+
+      // Parse Start ('S') and Exit ('E') coordinates
+      for (let r = 0; r < state.rows; r++) {
+        for (let c = 0; c < state.cols; c++) {
+          if (state.grid[r][c] === 'S') {
+            state.player = { x: c, y: r };
+            state.grid[r][c] = '.';
+          } else if (state.grid[r][c] === 'E') {
+            state.exitPos = { x: c, y: r };
+            state.grid[r][c] = '.';
+          } else if (state.grid[r][c].startsWith('G')) {
+            state.grid[r][c] = '.';
+          }
+        }
+      }
+
+      state.runes = def.runes.map((r, i) => ({
+        id: `R${i}`,
+        x: r.x,
+        y: r.y,
+        text: r.text,
+        gloss: r.gloss,
+        collected: false
+      }));
+
+      state.gates = def.gates.map((g, i) => ({
+        id: `G${i + 1}`,
+        x: g.x,
+        y: g.y,
+        parts: [...g.parts],
+        word: g.word,
+        origin: g.origin,
+        clue: g.clue,
+        breakdown: g.breakdown,
+        unlocked: false
+      }));
+
+      state.scrolls = (def.scrolls || []).map((s, i) => ({
+        id: `SC${i}`,
+        x: s.x,
+        y: s.y,
+        question: s.question,
+        options: [...s.options],
+        answer: s.answer,
+        solved: false
+      }));
+
+      // Guarantee every required rune for every gate is reachable on the player's side BEFORE that gate
+      validateAndEnsureReachable();
+
+      document.getElementById('chamberBadge').textContent = `Chamber ${state.chamberIdx + 1}: ${def.title}`;
+      setBanner('Collect glowing morpheme pedestals, then stand next to a Sealed Gate to forge!', 'text-slate-200');
+      updateAdjacentGateState();
+      renderSatchelAndForge();
+      updateHUD();
+    }
+
+    /**
+     * BFS Reachability Validator:
+     * Iterates through gates in order (G1, G2, ...) assuming previous gates are unlocked
+     * while the current gate and later gates remain sealed. Ensures every rune needed
+     * for the current gate can be reached from Start; relocates any blocked rune to an
+     * open reachable floor tile if needed.
+     */
+    function validateAndEnsureReachable() {
+      const claimedRunes = new Set();
+
+      state.gates.forEach((currentGate, gateIndex) => {
+        const blockedGateCoords = new Set();
+        for (let j = gateIndex; j < state.gates.length; j++) {
+          blockedGateCoords.add(`${state.gates[j].x},${state.gates[j].y}`);
+        }
+
+        // BFS from player start ignoring Phase Wall timing (since Phase Walls open every 3 steps)
+        const visited = new Set([`${state.player.x},${state.player.y}`]);
+        const queue = [{ x: state.player.x, y: state.player.y }];
+        const reachableOpenFloors = [];
+
+        while (queue.length > 0) {
+          const curr = queue.shift();
+          const key = `${curr.x},${curr.y}`;
+
+          const isStart = curr.x === state.player.x && curr.y === state.player.y;
+          const isExit = curr.x === state.exitPos.x && curr.y === state.exitPos.y;
+          const hasRune = state.runes.some(r => r.x === curr.x && r.y === curr.y);
+          const hasScroll = state.scrolls.some(s => s.x === curr.x && s.y === curr.y);
+          const hasAnyGate = state.gates.some(g => g.x === curr.x && g.y === curr.y);
+
+          if (!isStart && !isExit && !hasRune && !hasScroll && !hasAnyGate && state.grid[curr.y][curr.x] === '.') {
+            reachableOpenFloors.push({ x: curr.x, y: curr.y });
+          }
+
+          const dirs = [
+            [1, 0],
+            [-1, 0],
+            [0, 1],
+            [0, -1]
+          ];
+          for (const [dx, dy] of dirs) {
+            const nx = curr.x + dx;
+            const ny = curr.y + dy;
+            const nKey = `${nx},${ny}`;
+            if (nx < 0 || ny < 0 || nx >= state.cols || ny >= state.rows) continue;
+            if (visited.has(nKey)) continue;
+            if (state.grid[ny][nx] === '#') continue;
+            if (blockedGateCoords.has(nKey)) continue;
+
+            visited.add(nKey);
+            queue.push({ x: nx, y: ny });
+          }
+        }
+
+        // Verify each morpheme part needed for currentGate
+        currentGate.parts.forEach(partText => {
+          const matchedRune = state.runes.find(r => !claimedRunes.has(r.id) && r.text === partText);
+          if (matchedRune) {
+            claimedRunes.add(matchedRune.id);
+            if (!visited.has(`${matchedRune.x},${matchedRune.y}`) && reachableOpenFloors.length > 0) {
+              const spot = reachableOpenFloors.shift();
+              matchedRune.x = spot.x;
+              matchedRune.y = spot.y;
+            }
+          }
+        });
+      });
+    }
+
+    // =========================================================================
+    // 6. PLAYER MOVEMENT, SATCHEL, FORGE ANVIL & SCROLL INTERACTIONS
+    // =========================================================================
+    function tryMove(dx, dy) {
+      if (state.screen !== 'playing' || state.activeScroll) return;
+      const nx = state.player.x + dx;
+      const ny = state.player.y + dy;
+
+      if (nx < 0 || ny < 0 || nx >= state.cols || ny >= state.rows) return;
+      const cell = state.grid[ny][nx];
+      if (cell === '#') return;
+
+      // Check if blocked by a closed Phase Wall
+      if (cell === 'P' && isPhaseWallClosed()) {
+        sfx.playError();
+        setBanner('Phase Wall is SHIFTED CLOSED! Take steps nearby to cycle its phase (every 3 steps).', 'text-rose-300');
+        return;
+      }
+
+      // Check if blocked by a still-sealed Etymology Gate
+      const blockingGate = state.gates.find(g => !g.unlocked && g.x === nx && g.y === ny);
+      if (blockingGate) {
+        sfx.playError();
+        setBanner(`Sealed Gate! Combine [${blockingGate.parts.join(' + ')}] on the Forge Anvil first.`, 'text-amber-300');
+        return;
+      }
+
+      // Execute valid step
+      state.player.x = nx;
+      state.player.y = ny;
+      state.stepCount++;
+      state.stepsLeft = Math.max(0, state.stepsLeft - 1);
+      sfx.playStep();
+
+      // Never crush player if stepping onto a Phase Wall tile right on a 3-step boundary
+      if (cell === 'P' && isPhaseWallClosed()) {
+        state.stepCount++;
+      }
+
+      const { tileSize, offsetX, offsetY } = getGridGeometry();
+      const px = offsetX + (nx + 0.5) * tileSize;
+      const py = offsetY + (ny + 0.5) * tileSize;
+
+      // Collect Morpheme Rune if present
+      const rune = state.runes.find(r => !r.collected && r.x === nx && r.y === ny);
+      if (rune) {
+        if (state.satchel.length < MAX_SATCHEL) {
+          rune.collected = true;
+          state.satchel.push(rune);
+          state.score += 100;
+          sfx.playPickupRune();
+          spawnParticles(px, py, '#38bdf8', 16);
+          spawnFloatingText(px, py - 14, `+${rune.text} (${rune.gloss})`, '#7dd3fc');
+          setBanner(`Collected rune [${rune.text}] — "${rune.gloss}"`, 'text-sky-300');
+        } else {
+          setBanner('Satchel full (3/3)! Forge a word at a Sealed Gate or drop a rune.', 'text-amber-300');
+        }
+      }
+
+      // Trigger Cognate Scroll if present
+      const scroll = state.scrolls.find(s => !s.solved && s.x === nx && s.y === ny);
+      if (scroll) {
+        openScrollModal(scroll);
+      }
+
+      updateAdjacentGateState();
+      renderSatchelAndForge();
+      updateHUD();
+
+      // Check Exit Sanctum Portal
+      if (nx === state.exitPos.x && ny === state.exitPos.y) {
+        if (state.gates.every(g => g.unlocked)) {
+          handleChamberComplete();
+          return;
+        } else {
+          sfx.playError();
+          setBanner('The Exit Sanctum remains sealed! Unseal all Etymology Gates in this chamber first.', 'text-rose-300');
+        }
+      }
+
+      // Check Out of Torch Steps
+      if (state.stepsLeft <= 0 && !(nx === state.exitPos.x && ny === state.exitPos.y && state.gates.every(g => g.unlocked))) {
+        sfx.playError();
+        setBanner('Out of Torch Steps! Press [R] or Reset to retry this chamber.', 'text-rose-400');
+        setTimeout(() => {
+          if (state.screen === 'playing' && state.stepsLeft <= 0) {
+            finishExpedition(false);
+          }
+        }, 1100);
+      }
+    }
+
+    function updateAdjacentGateState() {
+      const adjGate = state.gates.find(
+        g => !g.unlocked && Math.abs(g.x - state.player.x) + Math.abs(g.y - state.player.y) === 1
+      );
+      state.activeGate = adjGate || null;
+    }
+
+    function renderSatchelAndForge() {
+      const satchelEl = document.getElementById('satchelSlots');
+      const countEl = document.getElementById('satchelCount');
+      const anvilEl = document.getElementById('anvilSlots');
+      const forgeBtn = document.getElementById('btnForgeWord');
+      const statusPill = document.getElementById('forgeStatusPill');
+      const clueText = document.getElementById('forgeClueText');
+
+      countEl.textContent = `${state.satchel.length} / ${MAX_SATCHEL} Runes`;
+
+      // Render 3 Satchel Slots
+      satchelEl.innerHTML = '';
+      for (let i = 0; i < MAX_SATCHEL; i++) {
+        const rune = state.satchel[i];
+        const inAnvil = state.anvil.includes(i);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+
+        if (rune) {
+          btn.disabled = inAnvil;
+          btn.className = `rune-chip p-2 rounded-xl border text-center flex flex-col items-center justify-center min-h-[54px] ${
+            inAnvil
+              ? 'bg-slate-950/70 border-slate-800 opacity-40 cursor-not-allowed'
+              : 'bg-sky-500/15 hover:bg-sky-500/25 border-sky-400/50 text-white cursor-pointer'
+          }`;
+          btn.innerHTML = `
+            <span class="font-mono-rune font-extrabold text-xs text-sky-300">${rune.text}</span>
+            <span class="text-[10px] text-slate-300 truncate max-w-full">${rune.gloss}</span>
+          `;
+          btn.addEventListener('click', () => {
+            if (!state.anvil.includes(i)) {
+              state.anvil.push(i);
+              sfx.playStep();
+              renderSatchelAndForge();
+            }
+          });
+        } else {
+          btn.disabled = true;
+          btn.className = 'p-2 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 text-slate-600 font-mono-rune text-[10px] flex items-center justify-center min-h-[54px]';
+          btn.textContent = 'EMPTY';
+        }
+        satchelEl.appendChild(btn);
+      }
+
+      // Render Forge Anvil Slots
+      anvilEl.innerHTML = '';
+      if (state.anvil.length === 0) {
+        anvilEl.innerHTML = '<span class="text-[11px] font-mono-rune text-slate-500">Select runes from your satchel above</span>';
+      } else {
+        state.anvil.forEach((satchelIdx, pos) => {
+          const rune = state.satchel[satchelIdx];
+          if (!rune) return;
+          const chip = document.createElement('button');
+          chip.type = 'button';
+          chip.title = 'Click to return rune to satchel';
+          chip.className = 'px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-rose-500/25 border border-amber-400/60 font-mono-rune font-extrabold text-xs text-amber-200 transition';
+          chip.textContent = rune.text;
+          chip.addEventListener('click', () => {
+            state.anvil.splice(pos, 1);
+            sfx.playStep();
+            renderSatchelAndForge();
+          });
+          anvilEl.appendChild(chip);
+
+          if (pos < state.anvil.length - 1) {
+            const plus = document.createElement('span');
+            plus.className = 'font-mono-rune font-bold text-slate-500 text-xs';
+            plus.textContent = '+';
+            anvilEl.appendChild(plus);
+          }
+        });
+      }
+
+      // Contextual Clue & Forge Button State
+      const displayGate = state.activeGate || state.gates.find(g => !g.unlocked);
+      if (displayGate) {
+        statusPill.textContent = state.activeGate
+          ? `ADJACENT GATE (${displayGate.origin})`
+          : `NEXT SEALED GATE (${displayGate.origin})`;
+        statusPill.className = state.activeGate
+          ? 'px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 font-mono-rune text-[10px] font-bold uppercase text-emerald-300'
+          : 'px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-400/40 font-mono-rune text-[10px] font-bold uppercase text-amber-300';
+        clueText.textContent = `"${displayGate.clue}" (${displayGate.parts.length} morphemes)`;
+      } else {
+        statusPill.textContent = 'ALL GATES UNSEALED';
+        statusPill.className = 'px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 font-mono-rune text-[10px] font-bold uppercase text-emerald-300';
+        clueText.textContent = 'All seals shattered! Step onto the green EXIT portal to clear the chamber.';
+      }
+
+      if (state.activeGate && state.anvil.length > 0) {
+        forgeBtn.disabled = false;
+        forgeBtn.textContent = `Forge ${state.anvil.map(idx => state.satchel[idx].text).join(' + ')}`;
+      } else if (state.activeGate) {
+        forgeBtn.disabled = true;
+        forgeBtn.textContent = 'Select Runes Above to Forge';
+      } else {
+        forgeBtn.disabled = true;
+        forgeBtn.textContent = 'Step Next to Gate to Forge';
+      }
+    }
+
+    function attemptForgeWord() {
+      if (!state.activeGate || state.anvil.length === 0) return;
+
+      const gate = state.activeGate;
+      const assembled = state.anvil.map(idx => state.satchel[idx].text);
+      const isMatch =
+        assembled.length === gate.parts.length &&
+        assembled.every((val, idx) => val === gate.parts[idx]);
+
+      const { tileSize, offsetX, offsetY } = getGridGeometry();
+      const gx = offsetX + (gate.x + 0.5) * tileSize;
+      const gy = offsetY + (gate.y + 0.5) * tileSize;
+
+      if (isMatch) {
+        gate.unlocked = true;
+        state.wordsForgedTotal++;
+        state.score += 300;
+        sfx.playForgeSuccess();
+
+        const usedIndices = [...state.anvil].sort((a, b) => b - a);
+        usedIndices.forEach(idx => state.satchel.splice(idx, 1));
+        state.anvil = [];
+
+        spawnParticles(gx, gy, '#34d399', 26);
+        spawnFloatingText(gx, gy - 16, `${gate.word} UNSEALED! +300`, '#6ee7b7');
+        setBanner(`FORGED! ${gate.breakdown}`, 'text-emerald-300');
+
+        updateAdjacentGateState();
+        renderSatchelAndForge();
+        updateHUD();
+      } else {
+        sfx.playError();
+        state.anvil = [];
+        renderSatchelAndForge();
+        setBanner(`Seal rejected [${assembled.join(' + ')}]! Check the clue order and try again.`, 'text-rose-300');
+      }
+    }
+
+    function openScrollModal(scrollObj) {
+      state.activeScroll = scrollObj;
+      const modal = document.getElementById('scrollModal');
+      const qEl = document.getElementById('scrollQuestion');
+      const optsEl = document.getElementById('scrollOptions');
+      const fbEl = document.getElementById('scrollFeedback');
+
+      qEl.textContent = scrollObj.question;
+      fbEl.textContent = 'Choose the correct etymological answer to earn +6 Torch Steps!';
+      fbEl.className = 'text-xs font-mono-rune text-slate-400 min-h-[18px]';
+      optsEl.innerHTML = '';
+
+      scrollObj.options.forEach((optText, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-purple-400 text-xs sm:text-sm font-semibold text-white transition';
+        btn.textContent = `${String.fromCharCode(65 + idx)}. ${optText}`;
+        btn.addEventListener('click', () => {
+          if (idx === scrollObj.answer) {
+            scrollObj.solved = true;
+            state.scrollsSolvedTotal++;
+            state.stepsLeft += 6;
+            state.score += 250;
+            sfx.playForgeSuccess();
+            fbEl.textContent = 'Correct! +6 Torch Steps & +250 pts granted!';
+            fbEl.className = 'text-xs font-mono-rune text-emerald-300 min-h-[18px]';
+            updateHUD();
+            setTimeout(() => {
+              state.activeScroll = null;
+              modal.classList.add('hidden');
+              setBanner('Scroll Deciphered! +6 Torch Steps restored.', 'text-purple-300');
+            }, 650);
+          } else {
+            sfx.playError();
+            fbEl.textContent = 'Not quite — try another root connection!';
+            fbEl.className = 'text-xs font-mono-rune text-rose-400 min-h-[18px]';
+          }
+        });
+        optsEl.appendChild(btn);
+      });
+
+      modal.classList.remove('hidden');
+    }
+
+    function useHint() {
+      const nextGate = state.activeGate || state.gates.find(g => !g.unlocked);
+      if (!nextGate) return;
+      state.score = Math.max(0, state.score - 75);
+      updateHUD();
+
+      const { tileSize, offsetX, offsetY } = getGridGeometry();
+      for (const part of nextGate.parts) {
+        const uncollected = state.runes.find(r => !r.collected && r.text === part);
+        if (uncollected) {
+          const rx = offsetX + (uncollected.x + 0.5) * tileSize;
+          const ry = offsetY + (uncollected.y + 0.5) * tileSize;
+          spawnParticles(rx, ry, '#c084fc', 24);
+          spawnFloatingText(rx, ry - 14, `NEEDED: ${part}`, '#e9d5ff');
+          break;
+        }
+      }
+
+      if (state.activeGate) {
+        state.anvil = [];
+        for (const part of nextGate.parts) {
+          const sIdx = state.satchel.findIndex((r, idx) => r.text === part && !state.anvil.includes(idx));
+          if (sIdx !== -1) state.anvil.push(sIdx);
+        }
+        renderSatchelAndForge();
+      }
+
+      sfx.playPickupRune();
+      setBanner(`ETYMOLOGY HINT: Combine [${nextGate.parts.join('] + [')}] for "${nextGate.clue}"`, 'text-purple-300');
+    }
+
+    function handleChamberComplete() {
+      sfx.playPortalClear();
+      const stepBonus = state.stepsLeft * 25;
+      state.score += 400 + stepBonus;
+      updateHUD();
+
+      const track = TRACK_DATA[state.trackKey];
+      setBanner(`CHAMBER CLEARED! +${400 + stepBonus} PTS (${state.stepsLeft} Torch Steps remaining)`, 'text-emerald-300');
+
+      setTimeout(() => {
+        if (state.chamberIdx + 1 < track.chambers.length) {
+          loadChamber(state.chamberIdx + 1);
+        } else {
+          finishExpedition(true);
+        }
+      }, 950);
+    }
+
+    function finishExpedition(victory) {
+      state.screen = 'end';
+      gameScreen.classList.add('hidden');
+      endScreen.classList.remove('hidden');
+
+      const badge = document.getElementById('endBadge');
+      const title = document.getElementById('endTitle');
+      const sub = document.getElementById('endSubtitle');
+
+      if (victory) {
+        badge.textContent = `${TRACK_DATA[state.trackKey].name} • 6/6 Cleared`;
+        badge.className = 'inline-block px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-cinzel text-xs font-bold uppercase tracking-widest mb-3';
+        title.textContent = 'GRAND PHILOLOGIST!';
+        sub.textContent = 'Every ancient etymological seal in the vault has been deciphered.';
+      } else {
+        badge.textContent = `Torch Extinguished • Chamber ${state.chamberIdx + 1}`;
+        badge.className = 'inline-block px-3.5 py-1 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 font-cinzel text-xs font-bold uppercase tracking-widest mb-3';
+        title.textContent = 'LOST IN THE ARCHIVES';
+        sub.textContent = 'Plan an efficient route to conserve Torch Steps between pedestals and gates.';
+      }
+
+      let stars = 1;
+      if (victory && state.score >= 3800) stars = 3;
+      else if (victory || state.wordsForgedTotal >= 4) stars = 2;
+      else if (!victory && state.wordsForgedTotal === 0) stars = 0;
+
+      const starsEl = document.getElementById('endStars');
+      starsEl.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= stars;
+        const wrap = document.createElement('div');
+        wrap.style.animationDelay = `${(i - 1) * 160}ms`;
+        wrap.className = earned ? 'star-pop' : 'opacity-25 scale-90';
+        wrap.innerHTML = `
+          <svg class="w-12 h-12 ${earned ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.85)]' : 'text-slate-600'}" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsEl.appendChild(wrap);
+      }
+
+      document.getElementById('endScore').textContent = state.score.toLocaleString();
+      document.getElementById('endWords').textContent = state.wordsForgedTotal;
+      document.getElementById('endScrolls').textContent = state.scrollsSolvedTotal;
+    }
+
+    function updateHUD() {
+      const track = TRACK_DATA[state.trackKey];
+      document.getElementById('hudChamber').textContent = `${String(state.chamberIdx + 1).padStart(2, '0')}/${String(track.chambers.length).padStart(2, '0')}`;
+      document.getElementById('hudSteps').textContent = state.stepsLeft;
+      document.getElementById('hudScore').textContent = state.score.toLocaleString();
+
+      const closed = isPhaseWallClosed();
+      const rem = stepsUntilPhaseToggle();
+      const phaseEl = document.getElementById('hudPhase');
+      phaseEl.textContent = `${closed ? 'SHIFT' : 'OPEN'} (${rem})`;
+      phaseEl.className = `font-mono-rune font-extrabold text-xs sm:text-sm ${closed ? 'text-rose-400' : 'text-purple-300'}`;
+
+      const unsealedCount = state.gates.filter(g => g.unlocked).length;
+      document.getElementById('gatesProgressText').textContent = `${unsealedCount} / ${state.gates.length}`;
+    }
+
+    function setBanner(text, colorClass = 'text-slate-200') {
+      const el = document.getElementById('statusBanner');
+      el.className = `text-xs sm:text-sm font-medium ${colorClass}`;
+      el.textContent = text;
+    }
+
+    // =========================================================================
+    // 7. HTML5 CANVAS TORCH-LIT DUNGEON RENDERER & PARTICLE SYSTEM
+    // =========================================================================
+    function getGridGeometry() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const w = Math.max(280, rect.width);
+      const h = Math.max(260, rect.height - 34);
+      const tileSize = Math.floor(Math.min((w - 28) / Math.max(1, state.cols), (h - 24) / Math.max(1, state.rows)));
+      const offsetX = Math.floor((w - tileSize * state.cols) / 2);
+      const offsetY = Math.floor((h - tileSize * state.rows) / 2);
+      return { w, h: rect.height, tileSize, offsetX, offsetY };
+    }
+
+    function spawnParticles(x, y, color, count = 16) {
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 30 + Math.random() * 130;
+        state.particles.push({
+          x,
+          y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: 2 + Math.random() * 3,
+          color,
+          alpha: 1,
+          decay: 1.5 + Math.random()
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color) {
+      state.floatingTexts.push({
+        x,
+        y,
+        vy: -34,
+        text,
+        color,
+        alpha: 1,
+        decay: 0.9
+      });
+    }
+
+    function drawLabyrinth(dt) {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetW = Math.max(1, Math.floor(rect.width * dpr));
+      const targetH = Math.max(1, Math.floor(rect.height * dpr));
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      if (state.screen !== 'playing' || state.rows === 0) {
+        ctx.restore();
+        return;
+      }
+
+      state.torchTime += dt * 4.5;
+      const { tileSize, offsetX, offsetY } = getGridGeometry();
+      const phaseClosed = isPhaseWallClosed();
+
+      // 1. Render Dungeon Floor, Stone Walls & Phase Walls
+      for (let r = 0; r < state.rows; r++) {
+        for (let c = 0; c < state.cols; c++) {
+          const x = offsetX + c * tileSize;
+          const y = offsetY + r * tileSize;
+          const cell = state.grid[r][c];
+
+          if (cell === '#') {
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(x + 1, y + 1, tileSize - 2, tileSize - 2, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Engraved stone inner bevel
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.08)';
+            ctx.strokeRect(x + 5, y + 5, tileSize - 10, tileSize - 10);
+          } else {
+            // Walkable Floor Tile
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#090e1c' : '#0b1121';
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.fillRect(x, y, tileSize, tileSize);
+            ctx.strokeRect(x, y, tileSize, tileSize);
+
+            if (cell === 'P') {
+              ctx.fillStyle = phaseClosed ? 'rgba(168, 85, 247, 0.38)' : 'rgba(168, 85, 247, 0.1)';
+              ctx.strokeStyle = phaseClosed ? '#c084fc' : 'rgba(192, 132, 252, 0.45)';
+              ctx.lineWidth = phaseClosed ? 2.2 : 1.2;
+              ctx.setLineDash(phaseClosed ? [] : [4, 4]);
+              ctx.beginPath();
+              ctx.roundRect(x + 4, y + 4, tileSize - 8, tileSize - 8, 8);
+              ctx.fill();
+              ctx.stroke();
+              ctx.setLineDash([]);
+
+              ctx.font = `700 ${Math.max(8, Math.floor(tileSize * 0.17))}px "JetBrains Mono", monospace`;
+              ctx.fillStyle = phaseClosed ? '#f3e8ff' : '#a855f7';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(phaseClosed ? 'SHIFT' : 'OPEN', x + tileSize / 2, y + tileSize / 2);
+            }
+          }
+        }
+      }
+
+      // 2. Render Exit Sanctum Portal
+      const allGatesOpen = state.gates.every(g => g.unlocked);
+      const ex = offsetX + (state.exitPos.x + 0.5) * tileSize;
+      const ey = offsetY + (state.exitPos.y + 0.5) * tileSize;
+      ctx.save();
+      ctx.fillStyle = allGatesOpen ? 'rgba(16, 185, 129, 0.25)' : 'rgba(100, 116, 139, 0.18)';
+      ctx.strokeStyle = allGatesOpen ? '#34d399' : '#64748b';
+      ctx.lineWidth = 2.5;
+      if (allGatesOpen) {
+        ctx.shadowColor = '#10b981';
+        ctx.shadowBlur = 14;
+      }
+      ctx.beginPath();
+      ctx.arc(ex, ey, tileSize * 0.34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      ctx.font = `800 ${Math.max(9, Math.floor(tileSize * 0.18))}px "Cinzel", serif`;
+      ctx.fillStyle = allGatesOpen ? '#a7f3d0' : '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('EXIT', ex, ey);
+      ctx.restore();
+
+      // 3. Render Cognate Bonus Scrolls
+      for (const sc of state.scrolls) {
+        if (sc.solved) continue;
+        const sx = offsetX + (sc.x + 0.5) * tileSize;
+        const sy = offsetY + (sc.y + 0.5) * tileSize;
+        ctx.save();
+        ctx.fillStyle = 'rgba(217, 70, 239, 0.22)';
+        ctx.strokeStyle = '#e879f9';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(sx - tileSize * 0.28, sy - tileSize * 0.24, tileSize * 0.56, tileSize * 0.48, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = `800 ${Math.max(9, Math.floor(tileSize * 0.18))}px "Cinzel", serif`;
+        ctx.fillStyle = '#f5d0fe';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SCROLL', sx, sy);
+        ctx.restore();
+      }
+
+      // 4. Render Floating Morpheme Rune Pedestals
+      for (const r of state.runes) {
+        if (r.collected) continue;
+        const rx = offsetX + (r.x + 0.5) * tileSize;
+        const ry = offsetY + (r.y + 0.5) * tileSize;
+        ctx.save();
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = 'rgba(56, 189, 248, 0.55)';
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.roundRect(rx - tileSize * 0.38, ry - tileSize * 0.26, tileSize * 0.76, tileSize * 0.52, 8);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.font = `800 ${Math.max(9, Math.floor(tileSize * 0.19))}px "JetBrains Mono", monospace`;
+        ctx.fillStyle = '#e0f2fe';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(r.text, rx, ry);
+        ctx.restore();
+      }
+
+      // 5. Render Sealed Etymology Gates
+      for (const g of state.gates) {
+        if (g.unlocked) continue;
+        const gx = offsetX + (g.x + 0.5) * tileSize;
+        const gy = offsetY + (g.y + 0.5) * tileSize;
+        const isAdj = state.activeGate && state.activeGate.id === g.id;
+
+        ctx.save();
+        ctx.fillStyle = isAdj ? 'rgba(245, 158, 11, 0.34)' : 'rgba(245, 158, 11, 0.18)';
+        ctx.strokeStyle = isAdj ? '#fde047' : '#f59e0b';
+        ctx.lineWidth = isAdj ? 3 : 2;
+        if (isAdj) {
+          ctx.shadowColor = 'rgba(251, 191, 36, 0.75)';
+          ctx.shadowBlur = 14;
+        }
+        ctx.beginPath();
+        ctx.roundRect(gx - tileSize * 0.4, gy - tileSize * 0.4, tileSize * 0.8, tileSize * 0.8, 9);
+        ctx.fill();
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        ctx.font = `800 ${Math.max(9, Math.floor(tileSize * 0.19))}px "Cinzel", serif`;
+        ctx.fillStyle = '#fef3c7';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('SEAL', gx, gy);
+        ctx.restore();
+      }
+
+      // 6. Render Explorer Avatar & Flickering Torchlight Aura
+      const px = offsetX + (state.player.x + 0.5) * tileSize;
+      const py = offsetY + (state.player.y + 0.5) * tileSize;
+      const torchRadius = tileSize * (2.2 + Math.sin(state.torchTime) * 0.12);
+
+      const torchGrad = ctx.createRadialGradient(px, py, 4, px, py, torchRadius);
+      torchGrad.addColorStop(0, 'rgba(251, 191, 36, 0.26)');
+      torchGrad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+      ctx.fillStyle = torchGrad;
+      ctx.beginPath();
+      ctx.arc(px, py, torchRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#fbbf24';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(px, py, tileSize * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 7. Update & Draw Particles and Floating Text
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          state.particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (let i = state.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = state.floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.alpha -= ft.decay * dt;
+        if (ft.alpha <= 0) {
+          state.floatingTexts.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = '800 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // =========================================================================
+    // 8. SEARCHABLE CODEX & EVENT LISTENERS
+    // =========================================================================
+    function renderCodex(query = '') {
+      const grid = document.getElementById('codexGrid');
+      const q = query.trim().toLowerCase();
+      const filtered = CODEX_ENTRIES.filter(entry =>
+        !q ||
+        entry.root.toLowerCase().includes(q) ||
+        entry.origin.toLowerCase().includes(q) ||
+        entry.gloss.toLowerCase().includes(q) ||
+        entry.examples.toLowerCase().includes(q)
+      );
+
+      grid.innerHTML = filtered.map(item => `
+        <div class="p-3.5 rounded-2xl bg-slate-900/95 border border-amber-500/25">
+          <div class="flex items-center justify-between mb-1">
+            <span class="font-mono-rune font-extrabold text-sm text-amber-300">${item.root}</span>
+            <span class="px-2 py-0.5 rounded bg-slate-800 font-mono-rune text-[10px] text-sky-300">${item.origin}</span>
+          </div>
+          <div class="text-white font-semibold mb-1">Meaning: "${item.gloss}"</div>
+          <div class="text-slate-400 text-[11px]">Derivatives: ${item.examples}</div>
+        </div>
+      `).join('');
+    }
+
+    document.querySelectorAll('.track-card').forEach(card => {
+      card.addEventListener('click', () => startTrack(card.dataset.track));
+    });
+
+    document.getElementById('btnPlayAgain').addEventListener('click', () => {
+      startTrack(state.trackKey);
+    });
+
+    document.getElementById('btnTracksMenu').addEventListener('click', () => {
+      state.screen = 'title';
+      gameScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      titleScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('btnResetChamber').addEventListener('click', () => {
+      if (state.screen === 'playing') {
+        sfx.playStep();
+        loadChamber(state.chamberIdx);
+      }
+    });
+
+    document.getElementById('btnForgeWord').addEventListener('click', attemptForgeWord);
+
+    document.getElementById('btnClearAnvil').addEventListener('click', () => {
+      state.anvil = [];
+      renderSatchelAndForge();
+    });
+
+    document.getElementById('btnDropLastRune').addEventListener('click', () => {
+      if (state.screen !== 'playing' || state.satchel.length === 0) return;
+      const popped = state.satchel.pop();
+      state.anvil = state.anvil.filter(idx => idx < state.satchel.length);
+      popped.x = state.player.x;
+      popped.y = state.player.y;
+      popped.collected = false;
+      sfx.playStep();
+      renderSatchelAndForge();
+      setBanner(`Dropped rune [${popped.text}] at (${popped.x}, ${popped.y}).`, 'text-slate-300');
+    });
+
+    document.getElementById('btnHintTop').addEventListener('click', useHint);
+    document.getElementById('btnGateHint').addEventListener('click', useHint);
+
+    document.getElementById('btnCodex').addEventListener('click', () => {
+      renderCodex(document.getElementById('codexSearchInput').value);
+      document.getElementById('codexModal').classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseCodex').addEventListener('click', () => {
+      document.getElementById('codexModal').classList.add('hidden');
+    });
+
+    document.getElementById('codexSearchInput').addEventListener('input', (e) => {
+      renderCodex(e.target.value);
+    });
+
+    document.getElementById('soundToggleBtn').addEventListener('click', (e) => {
+      const muted = sfx.toggleMute();
+      e.currentTarget.textContent = muted ? 'SFX: OFF' : 'SFX: ON';
+      if (!muted) sfx.playStep();
+    });
+
+    document.querySelectorAll('.dpad-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [dx, dy] = btn.dataset.dir.split(',').map(Number);
+        tryMove(dx, dy);
+      });
+    });
+
+    // Canvas Tile Click / Tap Movement
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.screen !== 'playing' || state.activeScroll) return;
+      sfx.init();
+      const rect = canvas.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      const { tileSize, offsetX, offsetY } = getGridGeometry();
+
+      const col = Math.floor((px - offsetX) / tileSize);
+      const row = Math.floor((py - offsetY) / tileSize);
+      const dx = col - state.player.x;
+      const dy = row - state.player.y;
+
+      if (Math.abs(dx) + Math.abs(dy) === 1) {
+        tryMove(dx, dy);
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      const codexModal = document.getElementById('codexModal');
+      if (e.key === 'Escape') {
+        if (!codexModal.classList.contains('hidden')) {
+          codexModal.classList.add('hidden');
+        }
+        return;
+      }
+
+      if (document.activeElement === document.getElementById('codexSearchInput')) return;
+
+      if (e.key.toLowerCase() === 'c') {
+        codexModal.classList.toggle('hidden');
+        if (!codexModal.classList.contains('hidden')) {
+          renderCodex(document.getElementById('codexSearchInput').value);
+        }
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+
+      if (state.screen !== 'playing' || !codexModal.classList.contains('hidden') || state.activeScroll) return;
+
+      if (e.key.toLowerCase() === 'r') {
+        loadChamber(state.chamberIdx);
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'h') {
+        useHint();
+        return;
+      }
+
+      if (e.key === 'Enter' || e.code === 'Space') {
+        e.preventDefault();
+        attemptForgeWord();
+        return;
+      }
+
+      const k = e.key.toLowerCase();
+      if (k === 'w' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        tryMove(0, -1);
+      } else if (k === 's' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        tryMove(0, 1);
+      } else if (k === 'a' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        tryMove(-1, 0);
+      } else if (k === 'd' || e.key === 'ArrowRight') {
+        e.preventDefault();
+        tryMove(1, 0);
+      }
+    });
+
+    // =========================================================================
+    // 9. MAIN ANIMATION LOOP
+    // =========================================================================
+    let lastTimestamp = 0;
+
+    function mainLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+
+      drawLabyrinth(dt);
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = function () {
+      renderCodex();
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
