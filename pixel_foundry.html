@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pixel Foundry: Shader Lab — Color Theory &amp; Optical Ray-Tracing Puzzle</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700;800&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-lab: #060913;
+      --panel-glass: rgba(12, 18, 34, 0.92);
+      --accent-cyan: #38bdf8;
+      --accent-magenta: #e879f9;
+      --accent-amber: #facc15;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      background-color: var(--bg-lab);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(232, 121, 249, 0.08) 0%, transparent 45%),
+        linear-gradient(rgba(56, 189, 248, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.03) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+      overflow-x: hidden;
+    }
+
+    .font-orbitron {
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .lab-panel {
+      background: var(--panel-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1.5px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 14px 36px -10px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    .prism-glow {
+      text-shadow: 0 0 14px rgba(56, 189, 248, 0.65), 0 0 28px rgba(232, 121, 249, 0.35);
+    }
+
+    @keyframes starPop {
+      0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+      75% { transform: scale(1.2) rotate(6deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .star-pop {
+      animation: starPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <!-- TOP SHADER LAB NAVIGATION & TELEMETRY HUD -->
+  <header class="w-full border-b border-sky-500/25 bg-slate-950/92 backdrop-blur-md sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <!-- Left: Back Link & Title -->
+      <div class="flex items-center gap-2.5 sm:gap-4">
+        <a href="./index.html"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-sky-500/35 text-sky-300 text-xs font-orbitron font-bold tracking-wider transition active:scale-95">
+          <span>&larr;</span>
+          <span>Arcade Hub</span>
+        </a>
+        <div class="hidden md:block">
+          <h1 class="font-orbitron font-black text-base lg:text-lg tracking-wider text-white leading-none">
+            PIXEL FOUNDRY<span class="text-sky-400">: SHADER LAB</span>
+          </h1>
+          <span id="hudModeName" class="text-[11px] font-mono-code text-slate-400">Optical Color Theory &amp; Ray-Tracing</span>
+        </div>
+      </div>
+
+      <!-- Center: Mode Badge, Level, Moves & Score -->
+      <div class="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-sky-500/35 text-center">
+          <div class="text-[9px] font-orbitron uppercase text-sky-300/80">Shader</div>
+          <div id="hudLevel" class="font-mono-code font-extrabold text-xs sm:text-sm text-sky-300">01/04</div>
+        </div>
+
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/35 text-center">
+          <div class="text-[9px] font-orbitron uppercase text-amber-300/80">Moves</div>
+          <div id="hudMoves" class="font-mono-code font-extrabold text-xs sm:text-sm text-amber-300">0</div>
+        </div>
+
+        <div class="px-2.5 py-1 rounded-xl bg-slate-900 border border-emerald-500/35 text-center">
+          <div class="text-[9px] font-orbitron uppercase text-emerald-300/80">Score</div>
+          <div id="hudScore" class="font-mono-code font-extrabold text-xs sm:text-sm text-emerald-300">0</div>
+        </div>
+      </div>
+
+      <!-- Right: Color Wheel, Hint, Reset, Sound & Modes -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <button id="btnColorWheel" type="button" title="Interactive RGB/CMY Color Wheel (C)"
+          class="px-2.5 py-1.5 rounded-xl bg-fuchsia-500/15 hover:bg-fuchsia-500/25 border border-fuchsia-400/45 text-fuchsia-200 text-xs font-orbitron font-bold transition active:scale-95">
+          Color Wheel <span class="hidden sm:inline">[C]</span>
+        </button>
+
+        <button id="btnHint" type="button" title="Pulse Next Misaligned Component (-75 pts) [H]"
+          class="px-2.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-400/45 text-amber-200 text-xs font-orbitron font-bold transition active:scale-95">
+          Hint <span class="hidden sm:inline">[H]</span>
+        </button>
+
+        <button id="btnResetPuzzle" type="button" title="Reset Current Puzzle"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-mono-code font-bold transition active:scale-95">
+          Reset
+        </button>
+
+        <button id="soundToggleBtn" type="button" title="Toggle Audio Synth (M)"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-code text-xs transition active:scale-95">
+          SFX: ON
+        </button>
+
+        <button id="btnModesMenu" type="button" title="Choose Curriculum Mode"
+          class="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-orbitron font-bold transition active:scale-95">
+          Modes
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 flex flex-col justify-center">
+
+    <!-- ==================== 1. CURRICULUM MODE SELECTOR ==================== -->
+    <section id="titleScreen" class="lab-panel rounded-3xl p-6 sm:p-9 max-w-4xl mx-auto w-full text-center">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/15 border border-sky-400/40 text-sky-300 text-xs font-orbitron uppercase tracking-widest mb-4">
+        <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+        <span>Digital Art &bull; Color Theory &bull; Computer Graphics</span>
+      </div>
+
+      <h2 class="font-orbitron font-black text-3xl sm:text-5xl text-white prism-glow tracking-tight mb-3">
+        PIXEL FOUNDRY: SHADER LAB
+      </h2>
+      <p class="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-7">
+        Route and blend spectral laser beams across an 8&times;6 optical workbench. Rotate <strong class="text-sky-300">Mirrors</strong>, <strong class="text-fuchsia-300">Dichroic Splitters</strong>, <strong class="text-amber-300">CMY Subtractive Gels</strong>, and <strong class="text-emerald-300">Additive Combiners</strong> to calibrate every target sensor.
+      </p>
+
+      <!-- 3 Curriculum Mode Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-left mb-7">
+        <button type="button" data-mode="rgb"
+          class="mode-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border-2 border-sky-400/65 shadow-[0_0_24px_rgba(56,189,248,0.18)] transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-sky-500/20 border border-sky-400/40 text-sky-300 font-orbitron text-[10px] font-bold uppercase">Module 01</span>
+              <span class="font-mono-code text-xs text-sky-300">4 Shaders</span>
+            </div>
+            <h3 class="font-orbitron font-extrabold text-base text-white group-hover:text-sky-300 mb-1.5">RGB Additive Light</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Master screen &amp; shader luminance: combine Red, Green, and Blue emitters into <span class="font-mono-code text-amber-300">Yellow</span>, <span class="font-mono-code text-teal-300">Cyan</span>, <span class="font-mono-code text-fuchsia-300">Magenta</span>, and pure <span class="font-mono-code text-white">White</span>.
+            </p>
+          </div>
+          <div class="mt-4 font-orbitron text-xs font-bold text-sky-300 flex items-center justify-between">
+            <span>Launch RGB Lab</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+
+        <button type="button" data-mode="cmy"
+          class="mode-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-fuchsia-500/45 hover:border-fuchsia-400 transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-fuchsia-500/20 border border-fuchsia-400/40 text-fuchsia-300 font-orbitron text-[10px] font-bold uppercase">Module 02</span>
+              <span class="font-mono-code text-xs text-fuchsia-300">4 Shaders</span>
+            </div>
+            <h3 class="font-orbitron font-extrabold text-base text-white group-hover:text-fuchsia-300 mb-1.5">CMY Subtractive Pigments</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Filter broadband light using <span class="font-mono-code text-teal-300">Cyan</span> (absorbs R), <span class="font-mono-code text-fuchsia-300">Magenta</span> (absorbs G), and <span class="font-mono-code text-amber-300">Yellow</span> (absorbs B) optical gel filters.
+            </p>
+          </div>
+          <div class="mt-4 font-orbitron text-xs font-bold text-fuchsia-300 flex items-center justify-between">
+            <span>Launch CMY Press</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+
+        <button type="button" data-mode="harmony"
+          class="mode-card group rounded-2xl p-5 bg-slate-900/95 hover:bg-slate-800/95 border border-amber-500/45 hover:border-amber-400 transition flex flex-col justify-between text-left">
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 font-orbitron text-[10px] font-bold uppercase">Module 03</span>
+              <span class="font-mono-code text-xs text-amber-300">4 Shaders</span>
+            </div>
+            <h3 class="font-orbitron font-extrabold text-base text-white group-hover:text-amber-300 mb-1.5">Hue, Harmony &amp; Contrast</h3>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Synthesize opposing complementary hues (<span class="font-mono-code text-sky-300">Blue/Yellow</span>, <span class="font-mono-code text-emerald-300">Green/Magenta</span>), triadic RGB balances, and quad-spectrum shaders.
+            </p>
+          </div>
+          <div class="mt-4 font-orbitron text-xs font-bold text-amber-300 flex items-center justify-between">
+            <span>Launch Harmony Studio</span>
+            <span>&rarr;</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Controls Legend -->
+      <div class="flex flex-wrap items-center justify-center gap-3 text-xs text-slate-400 border-t border-slate-800 pt-5">
+        <span><strong class="text-sky-300">Click / Tap Component</strong> Rotate or Cycle Filter</span>
+        <span>&bull;</span>
+        <span><strong class="text-amber-300">R / Space</strong> Rotate Selected Tile</span>
+        <span>&bull;</span>
+        <span><strong class="text-fuchsia-300">C</strong> Interactive Color Wheel</span>
+        <span>&bull;</span>
+        <span><strong class="text-emerald-300">H</strong> Optical Hint</span>
+      </div>
+    </section>
+
+    <!-- ==================== 2. ACTIVE OPTICAL WORKBENCH SCREEN ==================== -->
+    <section id="gameScreen" class="hidden w-full flex flex-col gap-3">
+
+      <!-- Puzzle Objective Header -->
+      <div class="lab-panel rounded-2xl px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span id="puzzleBadge" class="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/45 font-orbitron font-bold text-[11px] uppercase text-sky-300">
+            Shader 1
+          </span>
+          <span id="puzzleObjective" class="text-xs sm:text-sm font-medium text-slate-200">
+            Combine Red and Green emitters to illuminate the Yellow target sensor.
+          </span>
+        </div>
+        <div class="text-[11px] font-mono-code text-slate-400">
+          Sensors Locked: <span id="sensorsStatusCount" class="text-emerald-300 font-bold">0 / 1</span>
+        </div>
+      </div>
+
+      <!-- Main Split Layout: 8x6 Optical Canvas on Left, Telemetry & Target Inspector on Right -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+
+        <!-- Left: 8x6 Optical Ray-Tracing Canvas -->
+        <div id="canvasWrapper" class="lg:col-span-8 lab-panel rounded-3xl relative min-h-[370px] sm:min-h-[470px] overflow-hidden flex items-center justify-center">
+          <canvas id="opticalCanvas" class="block w-full h-full cursor-pointer"></canvas>
+
+          <!-- Compact Optical Legend -->
+          <div class="pointer-events-none absolute bottom-2.5 left-3 right-3 flex flex-wrap items-center justify-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-950/88 border border-slate-800/90 text-[10px] font-mono-code text-slate-300">
+            <span><strong class="text-sky-300">[Click / R]</strong> Rotate Unlocked Optic</span>
+            <span>&bull;</span>
+            <span><strong class="text-amber-300">Lock Dot</strong> Fixed Optic</span>
+            <span>&bull;</span>
+            <span><strong class="text-fuchsia-300">CMY Gel</strong> Subtracts Complement</span>
+            <span>&bull;</span>
+            <span><strong class="text-emerald-300">Combiner</strong> Sums RGB</span>
+          </div>
+        </div>
+
+        <!-- Right: Target Sensor Calibration & Selected Tile Inspector -->
+        <div class="lg:col-span-4 flex flex-col gap-3">
+
+          <!-- 1. Target Sensor Calibration List -->
+          <div class="lab-panel rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-2.5">
+              <div>
+                <h3 class="font-orbitron font-extrabold text-xs sm:text-sm uppercase tracking-wider text-emerald-300">
+                  Target Sensors
+                </h3>
+                <p class="text-[11px] text-slate-400">All sensors must match exact RGB bitmask</p>
+              </div>
+              <span id="calibrationBadge" class="px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 font-mono-code text-[10px] font-bold text-slate-300">
+                CALIBRATING
+              </span>
+            </div>
+
+            <div id="targetSensorsList" class="space-y-2"></div>
+          </div>
+
+          <!-- 2. Selected / Hovered Optic Inspector -->
+          <div class="lab-panel rounded-2xl p-4 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-orbitron font-extrabold text-xs uppercase tracking-wider text-sky-300">
+                  Optic Telemetry
+                </span>
+                <span id="inspectorCoords" class="font-mono-code text-[11px] text-slate-400">Tile (0, 0)</span>
+              </div>
+
+              <div class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 mb-3 space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <span id="inspectorTitle" class="font-bold text-sm text-white">Empty Optical Bench</span>
+                  <span id="inspectorLockBadge" class="px-2 py-0.5 rounded bg-slate-800 font-mono-code text-[10px] text-slate-400">
+                    BENCH
+                  </span>
+                </div>
+                <p id="inspectorDesc" class="text-xs text-slate-300 leading-relaxed">
+                  Click or hover any optical component on the 8&times;6 table to inspect its ray behavior and RGB channels.
+                </p>
+                <div class="pt-1.5 border-t border-slate-800/80 flex items-center justify-between text-[11px] font-mono-code">
+                  <span class="text-slate-400">State / Output:</span>
+                  <span id="inspectorStateText" class="text-sky-300 font-bold">—</span>
+                </div>
+              </div>
+            </div>
+
+            <button id="btnRotateSelected" type="button" disabled
+              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-400 to-fuchsia-400 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 text-slate-950 font-orbitron font-black text-xs uppercase tracking-wider transition active:scale-95">
+              Rotate Selected Optic [R]
+            </button>
+          </div>
+
+          <!-- 3. Quick Spectral Reference Card -->
+          <div class="lab-panel rounded-2xl p-3.5 text-[11px] font-mono-code space-y-1 text-slate-300">
+            <div class="font-orbitron font-bold text-[10px] uppercase text-amber-300 mb-1">Shader Mixing Cheatsheet</div>
+            <div><span class="text-rose-400">R</span> + <span class="text-emerald-400">G</span> = <span class="text-amber-300">Yellow</span> &nbsp;|&nbsp; <span class="text-rose-400">R</span> + <span class="text-sky-400">B</span> = <span class="text-fuchsia-300">Magenta</span> &nbsp;|&nbsp; <span class="text-emerald-400">G</span> + <span class="text-sky-400">B</span> = <span class="text-teal-300">Cyan</span></div>
+            <div><span class="text-teal-300">Cyan Gel</span> blocks <span class="text-rose-400">R</span> &bull; <span class="text-fuchsia-300">Magenta Gel</span> blocks <span class="text-emerald-400">G</span> &bull; <span class="text-amber-300">Yellow Gel</span> blocks <span class="text-sky-400">B</span></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. MODULE COMPLETION SUMMARY SCREEN ==================== -->
+    <section id="endScreen" class="hidden lab-panel rounded-3xl p-6 sm:p-10 max-w-xl mx-auto w-full text-center">
+      <div id="endBadge" class="inline-block px-3.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-orbitron text-xs font-bold uppercase tracking-widest mb-3">
+        Module Calibrated &bull; 4/4 Shaders
+      </div>
+
+      <h2 class="font-orbitron font-black text-2xl sm:text-4xl text-white prism-glow mb-2">
+        MASTER SHADER ARCHITECT!
+      </h2>
+      <p id="endSubtitle" class="text-slate-300 text-sm mb-5">
+        Every optical receptor in this curriculum module achieved exact chromatic lock.
+      </p>
+
+      <!-- 1-3 Star Rating -->
+      <div id="endStars" class="flex items-center justify-center gap-3 mb-6"></div>
+
+      <!-- Module Stats -->
+      <div class="grid grid-cols-3 gap-3 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6">
+        <div>
+          <div class="text-[10px] font-orbitron uppercase text-slate-400">Final Score</div>
+          <div id="endScore" class="font-mono-code font-extrabold text-lg sm:text-xl text-emerald-300">0</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-orbitron uppercase text-slate-400">Total Moves</div>
+          <div id="endMoves" class="font-mono-code font-extrabold text-lg sm:text-xl text-amber-300">0</div>
+        </div>
+        <div>
+          <div class="text-[10px] font-orbitron uppercase text-slate-400">Shaders Solved</div>
+          <div id="endSolved" class="font-mono-code font-extrabold text-lg sm:text-xl text-sky-300">4 / 4</div>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button id="btnPlayAgain" type="button"
+          class="flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-sky-400 to-fuchsia-400 text-slate-950 font-orbitron font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition active:scale-95">
+          Replay Module
+        </button>
+        <button id="btnSwitchModeEnd" type="button"
+          class="py-3.5 px-5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-orbitron font-bold text-xs uppercase tracking-wider transition">
+          All Modules
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== PUZZLE VICTORY MODAL ==================== -->
+  <div id="levelVictoryModal" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="lab-panel rounded-3xl max-w-md w-full p-6 border-2 border-emerald-400/60 text-center">
+      <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/45 font-orbitron font-bold text-[11px] uppercase text-emerald-300 mb-3">
+        Shader Locked &bull; +500 PTS
+      </div>
+      <h3 id="victoryTitle" class="font-orbitron font-black text-xl sm:text-2xl text-white mb-2">
+        SPECTRUM CALIBRATED!
+      </h3>
+      <div class="p-3.5 rounded-2xl bg-slate-950/90 border border-slate-800 mb-4">
+        <div class="text-[10px] font-orbitron uppercase text-slate-400 mb-1">Chromatic Equation Solved</div>
+        <div id="victoryEquation" class="font-mono-code font-extrabold text-xs sm:text-sm text-amber-300">
+          RED (1,0,0) + GREEN (0,1,0) = YELLOW (1,1,0)
+        </div>
+      </div>
+      <p id="victoryNote" class="text-xs text-slate-300 leading-relaxed mb-5">
+        Additive displays blend red and green subpixels at full intensity to produce perceived yellow light.
+      </p>
+      <button id="btnNextShader" type="button"
+        class="w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-400 to-sky-400 text-slate-950 font-orbitron font-black text-xs sm:text-sm uppercase tracking-wider hover:brightness-110 transition active:scale-95">
+        Next Shader &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== INTERACTIVE COLOR THEORY & WHEEL MODAL ==================== -->
+  <div id="colorWheelModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="lab-panel rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 mb-4">
+        <div>
+          <h3 class="font-orbitron font-black text-lg sm:text-xl text-sky-300">INTERACTIVE RGB / CMY COLOR WHEEL</h3>
+          <p class="text-xs text-slate-400">Additive Light Mixing vs. Subtractive Pigment Filtering</p>
+        </div>
+        <button id="btnCloseWheel" type="button"
+          class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-mono-code text-xs font-bold">
+          ESC / Close
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+        <!-- Interactive Venn / Color Wheel Canvas -->
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-3 flex flex-col items-center">
+          <canvas id="wheelCanvas" width="280" height="260" class="max-w-full h-auto"></canvas>
+          <span class="text-[10px] font-mono-code text-slate-400 mt-1">Additive RGB Light Overlap Diagram</span>
+        </div>
+
+        <!-- Theory Breakdown -->
+        <div class="space-y-3 text-xs">
+          <div class="p-3.5 rounded-2xl bg-slate-900/95 border border-sky-500/30">
+            <h4 class="font-orbitron font-bold text-sky-300 mb-1">1. Additive Color (RGB — Screens &amp; Shaders)</h4>
+            <p class="text-slate-300 leading-relaxed mb-2">
+              Emitted light adds wavelengths together. Starting from black (0,0,0), adding all three primaries produces <strong class="text-white">White (1,1,1)</strong>.
+            </p>
+            <div class="font-mono-code text-[11px] space-y-0.5 text-slate-200">
+              <div>&bull; <span class="text-rose-400">Red</span> + <span class="text-emerald-400">Green</span> = <span class="text-amber-300">Yellow</span></div>
+              <div>&bull; <span class="text-rose-400">Red</span> + <span class="text-sky-400">Blue</span> = <span class="text-fuchsia-300">Magenta</span></div>
+              <div>&bull; <span class="text-emerald-400">Green</span> + <span class="text-sky-400">Blue</span> = <span class="text-teal-300">Cyan</span></div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-slate-900/95 border border-fuchsia-500/30">
+            <h4 class="font-orbitron font-bold text-fuchsia-300 mb-1">2. Subtractive Color (CMY — Filters &amp; Print)</h4>
+            <p class="text-slate-300 leading-relaxed mb-2">
+              Optical filters absorb (subtract) their complementary RGB channel from incoming light:
+            </p>
+            <div class="font-mono-code text-[11px] space-y-0.5 text-slate-200">
+              <div>&bull; <span class="text-teal-300">Cyan Gel</span> absorbs <span class="text-rose-400">Red</span> (passes G + B)</div>
+              <div>&bull; <span class="text-fuchsia-300">Magenta Gel</span> absorbs <span class="text-emerald-400">Green</span> (passes R + B)</div>
+              <div>&bull; <span class="text-amber-300">Yellow Gel</span> absorbs <span class="text-sky-400">Blue</span> (passes R + G)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * PIXEL FOUNDRY: SHADER LAB
+     * 8x6 Optical Ray-Tracing Engine using 3-bit RGB Bitmasks:
+     * R = 1, G = 2, B = 4 -> 0 (Off) through 7 (White)
+     */
+
+    // =========================================================================
+    // 1. WEB AUDIO API OPTICAL SYNTHESIZER
+    // =========================================================================
+    class OpticalSynth {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        try {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+          }
+        } catch (e) {
+          this.ctx = null;
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playTone(freq, type = 'sine', duration = 0.08, vol = 0.1, delay = 0) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime + delay;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration + 0.01);
+        } catch (e) {}
+      }
+
+      playRotate() {
+        this.playTone(420, 'triangle', 0.055, 0.09, 0);
+        this.playTone(630, 'sine', 0.06, 0.07, 0.03);
+      }
+
+      playSensorLock() {
+        this.playTone(587.33, 'sine', 0.12, 0.11, 0);
+        this.playTone(880, 'sine', 0.18, 0.12, 0.06);
+      }
+
+      playLevelChord() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          this.playTone(f, 'triangle', 0.24, 0.13, i * 0.07);
+        });
+      }
+    }
+
+    const sfx = new OpticalSynth();
+
+    // =========================================================================
+    // 2. COLOR BITMASK DEFINITIONS & DIRECTION HELPERS
+    // Directions: 0 = North (0,-1), 1 = East (1,0), 2 = South (0,1), 3 = West (-1,0)
+    // =========================================================================
+    const DIR_VECTORS = [
+      { dx: 0, dy: -1, name: 'N' },
+      { dx: 1, dy: 0, name: 'E' },
+      { dx: 0, dy: 1, name: 'S' },
+      { dx: -1, dy: 0, name: 'W' }
+    ];
+
+    const COLOR_TABLE = {
+      0: { name: 'Dark', hex: '#334155', rgb: '0,0,0', cmy: '—' },
+      1: { name: 'Red', hex: '#ff3b5c', rgb: '1,0,0', cmy: 'M+Y' },
+      2: { name: 'Green', hex: '#22e58b', rgb: '0,1,0', cmy: 'C+Y' },
+      4: { name: 'Blue', hex: '#38bdf8', rgb: '0,0,1', cmy: 'C+M' },
+      3: { name: 'Yellow', hex: '#facc15', rgb: '1,1,0', cmy: 'Yellow' },
+      5: { name: 'Magenta', hex: '#e879f9', rgb: '1,0,1', cmy: 'Magenta' },
+      6: { name: 'Cyan', hex: '#2dd4bf', rgb: '0,1,1', cmy: 'Cyan' },
+      7: { name: 'White', hex: '#ffffff', rgb: '1,1,1', cmy: 'Clear' }
+    };
+
+    const GEL_MODES = [
+      { mask: 6, label: 'C', fullName: 'Cyan Gel (Blocks Red)', hex: '#2dd4bf' },     // 7 & ~1 = 6
+      { mask: 5, label: 'M', fullName: 'Magenta Gel (Blocks Green)', hex: '#e879f9' }, // 7 & ~2 = 5
+      { mask: 3, label: 'Y', fullName: 'Yellow Gel (Blocks Blue)', hex: '#facc15' }    // 7 & ~4 = 3
+    ];
+
+    // =========================================================================
+    // 3. THREE CURRICULUM MODES & 12 VERIFIED SOLVABLE PUZZLES (8x6 GRID)
+    // =========================================================================
+    const CURRICULUM_MODES = {
+      rgb: {
+        name: 'RGB Additive Light',
+        levels: [
+          {
+            title: 'Primary Routing & Secondary Yellow',
+            objective: 'Route Red and Green lasers into the Additive Combiner to illuminate the Yellow target.',
+            equation: 'RED (1,0,0) + GREEN (0,1,0) = YELLOW (1,1,0)',
+            note: 'In additive color spaces (monitors, OLEDs, GPU shaders), combining Red and Green wavelengths yields Yellow.',
+            parMoves: 3,
+            items: [
+              { x: 1, y: 1, type: 'emitter', dir: 1, color: 1, locked: true },
+              { x: 4, y: 1, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' reflects E -> S
+              { x: 1, y: 4, type: 'emitter', dir: 1, color: 2, locked: true },
+              { x: 4, y: 4, type: 'mirror', rot: 1, locked: false, solutionRot: 0 }, // '/' reflects E -> N
+              { x: 4, y: 2, type: 'combiner', dir: 1, locked: true },
+              { x: 6, y: 2, type: 'target', reqColor: 3, locked: true }
+            ]
+          },
+          {
+            title: 'Cyan & Magenta Split',
+            objective: 'Use the Half-Silvered Beam Splitter so Blue mixes with both Green (Cyan) and Red (Magenta).',
+            equation: 'BLUE + GREEN = CYAN (0,1,1)  |  BLUE + RED = MAGENTA (1,0,1)',
+            note: 'A half-silvered beam splitter transmits 50% of incoming light forward while reflecting 50% at 90 degrees.',
+            parMoves: 4,
+            items: [
+              { x: 1, y: 2, type: 'emitter', dir: 1, color: 4, locked: true },
+              { x: 3, y: 2, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E and reflects S
+              { x: 5, y: 1, type: 'emitter', dir: 2, color: 2, locked: true },
+              { x: 5, y: 2, type: 'combiner', dir: 1, locked: true },
+              { x: 7, y: 2, type: 'target', reqColor: 6, locked: true }, // Cyan
+              { x: 2, y: 4, type: 'emitter', dir: 1, color: 1, locked: true },
+              { x: 3, y: 4, type: 'combiner', dir: 2, locked: true },
+              { x: 3, y: 5, type: 'target', reqColor: 5, locked: true }  // Magenta
+            ]
+          },
+          {
+            title: 'Pure White Synthesis',
+            objective: 'Rotate the mirrors to merge Red, Green, and Blue beams through both combiners into the White sensor.',
+            equation: 'RED (1,0,0) + GREEN (0,1,0) + BLUE (0,0,1) = WHITE (1,1,1)',
+            note: 'Full-intensity Red, Green, and Blue channels combine to form achromatic White (255, 255, 255).',
+            parMoves: 3,
+            items: [
+              { x: 1, y: 1, type: 'emitter', dir: 1, color: 1, locked: true }, // Red E -> (3,1)
+              { x: 3, y: 1, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' reflects E -> S into Combiner (3,3)
+              { x: 1, y: 3, type: 'emitter', dir: 1, color: 2, locked: true }, // Green E -> Combiner (3,3)
+              { x: 3, y: 3, type: 'combiner', dir: 1, locked: true }, // Outputs Yellow (3) E -> Combiner (5,3)
+              { x: 6, y: 1, type: 'emitter', dir: 2, color: 4, locked: true }, // Blue S -> (6,5)
+              { x: 6, y: 5, type: 'mirror', rot: 1, locked: false, solutionRot: 0 }, // '/' reflects S -> W into (5,5)
+              { x: 5, y: 5, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' reflects W -> N into Combiner (5,3)
+              { x: 5, y: 3, type: 'combiner', dir: 1, locked: true }, // Outputs White (7) E -> Target (7,3)
+              { x: 7, y: 3, type: 'target', reqColor: 7, locked: true }
+            ]
+          },
+          {
+            title: 'Dual-Spectrum Matrix',
+            objective: 'Route Yellow and Cyan simultaneously without cross-contaminating either receptor.',
+            equation: 'YELLOW (R+G) & CYAN (G+B) Isolated Channels',
+            note: 'Shared primary channels like Green can be split cleanly to feed two distinct secondary shaders.',
+            parMoves: 5,
+            items: [
+              { x: 1, y: 2, type: 'emitter', dir: 1, color: 2, locked: true }, // Green
+              { x: 3, y: 2, type: 'splitter', rot: 1, locked: false, solutionRot: 0 }, // '/' passes E, reflects N
+              { x: 3, y: 0, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' N -> E
+              { x: 5, y: 1, type: 'emitter', dir: 2, color: 1, locked: true }, // Red -> S
+              { x: 5, y: 0, type: 'combiner', dir: 1, locked: true }, // wait: Red below won't enter; let's route Red from (4,0) or mirror!
+              { x: 6, y: 0, type: 'target', reqColor: 3, locked: true }, // Yellow
+              { x: 5, y: 4, type: 'emitter', dir: 0, color: 4, locked: true }, // Blue -> N
+              { x: 5, y: 2, type: 'combiner', dir: 1, locked: true },
+              { x: 7, y: 2, type: 'target', reqColor: 6, locked: true }  // Cyan
+            ]
+          }
+        ]
+      },
+
+      cmy: {
+        name: 'CMY Subtractive Pigments',
+        levels: [
+          {
+            title: 'Filtering Broadband White Light',
+            objective: 'Split a White beam and pass it through Cyan and Yellow optical gels to isolate Cyan and Yellow.',
+            equation: 'WHITE (7) - RED (1) = CYAN (6)  |  WHITE (7) - BLUE (4) = YELLOW (3)',
+            note: 'Cyan pigment absorbs Red wavelengths; Yellow pigment absorbs Blue wavelengths.',
+            parMoves: 3,
+            items: [
+              { x: 1, y: 2, type: 'emitter', dir: 1, color: 7, locked: true }, // White
+              { x: 3, y: 2, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E, reflects S
+              { x: 5, y: 2, type: 'gel', gelIdx: 1, locked: false, solutionGel: 0 }, // Cyan Gel
+              { x: 7, y: 2, type: 'target', reqColor: 6, locked: true }, // Cyan
+              { x: 3, y: 4, type: 'gel', gelIdx: 0, locked: false, solutionGel: 2 }, // Yellow Gel
+              { x: 3, y: 5, type: 'target', reqColor: 3, locked: true }  // Yellow
+            ]
+          },
+          {
+            title: 'Secondary-to-Primary Isolation',
+            objective: 'Pass a Yellow beam (R+G) through a Magenta Gel (absorbs G) to isolate pure Red.',
+            equation: 'YELLOW (R+G) & MAGENTA GEL (~G) = PURE RED (1,0,0)',
+            note: 'Stacking Yellow and Magenta subtractive filters removes Blue and Green, leaving only Red.',
+            parMoves: 3,
+            items: [
+              { x: 1, y: 3, type: 'emitter', dir: 1, color: 3, locked: true }, // Yellow
+              { x: 3, y: 3, type: 'mirror', rot: 1, locked: false, solutionRot: 0 }, // '/' E -> N
+              { x: 3, y: 1, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' N -> E
+              { x: 5, y: 1, type: 'gel', gelIdx: 0, locked: false, solutionGel: 1 }, // Magenta Gel
+              { x: 7, y: 1, type: 'target', reqColor: 1, locked: true }  // Red
+            ]
+          },
+          {
+            title: 'Two-Stage Subtractive Cascade',
+            objective: 'Chain subtractive gels on a White beam to produce both Green and Blue primary outputs.',
+            equation: 'WHITE - R - B = GREEN (0,1,0)  |  WHITE - R - G = BLUE (0,0,1)',
+            note: 'Cyan + Yellow filters isolate Green; Cyan + Magenta filters isolate Blue.',
+            parMoves: 5,
+            items: [
+              { x: 1, y: 2, type: 'emitter', dir: 1, color: 7, locked: true }, // White
+              { x: 2, y: 2, type: 'gel', gelIdx: 2, locked: false, solutionGel: 0 }, // Cyan Gel -> Cyan (G+B)
+              { x: 4, y: 2, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E, reflects S
+              { x: 6, y: 2, type: 'gel', gelIdx: 0, locked: false, solutionGel: 2 }, // Yellow Gel -> Green
+              { x: 7, y: 2, type: 'target', reqColor: 2, locked: true }, // Green
+              { x: 4, y: 4, type: 'gel', gelIdx: 0, locked: false, solutionGel: 1 }, // Magenta Gel -> Blue
+              { x: 4, y: 5, type: 'target', reqColor: 4, locked: true }  // Blue
+            ]
+          },
+          {
+            title: 'Print Press Separation',
+            objective: 'Separate White light into Cyan, Magenta, and Yellow channels simultaneously.',
+            equation: 'WHITE (7) -> CYAN (6) + MAGENTA (5) + YELLOW (3)',
+            note: 'Commercial CMYK offset printing separates full-color artwork into Cyan, Magenta, and Yellow plates.',
+            parMoves: 5,
+            items: [
+              { x: 1, y: 1, type: 'emitter', dir: 1, color: 7, locked: true }, // White
+              { x: 3, y: 1, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E, reflects S
+              { x: 5, y: 1, type: 'gel', gelIdx: 1, locked: false, solutionGel: 0 }, // Cyan Gel
+              { x: 7, y: 1, type: 'target', reqColor: 6, locked: true }, // Cyan
+              { x: 3, y: 3, type: 'splitter', rot: 1, locked: false, solutionRot: 0 }, // '/' S -> W? Wait: S hitting '/' reflects W! Let's use '\' S -> E
+              { x: 5, y: 3, type: 'gel', gelIdx: 0, locked: false, solutionGel: 1 }, // Magenta Gel
+              { x: 7, y: 3, type: 'target', reqColor: 5, locked: true }, // Magenta
+              { x: 3, y: 4, type: 'gel', gelIdx: 0, locked: false, solutionGel: 2 }, // Yellow Gel
+              { x: 3, y: 5, type: 'target', reqColor: 3, locked: true }  // Yellow
+            ]
+          }
+        ]
+      },
+
+      harmony: {
+        name: 'Hue, Harmony & Contrast',
+        levels: [
+          {
+            title: 'Complementary Pair: Blue & Yellow',
+            objective: 'Deliver Blue and its exact additive complement Yellow (R+G) into their harmony receptors.',
+            equation: 'COMPLEMENTARY PAIR: BLUE (0,0,1) + YELLOW (1,1,0) = WHITE (1,1,1)',
+            note: 'Complementary colors sit opposite each other on the color wheel and sum to neutral white light.',
+            parMoves: 4,
+            items: [
+              { x: 1, y: 1, type: 'emitter', dir: 1, color: 4, locked: true }, // Blue E
+              { x: 4, y: 1, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' E -> S
+              { x: 4, y: 2, type: 'target', reqColor: 4, locked: true }, // Blue Target
+              { x: 1, y: 4, type: 'emitter', dir: 1, color: 1, locked: true }, // Red E
+              { x: 3, y: 5, type: 'emitter', dir: 0, color: 2, locked: true }, // Green N
+              { x: 3, y: 4, type: 'combiner', dir: 1, locked: true }, // Red + Green = Yellow E
+              { x: 6, y: 4, type: 'target', reqColor: 3, locked: true }  // Yellow Target
+            ]
+          },
+          {
+            title: 'Complementary Pair: Green & Magenta',
+            objective: 'Route Green and synthesize its complement Magenta (R+B) for high-contrast chromatic balance.',
+            equation: 'COMPLEMENTARY PAIR: GREEN (0,1,0) + MAGENTA (1,0,1) = WHITE (1,1,1)',
+            note: 'Green and Magenta form the second canonical additive/subtractive complementary axis.',
+            parMoves: 4,
+            items: [
+              { x: 1, y: 1, type: 'emitter', dir: 1, color: 2, locked: true }, // Green E
+              { x: 6, y: 1, type: 'target', reqColor: 2, locked: true },
+              { x: 1, y: 3, type: 'emitter', dir: 1, color: 1, locked: true }, // Red E
+              { x: 3, y: 3, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' E -> S
+              { x: 1, y: 4, type: 'emitter', dir: 1, color: 4, locked: true }, // Blue E
+              { x: 3, y: 4, type: 'combiner', dir: 1, locked: true }, // Red + Blue = Magenta E
+              { x: 6, y: 4, type: 'target', reqColor: 5, locked: true }  // Magenta
+            ]
+          },
+          {
+            title: 'Triadic RGB Balance',
+            objective: 'Use Dichroic Splitters to separate a White beam into balanced Red, Green, and Blue triadic nodes.',
+            equation: 'TRIADIC HARMONY: RED (120°) + GREEN (240°) + BLUE (0°)',
+            note: 'A triadic palette spaces three hues evenly around the color wheel for vibrant visual equilibrium.',
+            parMoves: 4,
+            items: [
+              { x: 1, y: 2, type: 'emitter', dir: 1, color: 7, locked: true }, // White E
+              { x: 3, y: 2, type: 'dichroic', passMask: 1, rot: 0, locked: false, solutionRot: 1 }, // Passes Red E, reflects G+B S
+              { x: 6, y: 2, type: 'target', reqColor: 1, locked: true }, // Red
+              { x: 3, y: 4, type: 'dichroic', passMask: 4, rot: 0, locked: false, solutionRot: 1 }, // Passes Blue S, reflects Green E
+              { x: 6, y: 4, type: 'target', reqColor: 2, locked: true }, // Green
+              { x: 3, y: 5, type: 'target', reqColor: 4, locked: true }  // Blue
+            ]
+          },
+          {
+            title: 'Master Chromatic Shader',
+            objective: 'Filter White light into Cyan, Magenta, and Yellow, and recombine channels to power the White core.',
+            equation: 'CYAN (6) + MAGENTA (5) + YELLOW (3) + WHITE (7) FULL SPECTRUM',
+            note: 'Master shader pipelines balance both subtractive filtering and additive luminance reconstruction.',
+            parMoves: 5,
+            items: [
+              { x: 0, y: 2, type: 'emitter', dir: 1, color: 7, locked: true }, // White E
+              { x: 2, y: 2, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E, reflects S
+              { x: 4, y: 2, type: 'gel', gelIdx: 1, locked: false, solutionGel: 0 }, // Cyan Gel -> Cyan (6)
+              { x: 5, y: 2, type: 'splitter', rot: 0, locked: false, solutionRot: 1 }, // '\' passes E to Cyan target, reflects S to Combiner
+              { x: 7, y: 2, type: 'target', reqColor: 6, locked: true }, // Cyan Target
+              { x: 2, y: 4, type: 'gel', gelIdx: 0, locked: false, solutionGel: 1 }, // Magenta Gel -> Magenta (5)
+              { x: 2, y: 5, type: 'target', reqColor: 5, locked: true }, // Magenta Target
+              { x: 4, y: 4, type: 'emitter', dir: 1, color: 1, locked: true }, // Red E -> Combiner
+              { x: 5, y: 4, type: 'combiner', dir: 1, locked: true }, // Receives Cyan (6) from N + Red (1) from W = White (7)!
+              { x: 7, y: 4, type: 'target', reqColor: 7, locked: true }  // White Target
+            ]
+          }
+        ]
+      }
+    };
+
+    // Fix Level 4 of RGB Mode so Red enters Combiner cleanly from (5,1) -> Combiner (5,0) facing E
+    CURRICULUM_MODES.rgb.levels[3].items = [
+      { x: 1, y: 2, type: 'emitter', dir: 1, color: 2, locked: true }, // Green E
+      { x: 3, y: 2, type: 'splitter', rot: 1, locked: false, solutionRot: 0 }, // '/' passes E, reflects N
+      { x: 3, y: 0, type: 'mirror', rot: 0, locked: false, solutionRot: 1 }, // '\' N -> E
+      { x: 5, y: 1, type: 'emitter', dir: 0, color: 1, locked: true }, // Red N -> enters Combiner (5,0) from S!
+      { x: 5, y: 0, type: 'combiner', dir: 1, locked: true }, // Green (W) + Red (S) = Yellow (E)
+      { x: 7, y: 0, type: 'target', reqColor: 3, locked: true }, // Yellow Target
+      { x: 5, y: 4, type: 'emitter', dir: 0, color: 4, locked: true }, // Blue N -> enters Combiner (5,2) from S
+      { x: 5, y: 2, type: 'combiner', dir: 1, locked: true }, // Green (W) + Blue (S) = Cyan (E)
+      { x: 7, y: 2, type: 'target', reqColor: 6, locked: true }  // Cyan Target
+    ];
+
+    // Fix Level 4 of CMY Mode so splitter at (3,3) uses '\' (rot: 1) which passes S and reflects E
+    CURRICULUM_MODES.cmy.levels[3].items[4] = {
+      x: 3, y: 3, type: 'splitter', rot: 0, locked: false, solutionRot: 1
+    };
+
+    // =========================================================================
+    // 4. OPTICAL GRID & RAY-TRACING ENGINE (8x6)
+    // =========================================================================
+    const COLS = 8;
+    const ROWS = 6;
+
+    const state = {
+      screen: 'title', // 'title' | 'playing' | 'end'
+      modeKey: 'rgb',
+      levelIdx: 0,
+      moves: 0,
+      totalMoves: 0,
+      score: 0,
+      items: [],
+      rays: [], // { x1, y1, x2, y2, color }
+      sparks: [], // { x, y, color }
+      selectedPos: null,
+      hoveredPos: null,
+      hintPos: null,
+      hintTimer: 0,
+      levelSolved: false,
+      animTime: 0
+    };
+
+    const titleScreen = document.getElementById('titleScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const endScreen = document.getElementById('endScreen');
+    const canvas = document.getElementById('opticalCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasWrapper = document.getElementById('canvasWrapper');
+
+    function startMode(modeKey) {
+      sfx.init();
+      state.modeKey = CURRICULUM_MODES[modeKey] ? modeKey : 'rgb';
+      state.levelIdx = 0;
+      state.totalMoves = 0;
+      state.score = 0;
+      state.screen = 'playing';
+
+      document.getElementById('hudModeName').textContent = CURRICULUM_MODES[state.modeKey].name;
+      titleScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      document.getElementById('levelVictoryModal').classList.add('hidden');
+      gameScreen.classList.remove('hidden');
+
+      loadLevel(0);
+    }
+
+    function loadLevel(idx) {
+      const mode = CURRICULUM_MODES[state.modeKey];
+      state.levelIdx = Math.max(0, Math.min(mode.levels.length - 1, idx));
+      const def = mode.levels[state.levelIdx];
+
+      state.moves = 0;
+      state.levelSolved = false;
+      state.hintPos = null;
+      state.hintTimer = 0;
+
+      // Deep clone items and initialize target receivedColor
+      state.items = def.items.map(it => ({
+        ...it,
+        receivedColor: 0,
+        wasLockedIn: false
+      }));
+
+      // Select first rotatable item by default
+      const firstRotatable = state.items.find(it => !it.locked);
+      state.selectedPos = firstRotatable ? { x: firstRotatable.x, y: firstRotatable.y } : null;
+
+      document.getElementById('puzzleBadge').textContent = `Shader ${state.levelIdx + 1}: ${def.title}`;
+      document.getElementById('puzzleObjective').textContent = def.objective;
+      document.getElementById('levelVictoryModal').classList.add('hidden');
+
+      traceOpticalBench(false);
+      updateInspector();
+      updateHUD();
+    }
+
+    function getItemAt(x, y) {
+      return state.items.find(it => it.x === x && it.y === y) || null;
+    }
+
+    /**
+     * Reflects a direction index (0=N, 1=E, 2=S, 3=W) off a mirror:
+     * rot === 0 ('/'): N(0)<->E(1), S(2)<->W(3)
+     * rot === 1 ('\'): N(0)<->W(3), S(2)<->E(1)
+     */
+    function reflectDir(dir, rot) {
+      if (rot === 0) {
+        return [1, 0, 3, 2][dir];
+      } else {
+        return [3, 2, 1, 0][dir];
+      }
+    }
+
+    /**
+     * Multi-pass Optical Ray-Tracing Solver:
+     * Handles combiners accumulating multiple incoming RGB rays before emitting their sum.
+     */
+    function traceOpticalBench(playFeedback = true) {
+      // Reset combiner inputs and target colors
+      const combinerInputs = new Map();
+      state.items.forEach(it => {
+        if (it.type === 'target') it.receivedColor = 0;
+        if (it.type === 'combiner') combinerInputs.set(`${it.x},${it.y}`, 0);
+      });
+
+      // Run 3 convergence passes so chained combiners feed downstream optics cleanly
+      let finalRays = [];
+      let finalSparks = [];
+
+      for (let pass = 0; pass < 3; pass++) {
+        finalRays = [];
+        finalSparks = [];
+        const visitedStates = new Set();
+        const queue = [];
+
+        // Enqueue all Emitters
+        state.items.forEach(it => {
+          if (it.type === 'emitter' && it.color > 0) {
+            queue.push({ x: it.x, y: it.y, dir: it.dir, color: it.color });
+          }
+        });
+
+        // Enqueue active Combiners from previous pass
+        if (pass >= 1) {
+          state.items.forEach(it => {
+            if (it.type === 'combiner') {
+              const sumColor = combinerInputs.get(`${it.x},${it.y}`) || 0;
+              if (sumColor > 0) {
+                queue.push({ x: it.x, y: it.y, dir: it.dir, color: sumColor });
+              }
+            }
+          });
+        }
+
+        // Reset combinerInputs at the start of pass 0 or pass 1 accumulation
+        const nextCombinerInputs = new Map();
+        state.items.forEach(it => {
+          if (it.type === 'combiner') nextCombinerInputs.set(`${it.x},${it.y}`, 0);
+          if (it.type === 'target') it.receivedColor = 0;
+        });
+
+        while (queue.length > 0) {
+          const ray = queue.shift();
+          const stateKey = `${ray.x},${ray.y},${ray.dir},${ray.color}`;
+          if (visitedStates.has(stateKey)) continue;
+          visitedStates.add(stateKey);
+
+          const vec = DIR_VECTORS[ray.dir];
+          const nx = ray.x + vec.dx;
+          const ny = ray.y + vec.dy;
+
+          // Check grid boundary
+          if (nx < 0 || ny < 0 || nx >= COLS || ny >= ROWS) {
+            finalRays.push({
+              x1: ray.x + 0.5,
+              y1: ray.y + 0.5,
+              x2: ray.x + 0.5 + vec.dx * 0.5,
+              y2: ray.y + 0.5 + vec.dy * 0.5,
+              color: ray.color
+            });
+            continue;
+          }
+
+          finalRays.push({
+            x1: ray.x + 0.5,
+            y1: ray.y + 0.5,
+            x2: nx + 0.5,
+            y2: ny + 0.5,
+            color: ray.color
+          });
+
+          const hit = getItemAt(nx, ny);
+          if (!hit) {
+            queue.push({ x: nx, y: ny, dir: ray.dir, color: ray.color });
+            continue;
+          }
+
+          if (hit.type === 'blocker' || hit.type === 'emitter') {
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: ray.color });
+          } else if (hit.type === 'target') {
+            hit.receivedColor |= ray.color;
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: hit.receivedColor });
+          } else if (hit.type === 'combiner') {
+            // Accept beams entering from any side EXCEPT the output face
+            if (ray.dir !== (hit.dir + 2) % 4) {
+              const key = `${nx},${ny}`;
+              nextCombinerInputs.set(key, (nextCombinerInputs.get(key) || 0) | ray.color);
+              finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: ray.color });
+            }
+          } else if (hit.type === 'mirror') {
+            const outDir = reflectDir(ray.dir, hit.rot);
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: ray.color });
+            queue.push({ x: nx, y: ny, dir: outDir, color: ray.color });
+          } else if (hit.type === 'splitter') {
+            const refDir = reflectDir(ray.dir, hit.rot);
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: ray.color });
+            queue.push({ x: nx, y: ny, dir: ray.dir, color: ray.color }); // Pass straight
+            queue.push({ x: nx, y: ny, dir: refDir, color: ray.color });  // Reflect 90 deg
+          } else if (hit.type === 'dichroic') {
+            const passColor = ray.color & hit.passMask;
+            const refColor = ray.color & ~hit.passMask;
+            const refDir = reflectDir(ray.dir, hit.rot);
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: ray.color });
+            if (passColor > 0) {
+              queue.push({ x: nx, y: ny, dir: ray.dir, color: passColor });
+            }
+            if (refColor > 0) {
+              queue.push({ x: nx, y: ny, dir: refDir, color: refColor });
+            }
+          } else if (hit.type === 'gel') {
+            const gelDef = GEL_MODES[hit.gelIdx];
+            const filteredColor = ray.color & gelDef.mask;
+            finalSparks.push({ x: nx + 0.5, y: ny + 0.5, color: filteredColor || ray.color });
+            if (filteredColor > 0) {
+              queue.push({ x: nx, y: ny, dir: ray.dir, color: filteredColor });
+            }
+          }
+        }
+
+        combinerInputs.clear();
+        nextCombinerInputs.forEach((v, k) => combinerInputs.set(k, v));
+      }
+
+      state.rays = finalRays;
+      state.sparks = finalSparks;
+
+      // Update Target Sensors UI & Check Victory
+      const targets = state.items.filter(it => it.type === 'target');
+      let lockedCount = 0;
+      targets.forEach(t => {
+        const isMatched = t.receivedColor === t.reqColor;
+        if (isMatched) {
+          lockedCount++;
+          if (!t.wasLockedIn && playFeedback) {
+            sfx.playSensorLock();
+          }
+        }
+        t.wasLockedIn = isMatched;
+      });
+
+      renderTargetSensorsList(targets);
+      document.getElementById('sensorsStatusCount').textContent = `${lockedCount} / ${targets.length}`;
+
+      if (!state.levelSolved && targets.length > 0 && lockedCount === targets.length) {
+        state.levelSolved = true;
+        handleShaderSolved();
+      }
+    }
+
+    function rotateItem(item) {
+      if (!item || item.locked || state.levelSolved) return;
+
+      if (item.type === 'mirror' || item.type === 'splitter' || item.type === 'dichroic') {
+        item.rot = (item.rot + 1) % 2;
+      } else if (item.type === 'gel') {
+        item.gelIdx = (item.gelIdx + 1) % GEL_MODES.length;
+      } else if (item.type === 'combiner' || item.type === 'emitter') {
+        item.dir = (item.dir + 1) % 4;
+      } else {
+        return;
+      }
+
+      state.moves++;
+      state.totalMoves++;
+      sfx.playRotate();
+      traceOpticalBench(true);
+      updateInspector();
+      updateHUD();
+    }
+
+    function handleShaderSolved() {
+      sfx.playLevelChord();
+      const def = CURRICULUM_MODES[state.modeKey].levels[state.levelIdx];
+      const efficiencyBonus = Math.max(0, (def.parMoves + 4 - state.moves) * 40);
+      state.score += 500 + efficiencyBonus;
+      updateHUD();
+
+      document.getElementById('calibrationBadge').textContent = 'LOCKED IN';
+      document.getElementById('calibrationBadge').className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 font-mono-code text-[10px] font-bold text-emerald-300';
+
+      document.getElementById('victoryTitle').textContent = `SHADER ${state.levelIdx + 1} CALIBRATED!`;
+      document.getElementById('victoryEquation').textContent = def.equation;
+      document.getElementById('victoryNote').textContent = def.note;
+
+      const isLast = state.levelIdx + 1 >= CURRICULUM_MODES[state.modeKey].levels.length;
+      document.getElementById('btnNextShader').textContent = isLast ? 'Complete Module →' : 'Next Shader →';
+
+      setTimeout(() => {
+        document.getElementById('levelVictoryModal').classList.remove('hidden');
+      }, 480);
+    }
+
+    function finishModule() {
+      state.screen = 'end';
+      document.getElementById('levelVictoryModal').classList.add('hidden');
+      gameScreen.classList.add('hidden');
+      endScreen.classList.remove('hidden');
+
+      const mode = CURRICULUM_MODES[state.modeKey];
+      document.getElementById('endBadge').textContent = `${mode.name} • 4/4 Shaders`;
+      document.getElementById('endScore').textContent = state.score.toLocaleString();
+      document.getElementById('endMoves').textContent = state.totalMoves;
+      document.getElementById('endSolved').textContent = `${mode.levels.length} / ${mode.levels.length}`;
+
+      let stars = 2;
+      if (state.totalMoves <= 20) stars = 3;
+      else if (state.totalMoves > 34) stars = 1;
+
+      const starsEl = document.getElementById('endStars');
+      starsEl.innerHTML = '';
+      for (let i = 1; i <= 3; i++) {
+        const earned = i <= stars;
+        const wrap = document.createElement('div');
+        wrap.style.animationDelay = `${(i - 1) * 160}ms`;
+        wrap.className = earned ? 'star-pop' : 'opacity-25 scale-90';
+        wrap.innerHTML = `
+          <svg class="w-12 h-12 ${earned ? 'text-amber-400 drop-shadow-[0_0_12px_rgba(251,191,36,0.85)]' : 'text-slate-600'}" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+        `;
+        starsEl.appendChild(wrap);
+      }
+    }
+
+    // =========================================================================
+    // 5. TELEMETRY, TARGET SENSORS & HINT SYSTEM
+    // =========================================================================
+    function renderTargetSensorsList(targets) {
+      const list = document.getElementById('targetSensorsList');
+      list.innerHTML = targets.map((t, idx) => {
+        const req = COLOR_TABLE[t.reqColor];
+        const rec = COLOR_TABLE[t.receivedColor || 0];
+        const matched = t.receivedColor === t.reqColor;
+        const statusText = matched
+          ? 'MATCHED'
+          : t.receivedColor > 0
+            ? `WRONG (${rec.name})`
+            : 'UNLIT';
+        const statusClass = matched
+          ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
+          : t.receivedColor > 0
+            ? 'bg-rose-500/20 border-rose-400/50 text-rose-300'
+            : 'bg-slate-800 border-slate-700 text-slate-400';
+
+        return `
+          <div class="p-2.5 rounded-xl bg-slate-950/90 border ${matched ? 'border-emerald-500/50' : 'border-slate-800'} flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="w-4 h-4 rounded-full border border-white/40 shrink-0" style="background-color: ${req.hex}; box-shadow: 0 0 10px ${req.hex};"></span>
+              <div>
+                <div class="font-bold text-xs text-white">Sensor ${idx + 1}: ${req.name}</div>
+                <div class="font-mono-code text-[10px] text-slate-400">RGB (${req.rgb})</div>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded border font-mono-code text-[10px] font-bold ${statusClass}">
+              ${statusText}
+            </span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateInspector() {
+      const pos = state.hoveredPos || state.selectedPos;
+      const coordsEl = document.getElementById('inspectorCoords');
+      const titleEl = document.getElementById('inspectorTitle');
+      const lockEl = document.getElementById('inspectorLockBadge');
+      const descEl = document.getElementById('inspectorDesc');
+      const stateEl = document.getElementById('inspectorStateText');
+      const rotBtn = document.getElementById('btnRotateSelected');
+
+      const selectedItem = state.selectedPos ? getItemAt(state.selectedPos.x, state.selectedPos.y) : null;
+      rotBtn.disabled = !(selectedItem && !selectedItem.locked);
+
+      if (!pos) {
+        coordsEl.textContent = 'Tile (—)';
+        titleEl.textContent = 'Optical Workbench';
+        lockEl.textContent = 'GRID';
+        descEl.textContent = 'Click any rotatable optic on the 8×6 table to rotate mirrors or cycle CMY gels.';
+        stateEl.textContent = 'Ready';
+        return;
+      }
+
+      coordsEl.textContent = `Tile (${pos.x}, ${pos.y})`;
+      const item = getItemAt(pos.x, pos.y);
+      if (!item) {
+        titleEl.textContent = 'Empty Optical Cell';
+        lockEl.textContent = 'OPEN';
+        lockEl.className = 'px-2 py-0.5 rounded bg-slate-800 font-mono-code text-[10px] text-slate-400';
+        descEl.textContent = 'Free space allowing uninterrupted beam propagation.';
+        stateEl.textContent = 'Transmissive';
+        return;
+      }
+
+      lockEl.textContent = item.locked ? 'LOCKED' : 'ROTATABLE';
+      lockEl.className = item.locked
+        ? 'px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 font-mono-code text-[10px] text-amber-300'
+        : 'px-2 py-0.5 rounded bg-sky-500/20 border border-sky-400/40 font-mono-code text-[10px] text-sky-300';
+
+      if (item.type === 'emitter') {
+        const c = COLOR_TABLE[item.color];
+        titleEl.textContent = `${c.name} Laser Emitter`;
+        descEl.textContent = `Projects a continuous ${c.name} beam (${c.rgb}) facing ${DIR_VECTORS[item.dir].name}.`;
+        stateEl.textContent = `${c.name} (${c.hex})`;
+      } else if (item.type === 'mirror') {
+        titleEl.textContent = 'Front-Surface Mirror';
+        descEl.textContent = 'Reflects incoming light beams cleanly by 90 degrees without wavelength loss.';
+        stateEl.textContent = item.rot === 0 ? 'Angle: / (45°)' : 'Angle: \\ (135°)';
+      } else if (item.type === 'splitter') {
+        titleEl.textContent = 'Half-Silvered Beam Splitter';
+        descEl.textContent = 'Transmits light straight through AND reflects 90 degrees simultaneously.';
+        stateEl.textContent = item.rot === 0 ? 'Plane: /' : 'Plane: \\';
+      } else if (item.type === 'dichroic') {
+        const passC = COLOR_TABLE[item.passMask];
+        titleEl.textContent = `Dichroic Splitter (${passC.name} Pass)`;
+        descEl.textContent = `Passes ${passC.name} wavelength straight through while reflecting all other channels 90°.`;
+        stateEl.textContent = `${passC.name} Pass | ${item.rot === 0 ? '/' : '\\'}`;
+      } else if (item.type === 'gel') {
+        const g = GEL_MODES[item.gelIdx];
+        titleEl.textContent = 'Subtractive CMY Gel Filter';
+        descEl.textContent = 'Subtracts its complementary RGB channel from any beam passing straight through.';
+        stateEl.textContent = g.fullName;
+      } else if (item.type === 'combiner') {
+        titleEl.textContent = 'Additive Prism Combiner';
+        descEl.textContent = 'Collects incoming RGB beams from up to 3 sides and emits their bitwise additive sum.';
+        stateEl.textContent = `Output Dir: ${DIR_VECTORS[item.dir].name}`;
+      } else if (item.type === 'target') {
+        const req = COLOR_TABLE[item.reqColor];
+        titleEl.textContent = `${req.name} Target Receptor`;
+        descEl.textContent = `Requires exact ${req.name} light (${req.rgb}) to achieve spectral lock.`;
+        stateEl.textContent = `Target: ${req.name}`;
+      }
+    }
+
+    function triggerHint() {
+      const misaligned = state.items.find(it => {
+        if (it.locked) return false;
+        if (it.solutionRot !== undefined && it.rot !== it.solutionRot) return true;
+        if (it.solutionGel !== undefined && it.gelIdx !== it.solutionGel) return true;
+        return false;
+      });
+
+      if (misaligned) {
+        state.score = Math.max(0, state.score - 75);
+        state.hintPos = { x: misaligned.x, y: misaligned.y };
+        state.selectedPos = { x: misaligned.x, y: misaligned.y };
+        state.hintTimer = 3.5;
+        sfx.playRotate();
+        updateInspector();
+        updateHUD();
+        const targetLabel = misaligned.solutionGel !== undefined
+          ? GEL_MODES[misaligned.solutionGel].fullName
+          : misaligned.solutionRot === 0 ? 'Angle /' : 'Angle \\';
+        document.getElementById('inspectorStateText').textContent = `HINT: Set (${misaligned.x}, ${misaligned.y}) → ${targetLabel}`;
+      }
+    }
+
+    function updateHUD() {
+      const mode = CURRICULUM_MODES[state.modeKey];
+      document.getElementById('hudLevel').textContent = `${String(state.levelIdx + 1).padStart(2, '0')}/${String(mode.levels.length).padStart(2, '0')}`;
+      document.getElementById('hudMoves').textContent = state.moves;
+      document.getElementById('hudScore').textContent = state.score.toLocaleString();
+    }
+
+    // =========================================================================
+    // 6. HTML5 CANVAS OPTICAL WORKBENCH RENDERER
+    // =========================================================================
+    function getBoardGeometry() {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const w = Math.max(300, rect.width);
+      const h = Math.max(260, rect.height - 34);
+      const tile = Math.floor(Math.min((w - 28) / COLS, (h - 24) / ROWS));
+      const offsetX = Math.floor((w - tile * COLS) / 2);
+      const offsetY = Math.floor((h - tile * ROWS) / 2);
+      return { w, h: rect.height, tile, offsetX, offsetY };
+    }
+
+    function renderOpticalCanvas(dt) {
+      const rect = canvasWrapper.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetW = Math.max(1, Math.floor(rect.width * dpr));
+      const targetH = Math.max(1, Math.floor(rect.height * dpr));
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, rect.width, rect.height);
+
+      if (state.screen !== 'playing') {
+        ctx.restore();
+        return;
+      }
+
+      state.animTime += dt * 4;
+      if (state.hintTimer > 0) {
+        state.hintTimer = Math.max(0, state.hintTimer - dt);
+        if (state.hintTimer === 0) state.hintPos = null;
+      }
+
+      const { tile, offsetX, offsetY } = getBoardGeometry();
+
+      // 1. Draw 8x6 Optical Table Grid
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const x = offsetX + c * tile;
+          const y = offsetY + r * tile;
+          const isSelected = state.selectedPos && state.selectedPos.x === c && state.selectedPos.y === r;
+          const isHint = state.hintPos && state.hintPos.x === c && state.hintPos.y === r;
+
+          ctx.fillStyle = (r + c) % 2 === 0 ? '#090e1c' : '#0b1224';
+          ctx.fillRect(x, y, tile, tile);
+
+          ctx.strokeStyle = isHint
+            ? '#facc15'
+            : isSelected
+              ? '#38bdf8'
+              : 'rgba(56, 189, 248, 0.14)';
+          ctx.lineWidth = isHint || isSelected ? 2.2 : 1;
+          ctx.strokeRect(x + 1, y + 1, tile - 2, tile - 2);
+
+          // Subtle optical table mounting holes at tile corners
+          ctx.fillStyle = 'rgba(148, 163, 184, 0.22)';
+          ctx.beginPath();
+          ctx.arc(x + tile * 0.5, y + tile * 0.5, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 2. Draw Glowing Spectral Light Beams
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (const ray of state.rays) {
+        const cInfo = COLOR_TABLE[ray.color];
+        if (!cInfo || ray.color === 0) continue;
+
+        const x1 = offsetX + ray.x1 * tile;
+        const y1 = offsetY + ray.y1 * tile;
+        const x2 = offsetX + ray.x2 * tile;
+        const y2 = offsetY + ray.y2 * tile;
+
+        // Outer additive glow
+        ctx.strokeStyle = cInfo.hex;
+        ctx.shadowColor = cInfo.hex;
+        ctx.shadowBlur = 14;
+        ctx.lineWidth = Math.max(4, tile * 0.11);
+        ctx.globalAlpha = 0.65;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Crisp inner core
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(1.8, tile * 0.04);
+        ctx.globalAlpha = 0.9;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 3. Draw Optical Components
+      for (const item of state.items) {
+        const cx = offsetX + (item.x + 0.5) * tile;
+        const cy = offsetY + (item.y + 0.5) * tile;
+        const r = tile * 0.36;
+
+        ctx.save();
+
+        if (item.type === 'emitter') {
+          const c = COLOR_TABLE[item.color];
+          const vec = DIR_VECTORS[item.dir];
+          ctx.fillStyle = '#0f172a';
+          ctx.strokeStyle = c.hex;
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.roundRect(cx - r, cy - r, r * 2, r * 2, 10);
+          ctx.fill();
+          ctx.stroke();
+
+          // Aperture barrel
+          ctx.strokeStyle = c.hex;
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + vec.dx * r * 1.15, cy + vec.dy * r * 1.15);
+          ctx.stroke();
+
+          // Glowing core
+          ctx.fillStyle = c.hex;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.type === 'mirror') {
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 5;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          if (item.rot === 0) {
+            ctx.moveTo(cx - r * 0.85, cy + r * 0.85);
+            ctx.lineTo(cx + r * 0.85, cy - r * 0.85);
+          } else {
+            ctx.moveTo(cx - r * 0.85, cy - r * 0.85);
+            ctx.lineTo(cx + r * 0.85, cy + r * 0.85);
+          }
+          ctx.stroke();
+
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (item.type === 'splitter') {
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 3.5;
+          ctx.setLineDash([5, 4]);
+          ctx.beginPath();
+          if (item.rot === 0) {
+            ctx.moveTo(cx - r * 0.88, cy + r * 0.88);
+            ctx.lineTo(cx + r * 0.88, cy - r * 0.88);
+          } else {
+            ctx.moveTo(cx - r * 0.88, cy - r * 0.88);
+            ctx.lineTo(cx + r * 0.88, cy + r * 0.88);
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else if (item.type === 'dichroic') {
+          const passC = COLOR_TABLE[item.passMask];
+          ctx.strokeStyle = passC.hex;
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          if (item.rot === 0) {
+            ctx.moveTo(cx - r * 0.85, cy + r * 0.85);
+            ctx.lineTo(cx + r * 0.85, cy - r * 0.85);
+          } else {
+            ctx.moveTo(cx - r * 0.85, cy - r * 0.85);
+            ctx.lineTo(cx + r * 0.85, cy + r * 0.85);
+          }
+          ctx.stroke();
+        } else if (item.type === 'gel') {
+          const g = GEL_MODES[item.gelIdx];
+          ctx.fillStyle = g.hex + '33';
+          ctx.strokeStyle = g.hex;
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          ctx.roundRect(cx - r * 0.85, cy - r * 0.85, r * 1.7, r * 1.7, 9);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.font = `800 ${Math.max(11, Math.floor(tile * 0.24))}px "Orbitron", sans-serif`;
+          ctx.fillStyle = g.hex;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(g.label, cx, cy);
+        } else if (item.type === 'combiner') {
+          const vec = DIR_VECTORS[item.dir];
+          ctx.fillStyle = '#0f172a';
+          ctx.strokeStyle = '#34d399';
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Output nozzle arrow
+          ctx.fillStyle = '#34d399';
+          ctx.beginPath();
+          ctx.arc(cx + vec.dx * r * 0.78, cy + vec.dy * r * 0.78, 4.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.font = `800 ${Math.max(10, Math.floor(tile * 0.22))}px "JetBrains Mono", monospace`;
+          ctx.fillStyle = '#a7f3d0';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('+', cx, cy);
+        } else if (item.type === 'target') {
+          const req = COLOR_TABLE[item.reqColor];
+          const isMatched = item.receivedColor === item.reqColor;
+
+          ctx.fillStyle = isMatched ? req.hex + '44' : '#0f172a';
+          ctx.strokeStyle = req.hex;
+          ctx.lineWidth = isMatched ? 3.5 : 2.2;
+          if (isMatched) {
+            ctx.shadowColor = req.hex;
+            ctx.shadowBlur = 16;
+          }
+          ctx.beginPath();
+          ctx.arc(cx, cy, r * 0.86, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          ctx.font = `800 ${Math.max(8, Math.floor(tile * 0.16))}px "Orbitron", sans-serif`;
+          ctx.fillStyle = isMatched ? '#ffffff' : req.hex;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(req.name.toUpperCase(), cx, cy);
+        }
+
+        // Lock indicator dot on non-rotatable optics
+        if (item.locked && item.type !== 'target') {
+          ctx.fillStyle = '#facc15';
+          ctx.beginPath();
+          ctx.arc(cx + r * 0.72, cy - r * 0.72, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      // 4. Draw Intersection Sparks & Active Hint Callout
+      for (const sp of state.sparks) {
+        const c = COLOR_TABLE[sp.color];
+        if (!c || sp.color === 0) continue;
+        const sx = offsetX + sp.x * tile;
+        const sy = offsetY + sp.y * tile;
+        ctx.save();
+        ctx.fillStyle = c.hex;
+        ctx.shadowColor = c.hex;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3.2 + Math.sin(state.animTime * 2) * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (state.hintPos) {
+        const hx = offsetX + (state.hintPos.x + 0.5) * tile;
+        const hy = offsetY + state.hintPos.y * tile + 12;
+        ctx.save();
+        ctx.font = '800 10px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#facc15';
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 6;
+        ctx.fillText('ROTATE', hx, hy);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // =========================================================================
+    // 7. INTERACTIVE RGB / CMY COLOR WHEEL DIAGRAM
+    // =========================================================================
+    function drawColorWheelDiagram() {
+      const wc = document.getElementById('wheelCanvas');
+      if (!wc) return;
+      const wctx = wc.getContext('2d');
+      wctx.clearRect(0, 0, wc.width, wc.height);
+
+      const cx = wc.width / 2;
+      const cy = wc.height / 2 + 6;
+      const offset = 36;
+      const radius = 64;
+
+      wctx.save();
+      wctx.globalCompositeOperation = 'lighter';
+
+      const circles = [
+        { x: cx, y: cy - offset, color: '#ff3b5c', label: 'RED', lx: cx, ly: cy - offset - 32 },
+        { x: cx - offset * 0.92, y: cy + offset * 0.62, color: '#22e58b', label: 'GREEN', lx: cx - offset - 28, ly: cy + offset + 24 },
+        { x: cx + offset * 0.92, y: cy + offset * 0.62, color: '#38bdf8', label: 'BLUE', lx: cx + offset + 28, ly: cy + offset + 24 }
+      ];
+
+      circles.forEach(c => {
+        wctx.fillStyle = c.color;
+        wctx.beginPath();
+        wctx.arc(c.x, c.y, radius, 0, Math.PI * 2);
+        wctx.fill();
+      });
+
+      wctx.restore();
+
+      // Overlay crisp labels
+      wctx.font = '800 10px "Orbitron", sans-serif';
+      wctx.textAlign = 'center';
+      wctx.fillStyle = '#060913';
+      wctx.fillText('WHITE', cx, cy + 4);
+      wctx.fillText('YELLOW', cx - 32, cy - 8);
+      wctx.fillText('MAGENTA', cx + 32, cy - 8);
+      wctx.fillText('CYAN', cx, cy + 36);
+
+      wctx.fillStyle = '#f8fafc';
+      circles.forEach(c => {
+        wctx.fillText(c.label, c.lx, c.ly);
+      });
+    }
+
+    // =========================================================================
+    // 8. EVENT LISTENERS & MAIN LOOP
+    // =========================================================================
+    document.querySelectorAll('.mode-card').forEach(btn => {
+      btn.addEventListener('click', () => startMode(btn.dataset.mode));
+    });
+
+    document.getElementById('btnNextShader').addEventListener('click', () => {
+      const mode = CURRICULUM_MODES[state.modeKey];
+      if (state.levelIdx + 1 < mode.levels.length) {
+        loadLevel(state.levelIdx + 1);
+      } else {
+        finishModule();
+      }
+    });
+
+    document.getElementById('btnPlayAgain').addEventListener('click', () => startMode(state.modeKey));
+
+    document.getElementById('btnSwitchModeEnd').addEventListener('click', () => {
+      state.screen = 'title';
+      endScreen.classList.add('hidden');
+      titleScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('btnModesMenu').addEventListener('click', () => {
+      state.screen = 'title';
+      gameScreen.classList.add('hidden');
+      endScreen.classList.add('hidden');
+      titleScreen.classList.remove('hidden');
+    });
+
+    document.getElementById('btnResetPuzzle').addEventListener('click', () => {
+      if (state.screen === 'playing') {
+        sfx.playRotate();
+        loadLevel(state.levelIdx);
+      }
+    });
+
+    document.getElementById('btnRotateSelected').addEventListener('click', () => {
+      if (state.selectedPos) {
+        rotateItem(getItemAt(state.selectedPos.x, state.selectedPos.y));
+      }
+    });
+
+    document.getElementById('btnHint').addEventListener('click', triggerHint);
+
+    document.getElementById('btnColorWheel').addEventListener('click', () => {
+      drawColorWheelDiagram();
+      document.getElementById('colorWheelModal').classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseWheel').addEventListener('click', () => {
+      document.getElementById('colorWheelModal').classList.add('hidden');
+    });
+
+    document.getElementById('soundToggleBtn').addEventListener('click', (e) => {
+      const muted = sfx.toggleMute();
+      e.currentTarget.textContent = muted ? 'SFX: OFF' : 'SFX: ON';
+      if (!muted) sfx.playRotate();
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (state.screen !== 'playing') return;
+      const rect = canvas.getBoundingClientRect();
+      const { tile, offsetX, offsetY } = getBoardGeometry();
+      const col = Math.floor((e.clientX - rect.left - offsetX) / tile);
+      const row = Math.floor((e.clientY - rect.top - offsetY) / tile);
+      if (col >= 0 && row >= 0 && col < COLS && row < ROWS) {
+        state.hoveredPos = { x: col, y: row };
+      } else {
+        state.hoveredPos = null;
+      }
+      updateInspector();
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (state.screen !== 'playing' || state.levelSolved) return;
+      sfx.init();
+      const rect = canvas.getBoundingClientRect();
+      const { tile, offsetX, offsetY } = getBoardGeometry();
+      const col = Math.floor((e.clientX - rect.left - offsetX) / tile);
+      const row = Math.floor((e.clientY - rect.top - offsetY) / tile);
+
+      if (col >= 0 && row >= 0 && col < COLS && row < ROWS) {
+        state.selectedPos = { x: col, y: row };
+        const item = getItemAt(col, row);
+        if (item && !item.locked) {
+          rotateItem(item);
+        } else {
+          updateInspector();
+        }
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      const wheelModal = document.getElementById('colorWheelModal');
+      if (e.key === 'Escape') {
+        wheelModal.classList.add('hidden');
+        return;
+      }
+      if (e.key.toLowerCase() === 'c') {
+        wheelModal.classList.toggle('hidden');
+        if (!wheelModal.classList.contains('hidden')) drawColorWheelDiagram();
+        return;
+      }
+      if (e.key.toLowerCase() === 'm') {
+        document.getElementById('soundToggleBtn').click();
+        return;
+      }
+      if (state.screen !== 'playing' || !wheelModal.classList.contains('hidden')) return;
+
+      if (e.key.toLowerCase() === 'h') {
+        triggerHint();
+      } else if ((e.key.toLowerCase() === 'r' || e.code === 'Space') && state.selectedPos) {
+        e.preventDefault();
+        rotateItem(getItemAt(state.selectedPos.x, state.selectedPos.y));
+      }
+    });
+
+    let lastTime = 0;
+    function loop(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = Math.min(0.05, (ts - lastTime) / 1000);
+      lastTime = ts;
+      renderOpticalCanvas(dt);
+      requestAnimationFrame(loop);
+    }
+
+    window.onload = function () {
+      drawColorWheelDiagram();
+      requestAnimationFrame(loop);
+    };
+  </script>
+</body>
+</html>
